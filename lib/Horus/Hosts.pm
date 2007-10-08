@@ -1,12 +1,14 @@
-package Hosts;
+package Fusionone::Hosts;
 
+use Fusionone::DB;
 use strict;
 
-$Hosts::VERSION = '$Revision: 1.1 $';
+$Fusionone::Hosts::VERSION = '$Revision: 1.2 $';
 
 sub new {
   my $self = shift @_ || {};
   bless $self;
+  $self->{db} = new Fusionone::DB;
   return $self;
 }
 
