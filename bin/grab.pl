@@ -1,7 +1,10 @@
-#!/usr/bin/perl
+#!/usr/bin/perl -Ilib
+
+use Fusionone::Hosts;
 
 require Math::BigInt::GMP; # For speed on Net::SSH::Perl;
 use Net::SSH::Perl;
+
 use strict;
 
 my %machines;
