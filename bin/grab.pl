@@ -1,5 +1,22 @@
 #!/usr/bin/perl -Ilib
 
+=head schema
++----------------+--------------+------+-----+---------+----------------+
+| Field          | Type         | Null | Key | Default | Extra          |
++----------------+--------------+------+-----+---------+----------------+
+| id             | int(11)      |      | PRI | NULL    | auto_increment |
+| name           | varchar(255) | YES  | MUL | unknown |                |
+| os             | varchar(64)  | YES  |     | NULL    |                |
+| osversion      | varchar(255) | YES  |     | NULL    |                |
+| arch           | varchar(24)  | YES  |     | NULL    |                |
+| tz             | char(3)      | YES  |     | NULL    |                |
+| snmp           | int(11)      | YES  |     | 0       |                |
+| snmp_community | varchar(24)  | YES  |     | NULL    |                |
+| ntp            | int(11)      | YES  |     | 0       |                |
+| ntphost        | varchar(255) | YES  |     | NULL    |                |
++----------------+--------------+------+-----+---------+----------------+
+=cut
+
 use Fusionone::Hosts;
 
 require Math::BigInt::GMP; # For speed on Net::SSH::Perl;
