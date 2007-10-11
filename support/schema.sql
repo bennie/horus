@@ -23,6 +23,7 @@ CREATE TABLE `hosts` (
   `snmp_community` varchar(24) default NULL,
   `ntp` int(11) default '-1',
   `ntphost` varchar(255) default NULL,
+  `notes` text,
   `last_modified` timestamp NOT NULL default CURRENT_TIMESTAMP on update CURRENT_TIMESTAMP,
   PRIMARY KEY  (`id`),
   KEY `hosts_name` (`name`)
