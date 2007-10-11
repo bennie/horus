@@ -1,5 +1,17 @@
-DROP TABLE IF EXISTS `hosts`;
+DROP TABLE IF EXISTS `ethernet`;
+CREATE TABLE `ethernet` (
+  `address` varchar(17) NOT NULL default '',
+  `host_id` int(11) default NULL,
+  `switch_id` int(11) default NULL,
+  `port` varchar(10) default NULL,
+  `notes` text,
+  `last_modified` timestamp NOT NULL default CURRENT_TIMESTAMP on update CURRENT_TIMESTAMP,
+  PRIMARY KEY  (`address`),
+  KEY `ethernet_host_id` (`host_id`),
+  KEY `ethernet_switch_id` (`switch_id`)
+) ENGINE=MyISAM DEFAULT CHARSET=latin1;
 
+DROP TABLE IF EXISTS `hosts`;
 CREATE TABLE `hosts` (
   `id` int(11) NOT NULL auto_increment,
   `name` varchar(255) default 'unknown',
@@ -14,4 +26,15 @@ CREATE TABLE `hosts` (
   `last_modified` timestamp NOT NULL default CURRENT_TIMESTAMP on update CURRENT_TIMESTAMP,
   PRIMARY KEY  (`id`),
   KEY `hosts_name` (`name`)
+) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+
+DROP TABLE IF EXISTS `switches`;
+CREATE TABLE `switches` (
+  `id` int(11) NOT NULL default '0',
+  `name` varchar(255) NOT NULL default '',
+  `brand` varchar(64) default NULL,
+  `model` varchar(255) default NULL,
+  `notes` text,
+  `last_modified` timestamp NOT NULL default CURRENT_TIMESTAMP on update CURRENT_TIMESTAMP,
+  PRIMARY KEY  (`id`)
 ) ENGINE=MyISAM DEFAULT CHARSET=latin1;
