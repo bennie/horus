@@ -8,7 +8,7 @@ use DBI;
 use Fusionone::Utils qw/zt/;
 use strict;
 
-$Fusionone::DB::VERSION = '$Revision: 1.1 $';
+$Fusionone::DB::VERSION = '$Revision: 1.2 $';
 
 sub new {
   my     $self = {};
@@ -86,6 +86,31 @@ sub all {
   return \@out;
 }
 
+=head2 column($sql)
+
+Returns only one column of a DB query as an array
+
+=cut
+
+sub column {
+  my $self = shift @_;
+  my $sql  = shift @_;
+  my @bind =       @_;
+
+  my $sth = $self->{dbh}->prepare($sql);
+  my $ret = $sth->execute(@bind);
+
+  my @out;
+
+  while ( my @ret = $sth->fetchrow_array ) {
+    push @out, $ret[0];
+  }
+
+  $sth->finish;
+
+  return wantarray ? @out : \@out;
+}
+
 =head2 execute($sql)
 
 Good for inserts, etc.
@@ -114,6 +139,23 @@ sub get_dbh {
   return $_[0]->{dbh};
 }
 
+=head2 handle($sql)
+
+Returns query handle
+
+=cut
+
+sub handle {
+  my $self = shift @_;
+  my $sql  = shift @_;
+  my @bind =       @_;
+
+  my $sth = $self->{dbh}->prepare($sql);
+  my $ret = $sth->execute(@bind);
+
+  return wantarray ? ( $ret, $sth ) : $sth;
+}
+
 =head2 insert($table,$ref)
 
 inserts the hashref of data into the given table
@@ -138,55 +180,22 @@ sub insert {
   return wantarray ? ( $ret, $sql ) : $ret;
 }
 
-=head2 query_column($sql)
-
-Returns only one column of a DB query as an array
+=head2 quote($text)
 
 =cut
 
-sub query_column {
+sub quote {
   my $self = shift @_;
-  my $sql  = shift @_;
-  my @bind =       @_;
-
-  my $sth = $self->{dbh}->prepare($sql);
-  my $ret = $sth->execute(@bind);
-
-  my @out;
-
-  while ( my @ret = $sth->fetchrow_array ) {
-    push @out, $ret[0];
-  }
-
-  $sth->finish;
-
-  return @out;
+  return $self->{dbh}->quote(@_);
 }
 
-=head2 query_handle($sql)
-
-Returns query handle
-
-=cut
-
-sub query_handle {
-  my $self = shift @_;
-  my $sql  = shift @_;
-  my @bind =       @_;
-
-  my $sth = $self->{dbh}->prepare($sql);
-  my $ret = $sth->execute(@bind);
-
-  return wantarray ? ( $ret, $sth ) : $sth;
-}
-
-=head2 query_row($sql)
+=head2 row($sql)
 
 Returns only one row of a DB query as an array
 
 =cut
 
-sub query_row {
+sub row {
   my $self = shift @_;
   my $sql  = shift @_;
 
@@ -202,15 +211,6 @@ sub query_row {
   $sth->finish;
 
   return @ret;
-}
-
-=head2 quote($text)
-
-=cut
-
-sub quote {
-  my $self = shift @_;
-  return $self->{dbh}->quote(@_);
 }
 
 =head2 single($sql)
@@ -251,12 +251,38 @@ sub time {
   return $year.$month.$day.$hour.$min.$sec;
 }
 
+=head2 update($table,$idname,$idval,$hash_ref_of_values))
+
+Update table values as indiciated by the hash ref.
+
+Table and restricting id given.
+
+=cut
+
+sub update {
+  my $self   = shift @_;
+  my $table  = shift @_;
+  my $idname = shift @_;
+  my $idval  = shift @_;
+  my $data   = shift @_;
+
+  my @names = sort keys %$data;
+
+  my $sql = "update $table set"
+          . join(',', map { " $_=?" } @names)
+          . " where $idname=?";
+
+  my $ret = $self->execute($sql,( map {$data->{$_}} @names ),$idval);
+
+  return wantarray ? ( $ret, $sql ) : $ret;
+}
+
 =head1 Authorship:
 
   (c) 2007, Fusionone, Inc. 
 
   Work by Phil Pollard
-  $Revision: 1.1 $ $Date: 2007/10/08 23:58:58 $
+  $Revision: 1.2 $ $Date: 2007/10/11 00:57:49 $
 
   Some portions of this module are (c) 1999-2007, Phillip Pollard
   and were released under GPL v2.

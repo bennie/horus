@@ -28,21 +28,22 @@ my %machines;
 
 map { $machines{$_} = undef; } qw/al-fms01 al-fms02 alqa al-sync01 dba
 dbb dbc dbd db-embarq dbwh2 demo-vm fms01-palmbeta fmsa fmsb fmse
-fms-embarq fmsf fmsg fmsh fmsj fmsk fmsp1 fmsp2 frogger log02-palmbeta
-pagea pageb pagec paged pagee pageg pageh pagej pageo pagep palmweb01
-straylight sync02-palmbeta synca syncaa syncab syncb synce sync-embarq
-syncf syncg synch syncj synck syncl syncm syncn synco syncp syncq
-straylight frogger sawmill/;
+fms-embarq fmsf fmsg fmsh fmsi fmsj fmsk fmsp1 fmsp2 frogger
+log02-palmbeta pagea pageb pagec paged pagee pageg pageh pagej pageo
+pagep palmweb01 straylight sync02-palmbeta synca syncaa syncab syncb
+synce sync-embarq syncf syncg synch synci syncj synck syncl syncm syncn
+synco syncp syncq straylight frogger sawmill/;
 
 map { $machines{$_} = 'fusion123' } qw/vz-fms01 vz-fms02 vz-page01
 vz-page02 vz-sync01 vz-sync02 vz-db01 vz-db02/;
 
-# ducati fmsab fmsl pagel pageq vm-fms vm-page
+# ducati fmsab fmsl pagel pageq vm-fms vm-page ops
 
 my @telus = ();#qw/172.26.23.11 172.26.23.12 172.26.23.13 172.26.23.139/;
 
+### Main
 
-# ops
+my $hosts = new Fusionone::Hosts;
 
 for my $host ( sort keys %machines ) {
   my ($stdout, $stderr, $exit, $ssh);
@@ -69,5 +70,94 @@ for my $host ( sort keys %machines ) {
   chomp $stdout;
   my $os_version = $stdout;
 
+  ($stdout, $stderr, $exit) = $ssh->cmd('date +%Z');
+
+  chomp $stdout;
+  my $tz = $stdout;
+
   print "$host : $os $os_version ($arch)\n";
+
+  my $possible = $hosts->by_name($host);
+
+  print " Possible hosts: " . join(',',@$possible) . "\n";
+
+  my $id;
+
+  if ( scalar(@$possible) < 1 ) {
+    $id = $hosts->add({
+      arch => $arch,
+      name => $host,
+      os => $os,
+      osversion => $os_version,
+      tz => $tz
+    });
+    print " Added host: $id\n";
+  } elsif ( scalar(@$possible) == 1 ) {
+    $id = $possible->[0];
+    my $ret = $hosts->update($id,{
+      arch => $arch,
+      name => $host,
+      os => $os,
+      osversion => $os_version,
+      tz => $tz
+    });
+    print " Update returned $ret\n";
+  }
+
+  # Linux   
+
+  next unless $os eq 'Linux';
+  
+  my $snmp = &is_running($ssh,'snmpd');
+  my $ntp  = &is_running($ssh,'ntpd');
+
+  my $ret = $hosts->update($id,{
+    snmp => $snmp,
+    ntp  => $ntp,
+  });
+  print " Update returned $ret (ntp,snmp)\n";
+
+  my $ntphost;
+
+  if ( $ntp == 1 ) {
+    ($stdout,$stderr,$exit) = $ssh->cmd('egrep \'^server\' /etc/ntp.conf | grep -v 127.127.1.0 | head -1');
+    chomp $stdout;
+
+    if ( $stdout =~ /^server\s+(\S+)/ ) {
+      $ntphost = $1;
+      my $ret = $hosts->update($id,{ ntphost => $ntphost });
+      print " Update returned $ret (ntphost)\n";
+    }
+  }
+
+  my $snmp_community;
+
+  if ( $snmp == 1 ) {
+    ($stdout,$stderr,$exit) = $ssh->cmd('egrep \'^com2sec.*notConfigUser.*default\' /etc/snmp/snmpd.conf');
+    chomp $stdout;
+
+    if ( $stdout =~ /\s+(\S+)\s*$/ ) {
+      $snmp_community = $1;
+      my $ret = $hosts->update($id,{ snmp_community => $snmp_community });
+      print " Update returned $ret (snmp_community)\n";
+    }
+  }
+}
+
+### Subroutines
+
+sub is_running {
+  my $ssh  = shift @_;
+  my $serv = shift @_;
+  my ($stdout, $stderr, $exit) = $ssh->cmd('chkconfig --list '.$serv);
+  chomp $stdout;
+
+  return -1 unless $stdout =~ /\w+\s+0:\w+\s+1:\w+\s+2:\w+\s+3:(\w+)\s+4:\w+\s+5:(\w+)\s+6:\w+/;
+
+  return 1 if $1 eq 'on' and $2 eq 'on';
+  return 0 if $1 eq 'off' and $2 eq 'off';
+
+  warn "Service $serv is configured badly. ($1:$2)";
+
+  return -1;
 }
