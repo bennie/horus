@@ -11,7 +11,7 @@ package Fusionone::Hosts;
 use Fusionone::DB;
 use strict;
 
-$Fusionone::Hosts::VERSION = '$Revision: 1.3 $';
+$Fusionone::Hosts::VERSION = '$Revision: 1.4 $';
 
 sub new {
   my $self = {};
@@ -69,5 +69,14 @@ sub update {
   my $ref  = shift @_;
   return $self->{db}->update('hosts','id',$id,$ref);
 }
+
+=head1 Authorship:
+ 
+  (c) 2007, Fusionone, Inc.
+
+  Work by Phil Pollard
+  $Revision: 1.4 $ $Date: 2007/10/12 01:09:47 $
+    
+=cut
 
 1;
