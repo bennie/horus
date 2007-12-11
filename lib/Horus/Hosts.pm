@@ -11,7 +11,7 @@ package Fusionone::Hosts;
 use Fusionone::DB;
 use strict;
 
-$Fusionone::Hosts::VERSION = '$Revision: 1.4 $';
+$Fusionone::Hosts::VERSION = '$Revision: 1.5 $';
 
 sub new {
   my $self = {};
@@ -27,7 +27,8 @@ sub new {
 Returns the id of the host created. Accepts a has ref with any of the following 
 values:
 
-  name, os, osversion, arch, tz, snmp, snmp_community, net, ntphost
+  name, os, osversion, arch, tz, snmp, snmp_community, net, ntphost, vm, 
+  vmhost
 
 =cut
 
@@ -75,7 +76,7 @@ sub update {
   (c) 2007, Fusionone, Inc.
 
   Work by Phil Pollard
-  $Revision: 1.4 $ $Date: 2007/10/12 01:09:47 $
+  $Revision: 1.5 $ $Date: 2007/12/11 01:16:59 $
     
 =cut
 

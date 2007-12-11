@@ -11,7 +11,7 @@ package Fusionone::Ethernet;
 use Fusionone::DB;
 use strict;
 
-$Fusionone::Ethernet::VERSION = '$Revision: 1.1 $';
+$Fusionone::Ethernet::VERSION = '$Revision: 1.2 $';
 
 sub new {
   my $self = {};
@@ -27,7 +27,7 @@ sub new {
 Returns the id of the ethernet created. Accepts a hash ref with any of
 the following values:
 
-  host_id, switch_id, port, notes, last_modified
+  address, host_id, host_interface, switch_id, port, notes, last_modified
 
 Required:
 
@@ -44,6 +44,19 @@ sub add {
   return $id;
 }
 
+
+=head3 exists($address)
+
+Returns true if the address is known in the DB.
+
+=cut
+
+sub exists {
+  my $self = shift @_;
+  my $addr = shift @_;
+  return $self->{db}->single('select count(*) from ethernet where address=?',$addr);
+}
+
 =head3 update($address,$ref)
 
 Returns the sql return code of the update dictated by the given id and hasref of 
@@ -51,7 +64,8 @@ values to update.
 
 Values can be:
 
-  host_id, switch_id, port, notes, last_modified
+  host_id, switch_id, port, current_speed, max_speed, link_detected,
+  notes, last_modified
 
 =cut
 
@@ -67,7 +81,7 @@ sub update {
   (c) 2007, Fusionone, Inc.
 
   Work by Phil Pollard
-  $Revision: 1.1 $ $Date: 2007/10/12 01:09:47 $
+  $Revision: 1.2 $ $Date: 2007/12/11 01:16:59 $
 
 =cut
 

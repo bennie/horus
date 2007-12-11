@@ -17,6 +17,7 @@
 +----------------+--------------+------+-----+---------+----------------+
 =cut
 
+use Fusionone::Ethernet;
 use Fusionone::Hosts;
 
 require Math::BigInt::GMP; # For speed on Net::SSH::Perl;
@@ -28,11 +29,11 @@ my %machines;
 
 map { $machines{$_} = undef; } qw/al-fms01 al-fms02 alqa al-sync01 dba
 dbb dbc dbd db-embarq dbwh2 demo-vm fms01-palmbeta fmsa fmsb fmse
-fms-embarq fmsf fmsg fmsh fmsi fmsj fmsk fmsp1 fmsp2 frogger
-log02-palmbeta pagea pageb pagec paged pagee pageg pageh pagej pageo
-pagep palmweb01 straylight sync02-palmbeta synca syncaa syncab syncb
-synce sync-embarq syncf syncg synch synci syncj synck syncl syncm syncn
-synco syncp syncq straylight frogger sawmill/;
+fms-embarq fmsf fmsg fmsh fmsi fmsj fmsk fmso fmsp fmsq fmsr fmss fmsp1
+fmsp2 frogger log02-palmbeta pagea pageb pagec paged pagee pageg pageh
+pagej pageo pagep palmweb01 straylight sync02-palmbeta synca syncb synce
+sync-embarq syncf syncg synch synci syncj synck syncl syncn syncp
+straylight frogger sawmill/;
 
 map { $machines{$_} = 'fusion123' } qw/vz-fms01 vz-fms02 vz-page01
 vz-page02 vz-sync01 vz-sync02 vz-db01 vz-db02/;
@@ -43,7 +44,8 @@ my @telus = ();#qw/172.26.23.11 172.26.23.12 172.26.23.13 172.26.23.139/;
 
 ### Main
 
-my $hosts = new Fusionone::Hosts;
+my $ethernet = new Fusionone::Ethernet;
+my $hosts    = new Fusionone::Hosts;
 
 for my $host ( sort keys %machines ) {
   my ($stdout, $stderr, $exit, $ssh);
@@ -108,8 +110,8 @@ for my $host ( sort keys %machines ) {
 
   next unless $os eq 'Linux';
   
-  my $snmp = &is_running($ssh,'snmpd');
-  my $ntp  = &is_running($ssh,'ntpd');
+  my $snmp = &is_running_linux($ssh,'snmpd');
+  my $ntp  = &is_running_linux($ssh,'ntpd');
 
   my $ret = $hosts->update($id,{
     snmp => $snmp,
@@ -142,11 +144,25 @@ for my $host ( sort keys %machines ) {
       print " Update returned $ret (snmp_community)\n";
     }
   }
+
+  my %dev = &net_devices_linux($ssh);  
+  for my $dev ( keys %dev ) {
+    next if $dev{$dev} =~ /00.00.00.00.00.00/;
+    if ( $ethernet->exists($dev{$dev}) ) {
+      my $ret = $ethernet->update($dev{$dev},{ host_id => $id, host_interface => $dev });
+      print " Update returned $ret ($dev)\n";
+    } else {
+      my $ret = $ethernet->add({ address => $dev{$dev}, host_id => $id, host_interface => $dev });
+      print " Insert returned $ret ($dev)\n";
+    }
+  }
 }
 
 ### Subroutines
 
-sub is_running {
+# is a service running
+
+sub is_running_linux {
   my $ssh  = shift @_;
   my $serv = shift @_;
   my ($stdout, $stderr, $exit) = $ssh->cmd('chkconfig --list '.$serv);
@@ -160,4 +176,18 @@ sub is_running {
   warn "Service $serv is configured badly. ($1:$2)";
 
   return -1;
+}
+
+sub net_devices_linux {
+  my $ssh  = shift @_;
+  my ($stdout, $stderr, $exit) = $ssh->cmd('ifconfig -a | grep HWaddr');
+
+  my %out;
+
+  for my $line ( split /\n/, $stdout ) {
+    next unless $line =~ /(\w+\d+)(:\d+)?\s+.+HWaddr\s+([0-9A-Fa-f:]+)/;
+    $out{$1} = $3;
+  }
+
+  return %out;
 }
