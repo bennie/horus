@@ -1,3 +1,6 @@
+7de223e7d5c0808f6c4f07cd55286c99  Term/Activity.pm
+4c5120395e95bba76111ecd41638d246  Text/Delimited.pm
+2458030f506c1314d0d85116a2667b10  Text/TabFile.pm
 60567c8d7f3ed8f5d717d1483b368001  Fusionone/Utils.pm
 06328dc306d7c4235c7135de300b3a2d  Fusionone/Ethernet.pm
 337e0fd8df73fe347e28a6a37dde6104  Fusionone/Hosts.pm
