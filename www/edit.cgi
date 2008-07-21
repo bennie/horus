@@ -12,15 +12,36 @@ my %skip = map {$_,1;} qw/arch id last_modified ntphost osversion snmp_community
 
 print $cgi->header, $cgi->start_html( -title=> 'Hello, World!');
 
-if ( $cgi->param('Edit') and $cgi->param('id') ) {
+if ( $cgi->param('Update') && $cgi->param('id') ) {
+  my $ref = {};
 
+  for my $param ( $cgi->param() ) {
+    next if $param eq 'Update';
+    next if $param eq 'id';
+    next unless length $cgi->param($param);
+    print $param,' : ',$cgi->param($param), $cgi->br;
+    $ref->{$param} = $cgi->param($param);
+  }
+
+  my $ret = $fh->update($cgi->param('id'),$ref);
+
+  print $cgi->p("Update returned $ret");
+
+  print $cgi->a({-href=>''},'Back');
+
+} elsif ( ( $cgi->param('Edit') and $cgi->param('id') ) || $cgi->param('New') ) {
   my $id = $cgi->param('id');
+
+  unless ($id) {
+    $id = $fh->add({ name => 'New Host' });
+  }
+
   my %rec = $fh->get($id);
 
   print $cgi->p($cgi->b("$id) $rec{name}")), 
         $cgi->hr({-noshade=>undef});
 
-  print $cgi->start_html;
+  print $cgi->start_form, $cgi->hidden({name=>'id',value=>$id});;
 
   for my $key ( keys %rec ) {
     next if $skip{$key};
@@ -39,10 +60,9 @@ if ( $cgi->param('Edit') and $cgi->param('id') ) {
 
 } else {
   my %hosts = $fh->all();
-  for my $id ( keys %hosts ) {
-    print $cgi->p("$hosts{$id}",
-            $cgi->start_form, $cgi->hidden({-name=>'id',-value=>$id}), $cgi->submit({-name=>'Edit'}), $cgi->end_form,
-          );
+  print $cgi->start_form, $cgi->submit({-name=>'New'}),$cgi->end_form;
+  for my $id ( sort { lc($hosts{$a}) cmp lc($hosts{$b})  } keys %hosts ) {
+    print $cgi->start_form, "$hosts{$id}", $cgi->hidden({-name=>'id',-value=>$id}), $cgi->submit({-name=>'Edit'}), $cgi->end_form;
   }
 }
 
