@@ -8,7 +8,7 @@ use DBI;
 use Fusionone::Utils qw/zt/;
 use strict;
 
-$Fusionone::DB::VERSION = '$Revision: 1.2 $';
+$Fusionone::DB::VERSION = '$Revision: 1.3 $';
 
 sub new {
   my     $self = {};
@@ -23,9 +23,9 @@ sub _initialize {
 
   # DB config  
   my $db_driver = 'mysql';
-  my $db_name   = 'info';
-  my $db_user   = 'info';
-  my $db_pass   = 'info';
+  my $db_name   = 'horus';
+  my $db_user   = 'horus';
+  my $db_pass   = 'nochaos';
 
   my @db_connect = ("dbi:$db_driver:dbname=$db_name", $db_user, $db_pass);
 
@@ -282,7 +282,7 @@ sub update {
   (c) 2007, Fusionone, Inc. 
 
   Work by Phil Pollard
-  $Revision: 1.2 $ $Date: 2007/10/11 00:57:49 $
+  $Revision: 1.3 $ $Date: 2008/07/21 22:22:52 $
 
   Some portions of this module are (c) 1999-2007, Phillip Pollard
   and were released under GPL v2.

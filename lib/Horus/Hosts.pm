@@ -11,7 +11,7 @@ package Fusionone::Hosts;
 use Fusionone::DB;
 use strict;
 
-$Fusionone::Hosts::VERSION = '$Revision: 1.5 $';
+$Fusionone::Hosts::VERSION = '$Revision: 1.6 $';
 
 sub new {
   my $self = {};
@@ -41,6 +41,23 @@ sub add {
   return $id;
 }
 
+=head3 all()
+
+Returns a hash or hasref of all ids and their name from the hosts table.
+
+=cut
+
+sub all {
+  my $self = shift @_;
+  my $name = shift @_;
+  my $sth = $self->{db}->handle('select id, name from hosts');
+  my %out;
+  while ( my $ref = $sth->fetchrow_arrayref ) {
+    $out{$ref->[0]} = $ref->[1];
+  }
+  return wantarray ? %out : \%out;
+}
+
 =head3 by_name($name)
 
 Returns an array or arrayref of possible host ID's that match this name.
@@ -51,6 +68,23 @@ sub by_name {
   my $self = shift @_;
   my $name = shift @_;
   return $self->{db}->column('select id from hosts where name like ?',$name);
+}
+
+=head3 get($id)
+
+Returns an hash or hashref of the info for the requested machine..
+
+=cut
+
+sub get {
+  my $self = shift @_;
+  my $id   = shift @_;
+  my $sth  = $self->{db}->handle('select * from hosts where id=?',$id);
+  if ( my $ref = $sth->fetchrow_hashref ) {
+    return wantarray ? %{$ref} : $ref;
+  } else {
+    return undef;
+  }
 }
 
 =head3 update($id,$ref)
@@ -76,7 +110,7 @@ sub update {
   (c) 2007, Fusionone, Inc.
 
   Work by Phil Pollard
-  $Revision: 1.5 $ $Date: 2007/12/11 01:16:59 $
+  $Revision: 1.6 $ $Date: 2008/07/21 22:22:52 $
     
 =cut
 
