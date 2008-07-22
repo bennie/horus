@@ -10,7 +10,7 @@ my $fh = new Fusionone::Hosts;
 
 my %skip = map {$_,1;} qw/arch id last_modified ntphost osversion snmp_community tz/;
 
-print $cgi->header, $cgi->start_html( -title=> 'Hello, World!');
+print $cgi->header, $cgi->start_html( -title=> 'Editing a Host');
 
 if ( $cgi->param('Update') && $cgi->param('id') ) {
   my $ref = {};
