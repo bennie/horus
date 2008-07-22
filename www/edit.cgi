@@ -27,7 +27,7 @@ if ( $cgi->param('Update') && $cgi->param('id') ) {
 
   print $cgi->p("Update returned $ret");
 
-  print $cgi->a({-href=>''},'Back');
+  print $cgi->a({-href=>'index.cgi'},'Back');
 
 } elsif ( ( $cgi->param('Edit') and $cgi->param('id') ) || $cgi->param('New') ) {
   my $id = $cgi->param('id');
@@ -37,6 +37,7 @@ if ( $cgi->param('Update') && $cgi->param('id') ) {
   }
 
   my %rec = $fh->get($id);
+  #my @custs = $fh->list_customers;
 
   print $cgi->p($cgi->b("$id) $rec{name}")), 
         $cgi->hr({-noshade=>undef});
