@@ -9,24 +9,18 @@ use strict;
 
 my %machines;
 
-for my $cust ( qw/al bm nwh telus/ ) {
-  for my $type ( qw/fms page sync/ ) {
-    for my $num ( qw/01 02/ ) {
-      $machines{"$cust-$type$num"} = undef;
-    }
-  }
-}
+my $fh = new Fusionone::Hosts;
+my %all = $fh->all();
 
-map { $machines{$_} = undef; } qw/ dba dbb dbc dbd dbwh2 demo-vm fmsa
-fmsb fmse fmsf fmsg fmsh fmsi fmsj fmsk fmsp fmsp1 fmsp2 frogger pagea
-pageb pagec paged pagee pageg pageh pagej pageo pagep straylight synca
-syncb synce syncf syncg synch synci syncj synck syncl syncp straylight
-frogger sawmill/;
+for my $id ( keys %all ) {
+  $machines{$all{$id}} = undef;
+}
 
 map { $machines{$_} = 'fusion123' } qw/vz-fms01 vz-fms02 vz-page01
 vz-page02 vz-sync01 vz-sync02 vz-db01 vz-db02/;
 
-map { $machines{$_} = 'g00df3ll45' } qw/alqa/;
+map { $machines{$_} = 'g00df3ll45' } qw/alqa alqa-fms01 alqa-page01 
+alqa-sync01/;
 
 # ducati fmsab fmsl pagel pageq vm-fms vm-page ops db-embarq
 
@@ -58,7 +52,10 @@ for my $host ( sort keys %machines ) {
   } else {
     $ssh->run_ssh() or die "SSH Process couldn't start: $!";
     my $read = $ssh->read_all(2);
-    ( $read =~ /[>\$\#]\s*\z/ ) or die "Where is the remote prompt? $read";
+    unless ( $read =~ /[>\$\#]\s*\z/ ) {
+      warn "Where is the remote prompt? $read";
+      next;
+    }
   }
 
   $ssh->exec("stty raw -echo"); # Turn off echo
