@@ -1,6 +1,6 @@
 #!/usr/bin/perl -I../lib
 
-# $Id: grab.pl,v 1.17 2008/07/23 18:39:23 ppollard Exp $
+# $Id: grab.pl,v 1.18 2008/07/23 19:09:02 ppollard Exp $
 
 use Fusionone::Ethernet;
 use Fusionone::Hosts;
@@ -24,6 +24,8 @@ vz-page02 vz-sync01 vz-sync02 vz-db01 vz-db02/;
 
 map { $machines{$_} = 'g00df3ll45' } qw/alqa alqa-fms01 alqa-page01 
 alqa-sync01 bmqa-fms bmqa-page bmqa-sync nwhqa-fms nwhqa-page nwhqa-sync/;
+
+$machines{build} = 'dev3695';
 
 ### Main
 
@@ -82,16 +84,19 @@ for my $host ( sort keys %machines ) {
   my $os = run('uname -s');
   print "OS: $os\n";
 
+  my $os_version = run('uname -r');
+  print "OS VERSION: $os_version\n";  
+
   my $os_release = run('if [ -f /etc/redhat-release ]; then cat /etc/redhat-release; fi');
 
   $os_release = 'RH'.$1.'L 4' if $os_release =~ /Red Hat Enterprise Linux (\w)S release 4 \(Nahant\)/;
   $os_release = 'RH'.$1.'L 4.'.$2 if $os_release =~ /Red Hat Enterprise Linux (\w)S release 4 \(Nahant Update (\d)\)/;
   $os_release = 'CentOS 4.6' if $os_release =~ /CentOS release 4.6 \(Final\)/;
   $os_release = 'CentOS 5'   if $os_release =~ /CentOS release 5 \(Final\)/;
-  print "OS RELEASE: $os_release\n";  
 
-  my $os_version = run('uname -r');
-  print "OS VERSION: $os_version\n";  
+  $os_release = "$os $os_version" if $os eq 'SunOS' and not $os_release;
+
+  print "OS RELEASE: $os_release\n";  
 
   my $tz = run('date +%Z');
   print "TZ: $tz\n";
