@@ -1,6 +1,6 @@
 #!/usr/bin/perl -I../lib
 
-# $Id: grab.pl,v 1.15 2008/07/23 18:00:22 ppollard Exp $
+# $Id: grab.pl,v 1.16 2008/07/23 18:36:21 ppollard Exp $
 
 use Fusionone::Ethernet;
 use Fusionone::Hosts;
@@ -47,11 +47,17 @@ for my $host ( sort keys %machines ) {
   our $ssh = Net::SSH::Expect->new(%$conf);
 
   if ( $conf->{password} ) {
-    my $logintext = $ssh->login();
+
+    my $logintext;
+    eval { $logintext = $ssh->login(); };
+    if ( $@ ) { warn $@; next; }
+
     if ( $logintext !~ /Welcome/ and $logintext !~ /Last login/ ) {
       die "Login failed: \n\n$logintext\n\n";
     }
+
   } else {
+
     unless ( $ssh->run_ssh() ) {
       warn "SSH Process couldn't start: $!";
       next;
@@ -65,6 +71,7 @@ for my $host ( sort keys %machines ) {
       warn "Where is the remote prompt? $read";
       next;
     }
+
   }
 
   $ssh->exec("stty raw -echo"); # Turn off echo

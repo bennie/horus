@@ -1,6 +1,6 @@
 #!/usr/bin/perl -I../lib
 
-# $Id: index.cgi,v 1.7 2008/07/23 18:00:22 ppollard Exp $
+# $Id: index.cgi,v 1.8 2008/07/23 18:36:21 ppollard Exp $
 
 use Fusionone::Hosts;
 
@@ -44,7 +44,7 @@ sub dashboard {
       $cgi->td({-bgcolor=>'#666699'},'Brand'),
       $cgi->td({-bgcolor=>'#666699'},'Time Zone'),
       $cgi->td({-bgcolor=>'#666699'},'Last Update'),
-      $cgi->td({-bgcolor=>'#666699'}, $cgi->start_form({-action=>'edit.cgi'}), $cgi->submit({-name=>'New'}), $cgi->end_form )
+      $cgi->td({-bgcolor=>'#666699'}, $cgi->start_form({-action=>'/edit.cgi'}), $cgi->submit({-name=>'New'}), $cgi->end_form )
     )
   );
 
@@ -64,7 +64,7 @@ sub dashboard {
       $cgi->td({-bgcolor=>'#ffffff'}, "$rec{machine_brand}" ),
       $cgi->td({-bgcolor=>'#ffffff'}, "$rec{tz}" ),
       $cgi->td({-bgcolor=>'#ffffff'}, $time ),
-      $cgi->td({-bgcolor=>'#ffffff'}, $cgi->start_form({-action=>'edit.cgi'}), $cgi->hidden({-name=>'id',-value=>$id}), $cgi->submit({-name=>'Edit'}), $cgi->end_form ),
+      $cgi->td({-bgcolor=>'#ffffff'}, $cgi->start_form({-action=>'/edit.cgi'}), $cgi->hidden({-name=>'id',-value=>$id}), $cgi->submit({-name=>'Edit'}), $cgi->end_form ),
     );
   }
 
@@ -82,8 +82,15 @@ sub host {
   my %rec = $fh->get($possible->[0]);
 
   for my $key ( sort keys %rec ) {
+    next if $key eq 'last_modified' or $key eq 'id';
     print $cgi->p($cgi->b($key),$rec{$key});
   }
+  
+  print $cgi->hr({-noshade=>undef}),
+        $cgi->font({-size=>1},
+          $cgi->p('Last Modified:',$rec{last_modified}),
+          $cgi->p('ID:',$rec{id}),
+        );
 }
 
 ### Subroutines
