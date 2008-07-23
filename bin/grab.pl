@@ -1,5 +1,7 @@
 #!/usr/bin/perl -I../lib
 
+# $Id: grab.pl,v 1.15 2008/07/23 18:00:22 ppollard Exp $
+
 use Fusionone::Ethernet;
 use Fusionone::Hosts;
 
@@ -21,7 +23,7 @@ map { $machines{$_} = 'fusion123' } qw/vz-fms01 vz-fms02 vz-page01
 vz-page02 vz-sync01 vz-sync02 vz-db01 vz-db02/;
 
 map { $machines{$_} = 'g00df3ll45' } qw/alqa alqa-fms01 alqa-page01 
-alqa-sync01 bmqa-fms bmqa-page bmqa-sync/;
+alqa-sync01 bmqa-fms bmqa-page bmqa-sync nwhqa-fms nwhqa-page nwhqa-sync/;
 
 ### Main
 
@@ -50,8 +52,15 @@ for my $host ( sort keys %machines ) {
       die "Login failed: \n\n$logintext\n\n";
     }
   } else {
-    $ssh->run_ssh() or die "SSH Process couldn't start: $!";
-    my $read = $ssh->read_all(2);
+    unless ( $ssh->run_ssh() ) {
+      warn "SSH Process couldn't start: $!";
+      next;
+    }
+
+    my $read;
+    eval { $read = $ssh->read_all(2); };
+    if ( $@ ) { warn $@; next; }
+
     unless ( $read =~ /[>\$\#]\s*\z/ ) {
       warn "Where is the remote prompt? $read";
       next;
@@ -64,15 +73,13 @@ for my $host ( sort keys %machines ) {
   print "ARCH: $arch\n";
 
   my $os = run('uname -s');
-  my $release = run('if [ -f /etc/redhat-release ]; then cat /etc/redhat-release; fi');
-
-  $os = 'RHEL 4.5' if $release =~ /Red Hat Enterprise Linux ES release 4 \(Nahant Update 5\)/;
-  $os = 'RHEL 4.6' if $release =~ /Red Hat Enterprise Linux ES release 4 \(Nahant Update 6\)/;
-  $os = 'CentOS 4.6' if $release =~ /CentOS release 4.6 \(Final\)/;
-  $os = 'CentOS 5' if $release =~ /CentOS release 5 \(Final\)/;
   print "OS: $os\n";
 
-  warn "Unknown release: $release" if $os eq 'Linux' and length $release;
+  my $os_release = run('if [ -f /etc/redhat-release ]; then cat /etc/redhat-release; fi');
+  $os_release = 'RH'.$1.'L 4.'.$2 if $os_release =~ /Red Hat Enterprise Linux (\w)S release 4 \(Nahant Update (\d)\)/;
+  $os_release = 'CentOS 4.6' if $os_release =~ /CentOS release 4.6 \(Final\)/;
+  $os_release = 'CentOS 5'   if $os_release =~ /CentOS release 5 \(Final\)/;
+  print "OS RELEASE: $os_release\n";  
 
   my $os_version = run('uname -r');
   print "OS VERSION: $os_version\n";  
@@ -90,6 +97,7 @@ for my $host ( sort keys %machines ) {
       arch => $arch,
       name => $host,
       os => $os,
+      osrelease => $os_release,
       osversion => $os_version,
       tz => $tz
     });
@@ -100,6 +108,7 @@ for my $host ( sort keys %machines ) {
       arch => $arch,
       name => $host,
       os => $os,
+      osrelease => $os_release,
       osversion => $os_version,
       tz => $tz
     });
@@ -142,6 +151,27 @@ for my $host ( sort keys %machines ) {
       print " Update returned $ret (snmp_community)\n";
     }
   }
+
+  # Brand of HW
+
+  my $machine_brand;
+
+  my $stdout = run('cat /var/log/dmesg');
+
+  if ( $stdout =~ /ACPI:\s+MCFG\s+\(v001\s+HP\s+ProLiant/ ) {
+    $machine_brand = 'HP';
+  }
+
+  if ( $stdout =~ /ACPI: RSDP \(v000 ACPIAM                                \) \@ 0x00000000000f8140/ && $stdout =~ /ACPI: RSDT \(v001 A M I  OEMRSDT  0x05000631 MSFT 0x00000097\) \@ 0x00000000cfff0000/ && $stdout =~ /ACPI: FADT \(v002 A M I  OEMFACP  0x05000631 MSFT 0x00000097\) \@ 0x00000000cfff0200/ && $stdout =~ /ACPI: MADT \(v001 A M I  OEMAPIC  0x05000631 MSFT 0x00000097\) \@ 0x00000000cfff0390/ && $stdout =~ /ACPI: SPCR \(v001 A M I  OEMSPCR  0x05000631 MSFT 0x00000097\) \@ 0x00000000cfff0420/ && $stdout =~ /ACPI: OEMB \(v001 A M I  AMI_OEM  0x05000631 MSFT 0x00000097\) \@ 0x00000000cfffe040/ && $stdout =~ /ACPI: DSDT \(v001  TUNA_ TUNA_160 0x00000160 INTL 0x02002026\) \@ 0x0000000000000000/ ) {
+    $machine_brand = 'Penguin';
+  }
+
+  if ( $machine_brand ) {
+    my $ret = $hosts->update($id,{ machine_brand => $machine_brand });
+    print " Update returned $ret (machine_brand)\n";
+  }
+
+  # Net devices
 
   my %dev = &net_devices_linux($ssh);  
   for my $dev ( keys %dev ) {
