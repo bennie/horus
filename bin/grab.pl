@@ -1,6 +1,6 @@
 #!/usr/bin/perl -I../lib
 
-# $Id: grab.pl,v 1.20 2008/07/23 20:54:24 ppollard Exp $
+# $Id: grab.pl,v 1.21 2008/07/23 21:06:35 ppollard Exp $
 
 use Fusionone::Ethernet;
 use Fusionone::Hosts;
@@ -12,7 +12,7 @@ require Math::BigInt::GMP; # For speed on Net::SSH::Perl;
 
 use strict;
 
-my $use_expect = 1;
+my $use_expect = 0;
 
 my %machines;
 
@@ -42,51 +42,7 @@ my $hosts    = new Fusionone::Hosts;
 our $ssh;
 
 for my $host ( scalar @ARGV ? @ARGV : sort keys %machines ) {
-  my $conf = {
-    host => $host,
-    user => 'root',
-    raw_pty => 1,
-    timeout => 2
-  };
-
-  $conf->{password} = $machines{$host} if $machines{$host};
-
-  print "\nTrying $host " .( $conf->{password} ? 'with' : 'without' ). " a password\n";
-
-  if ( $conf->{password} ) {
-    $use_expect = 0;
-  
-    our $ssh = Net::SSH::Perl->new($host);
-    $ssh->login('root',$machines{$host});
-  
-    #my $logintext;
-    #eval { $logintext = $ssh->login(); };
-    #if ( $@ ) { warn $@; next; }
-
-    #if ( $logintext !~ /Welcome/ and $logintext !~ /Last login/ ) {
-    #  die "Login failed: \n\n$logintext\n\n";
-    #}
-
-  } else {
-    $use_expect = 1;
-    our $ssh = Net::SSH::Expect->new(%$conf);
-    
-    unless ( $ssh->run_ssh() ) {
-      warn "SSH Process couldn't start: $!";
-      next;
-    }
-
-    my $read;
-    eval { $read = $ssh->read_all(2); };
-    if ( $@ ) { warn $@; next; }
-
-    unless ( $read =~ /[>\$\#]\s*\z/ ) {
-      warn "Where is the remote prompt? $read";
-      next;
-    }
-
-    $ssh->exec("stty raw -echo"); # Turn off echo
-  }
+  &open_connection($host,'root',$machines{$host});
 
   my $arch = run('uname -m');
   print "ARCH: $arch\n";
@@ -227,7 +183,63 @@ for my $host ( scalar @ARGV ? @ARGV : sort keys %machines ) {
   }
 }
 
-### Subroutines
+### SSH Subroutines
+
+# Open a connection
+sub open_connection {
+  my $host = shift @_;
+  my $user = shift @_;
+  my $pass = shift @_;
+
+  print "\nTrying $host " .( $pass ? 'with' : 'without' ). " a password\n";
+
+  if ( $use_expect ) {
+
+    my $conf = {
+      host => $host,
+      user => $user,
+      raw_pty => 1,
+      timeout => 2
+    };
+
+    $conf->{password} = $machines{$host} if $machines{$host};
+
+    our $ssh = Net::SSH::Expect->new(%$conf);
+
+    if ( $conf->{password} ) {
+      my $logintext;
+      eval { $logintext = $ssh->login(); };
+      if ( $@ ) { warn $@; next; }
+
+      if ( $logintext !~ /Welcome/ and $logintext !~ /Last login/ ) {
+        die "Login failed: \n\n$logintext\n\n";
+      }
+
+    } else {
+      unless ( $ssh->run_ssh() ) {
+        warn "SSH Process couldn't start: $!";
+        next;
+      }
+
+      my $read;
+      eval { $read = $ssh->read_all(2); };
+      if ( $@ ) { warn $@; next; }
+
+      unless ( $read =~ /[>\$\#]\s*\z/ ) {
+        warn "Where is the remote prompt? $read";
+        next;
+      }
+
+      $ssh->exec("stty raw -echo"); # Turn off echo
+    }
+
+  } else {
+  
+    our $ssh = Net::SSH::Perl->new($host, (protocol=>'2,1', debug=>0) );
+    $ssh->login($user,$pass);
+
+  }
+}
 
 # Run a command on the remote host
 sub run {
@@ -245,6 +257,8 @@ sub run {
   }
 }
 
+### Subroutines
+
 # is a service running
 sub is_running_linux {
   my $serv = shift @_;
@@ -261,6 +275,7 @@ sub is_running_linux {
   return -1;
 }
 
+# Whar are the net devices
 sub net_devices_linux {
   my $stdout = run('ifconfig -a | grep HWaddr');
 
