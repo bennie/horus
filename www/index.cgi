@@ -35,7 +35,7 @@ for my $id ( sort { lc($hosts{$a}) cmp lc($hosts{$b}) } keys %hosts ) {
     #$cgi->td({-bgcolor=>'#ffffff'}, $cgi->start_form, $cgi->end_form ),
     $cgi->td({-bgcolor=>'#ffffff'}, "$hosts{$id}" ),
     $cgi->td({-bgcolor=>'#ffffff'}, "$rec{customer}" ),
-    $cgi->td({-bgcolor=>'#ffffff'}, "$rec{os}" ),
+    $cgi->td({-bgcolor=>'#ffffff'}, "$rec{os} $rec{arch}" ),
     $cgi->td({-bgcolor=>'#ffffff'}, "$rec{osversion}" ),
     $cgi->td({-bgcolor=>'#ffffff'}, "$rec{tz}" ),
     $cgi->td({-bgcolor=>'#ffffff'}, "$rec{last_modified}" ),

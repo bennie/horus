@@ -34,7 +34,8 @@ for my $host ( sort keys %machines ) {
   my $conf = {
     host => $host,
     user => 'root',
-    raw_pty => 1
+    raw_pty => 1,
+    timeout => 2
   };
 
   $conf->{password} = $machines{$host} if $machines{$host};
@@ -45,7 +46,7 @@ for my $host ( sort keys %machines ) {
 
   if ( $conf->{password} ) {
     my $logintext = $ssh->login();
-    if ( $logintext !~ /Welcome/ ) {
+    if ( $logintext !~ /Welcome/ and $logintext !~ /Last login/ ) {
       die "Login failed: \n\n$logintext\n\n";
     }
   } else {
@@ -65,8 +66,10 @@ for my $host ( sort keys %machines ) {
   my $os = run('uname -s');
   my $release = run('if [ -f /etc/redhat-release ]; then cat /etc/redhat-release; fi');
 
+  $os = 'RHEL 4.5' if $release =~ /Red Hat Enterprise Linux ES release 4 \(Nahant Update 5\)/;
   $os = 'RHEL 4.6' if $release =~ /Red Hat Enterprise Linux ES release 4 \(Nahant Update 6\)/;
   $os = 'CentOS 4.6' if $release =~ /CentOS release 4.6 \(Final\)/;
+  $os = 'CentOS 5' if $release =~ /CentOS release 5 \(Final\)/;
   print "OS: $os\n";
 
   warn "Unknown release: $release" if $os eq 'Linux' and length $release;
