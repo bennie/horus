@@ -1,11 +1,15 @@
 #!/usr/bin/perl -I../lib
 
-# $Id: grab.pl,v 1.19 2008/07/23 19:26:26 ppollard Exp $
+# $Id: grab.pl,v 1.20 2008/07/23 20:54:24 ppollard Exp $
 
 use Fusionone::Ethernet;
 use Fusionone::Hosts;
 
 use Net::SSH::Expect;
+use Net::SSH::Perl;
+
+require Math::BigInt::GMP; # For speed on Net::SSH::Perl;
+
 use strict;
 
 my $use_expect = 1;
@@ -23,11 +27,12 @@ map { $machines{$_} = 'fusion123' } qw/vz-fms01 vz-fms02 vz-page01
 vz-page02 vz-sync01 vz-sync02 vz-db01 vz-db02/;
 
 map { $machines{$_} = 'g00df3ll45' } qw/alqa alqa-fms01 alqa-page01 
-alqa-sync01 bmqa-fms bmqa-page bmqa-sync nwhqa-fms nwhqa-page nwhqa-sync/;
+alqa-sync01 bmqa-fms bmqa-page bmqa-sync nwhqa-fms nwhqa-page nwhqa-sync
+telus-fms01 telus-fms02 telus-page01 telus-page02 telus-sync01 telus-sync02/;
 
 $machines{build} = 'dev3695';
 
-$machines{cits} = 'mypassword';
+map { $machines{$_} = 'mypassword'; } qw/tickets horus/;
 
 ### Main
 
@@ -48,20 +53,24 @@ for my $host ( scalar @ARGV ? @ARGV : sort keys %machines ) {
 
   print "\nTrying $host " .( $conf->{password} ? 'with' : 'without' ). " a password\n";
 
-  our $ssh = Net::SSH::Expect->new(%$conf);
-
   if ( $conf->{password} ) {
+    $use_expect = 0;
+  
+    our $ssh = Net::SSH::Perl->new($host);
+    $ssh->login('root',$machines{$host});
+  
+    #my $logintext;
+    #eval { $logintext = $ssh->login(); };
+    #if ( $@ ) { warn $@; next; }
 
-    my $logintext;
-    eval { $logintext = $ssh->login(); };
-    if ( $@ ) { warn $@; next; }
-
-    if ( $logintext !~ /Welcome/ and $logintext !~ /Last login/ ) {
-      die "Login failed: \n\n$logintext\n\n";
-    }
+    #if ( $logintext !~ /Welcome/ and $logintext !~ /Last login/ ) {
+    #  die "Login failed: \n\n$logintext\n\n";
+    #}
 
   } else {
-
+    $use_expect = 1;
+    our $ssh = Net::SSH::Expect->new(%$conf);
+    
     unless ( $ssh->run_ssh() ) {
       warn "SSH Process couldn't start: $!";
       next;
@@ -76,9 +85,8 @@ for my $host ( scalar @ARGV ? @ARGV : sort keys %machines ) {
       next;
     }
 
+    $ssh->exec("stty raw -echo"); # Turn off echo
   }
-
-  $ssh->exec("stty raw -echo"); # Turn off echo
 
   my $arch = run('uname -m');
   print "ARCH: $arch\n";
@@ -93,8 +101,7 @@ for my $host ( scalar @ARGV ? @ARGV : sort keys %machines ) {
 
   $os_release = 'RH'.$1.'L 4' if $os_release =~ /Red Hat Enterprise Linux (\w)S release 4 \(Nahant\)/;
   $os_release = 'RH'.$1.'L 4.'.$2 if $os_release =~ /Red Hat Enterprise Linux (\w)S release 4 \(Nahant Update (\d)\)/;
-  $os_release = 'CentOS 4.6' if $os_release =~ /CentOS release 4.6 \(Final\)/;
-  $os_release = 'CentOS 5'   if $os_release =~ /CentOS release 5 \(Final\)/;
+  $os_release = 'CentOS '.$1 if $os_release =~ /CentOS release (\d(\.\d)?) \(Final\)/;
 
   $os_release = "$os $os_version" if $os eq 'SunOS' and not $os_release;
 
@@ -173,17 +180,31 @@ for my $host ( scalar @ARGV ? @ARGV : sort keys %machines ) {
   my $machine_brand;
 
   my $stdout = run('cat /var/log/dmesg');
-
+ 
+  # DL 360
   if ( $stdout =~ /ACPI:\s+MCFG\s+\(v001\s+HP\s+ProLiant/ ) {
     $machine_brand = 'HP';
   }
 
+  # VZ DBs
   if ( $stdout =~ /ACPI: MCFG \(v001 IBM/ ) {
     $machine_brand = 'IBM';
   }
 
+  # VZ Blade
+  
+  if ( $stdout =~ /ACPI: RSDP \(v000 IBM                                   \) \@ 0x00000000000fdfe0/ && $stdout =~ /ACPI: RSDT \(v001 IBM    SERLEWIS 0x00001000 IBM  0x45444f43\) \@ 0x00000000cffa7380/ && $stdout =~ /ACPI: FADT \(v002 IBM    SERLEWIS 0x00001000 IBM  0x45444f43\) \@ 0x00000000cffa72c0/ && $stdout =~ /ACPI: MADT \(v001 IBM    SERLEWIS 0x00001000 IBM  0x45444f43\) \@ 0x00000000cffa7200/ && $stdout =~ /ACPI: SRAT \(v001 AMD    HAMMER   0x00000001 AMD  0x00000001\) \@ 0x00000000cffa70c0/ && $stdout =~ /ACPI: DSDT \(v001 IBM    SERLEWIS 0x00001000 INTL 0x02002025\) \@ 0x0000000000000000/ ) {
+    $machine_brand = 'IBM Blade';
+  }
+  
+  # Penguin
   if ( $stdout =~ /ACPI: RSDP \(v000 ACPIAM                                \) \@ 0x00000000000f8140/ && $stdout =~ /ACPI: RSDT \(v001 A M I  OEMRSDT  0x05000631 MSFT 0x00000097\) \@ 0x00000000cfff0000/ && $stdout =~ /ACPI: FADT \(v002 A M I  OEMFACP  0x05000631 MSFT 0x00000097\) \@ 0x00000000cfff0200/ && $stdout =~ /ACPI: MADT \(v001 A M I  OEMAPIC  0x05000631 MSFT 0x00000097\) \@ 0x00000000cfff0390/ && $stdout =~ /ACPI: SPCR \(v001 A M I  OEMSPCR  0x05000631 MSFT 0x00000097\) \@ 0x00000000cfff0420/ && $stdout =~ /ACPI: OEMB \(v001 A M I  AMI_OEM  0x05000631 MSFT 0x00000097\) \@ 0x00000000cfffe040/ && $stdout =~ /ACPI: DSDT \(v001  TUNA_ TUNA_160 0x00000160 INTL 0x02002026\) \@ 0x0000000000000000/ ) {
     $machine_brand = 'Penguin';
+  }
+  
+  # VM?
+  if ( $stdout =~ /ACPI: FADT \(v001 INTEL  440BX/ && $stdout =~ /ACPI: BOOT \(v001 PTLTD  \$SBFTBL\$/ && $stdout =~ /ACPI: DSDT \(v001 PTLTD  Custom/ ) {
+    $machine_brand = 'VM';
   }
 
   if ( $machine_brand ) {
