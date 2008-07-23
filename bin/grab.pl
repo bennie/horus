@@ -1,6 +1,6 @@
 #!/usr/bin/perl -I../lib
 
-# $Id: grab.pl,v 1.16 2008/07/23 18:36:21 ppollard Exp $
+# $Id: grab.pl,v 1.17 2008/07/23 18:39:23 ppollard Exp $
 
 use Fusionone::Ethernet;
 use Fusionone::Hosts;
@@ -83,6 +83,8 @@ for my $host ( sort keys %machines ) {
   print "OS: $os\n";
 
   my $os_release = run('if [ -f /etc/redhat-release ]; then cat /etc/redhat-release; fi');
+
+  $os_release = 'RH'.$1.'L 4' if $os_release =~ /Red Hat Enterprise Linux (\w)S release 4 \(Nahant\)/;
   $os_release = 'RH'.$1.'L 4.'.$2 if $os_release =~ /Red Hat Enterprise Linux (\w)S release 4 \(Nahant Update (\d)\)/;
   $os_release = 'CentOS 4.6' if $os_release =~ /CentOS release 4.6 \(Final\)/;
   $os_release = 'CentOS 5'   if $os_release =~ /CentOS release 5 \(Final\)/;
@@ -167,6 +169,10 @@ for my $host ( sort keys %machines ) {
 
   if ( $stdout =~ /ACPI:\s+MCFG\s+\(v001\s+HP\s+ProLiant/ ) {
     $machine_brand = 'HP';
+  }
+
+  if ( $stdout =~ /ACPI: MCFG \(v001 IBM/ ) {
+    $machine_brand = 'IBM';
   }
 
   if ( $stdout =~ /ACPI: RSDP \(v000 ACPIAM                                \) \@ 0x00000000000f8140/ && $stdout =~ /ACPI: RSDT \(v001 A M I  OEMRSDT  0x05000631 MSFT 0x00000097\) \@ 0x00000000cfff0000/ && $stdout =~ /ACPI: FADT \(v002 A M I  OEMFACP  0x05000631 MSFT 0x00000097\) \@ 0x00000000cfff0200/ && $stdout =~ /ACPI: MADT \(v001 A M I  OEMAPIC  0x05000631 MSFT 0x00000097\) \@ 0x00000000cfff0390/ && $stdout =~ /ACPI: SPCR \(v001 A M I  OEMSPCR  0x05000631 MSFT 0x00000097\) \@ 0x00000000cfff0420/ && $stdout =~ /ACPI: OEMB \(v001 A M I  AMI_OEM  0x05000631 MSFT 0x00000097\) \@ 0x00000000cfffe040/ && $stdout =~ /ACPI: DSDT \(v001  TUNA_ TUNA_160 0x00000160 INTL 0x02002026\) \@ 0x0000000000000000/ ) {
