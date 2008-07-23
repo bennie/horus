@@ -4,8 +4,9 @@ use Fusionone::Ethernet;
 use Fusionone::Hosts;
 
 use Net::SSH::Expect;
-
 use strict;
+
+my $use_expect = 1;
 
 my %machines;
 
@@ -20,16 +21,14 @@ map { $machines{$_} = 'fusion123' } qw/vz-fms01 vz-fms02 vz-page01
 vz-page02 vz-sync01 vz-sync02 vz-db01 vz-db02/;
 
 map { $machines{$_} = 'g00df3ll45' } qw/alqa alqa-fms01 alqa-page01 
-alqa-sync01/;
-
-# ducati fmsab fmsl pagel pageq vm-fms vm-page ops db-embarq
-
-my @telus = ();#qw/172.26.23.11 172.26.23.12 172.26.23.13 172.26.23.139/;
+alqa-sync01 bmqa-fms bmqa-page bmqa-sync/;
 
 ### Main
 
 my $ethernet = new Fusionone::Ethernet;
 my $hosts    = new Fusionone::Hosts;
+
+our $ssh;
 
 for my $host ( sort keys %machines ) {
   my $conf = {
@@ -42,7 +41,7 @@ for my $host ( sort keys %machines ) {
 
   print "\nTrying $host " .( $conf->{password} ? 'with' : 'without' ). " a password\n";
 
-  my $ssh = Net::SSH::Expect->new(%$conf);
+  our $ssh = Net::SSH::Expect->new(%$conf);
 
   if ( $conf->{password} ) {
     my $logintext = $ssh->login();
@@ -60,24 +59,22 @@ for my $host ( sort keys %machines ) {
 
   $ssh->exec("stty raw -echo"); # Turn off echo
 
-  my @arch = split "\n", $ssh->exec('uname -m');
-  my $arch = $arch[0];
-
+  my $arch = run('uname -m');
   print "ARCH: $arch\n";
 
-  my @os = split "\n", $ssh->exec('uname -s');
-  my $os = $os[0];
+  my $os = run('uname -s');
+  my $release = run('if [ -f /etc/redhat-release ]; then cat /etc/redhat-release; fi');
 
+  $os = 'RHEL 4.6' if $release =~ /Red Hat Enterprise Linux ES release 4 \(Nahant Update 6\)/;
+  $os = 'CentOS 4.6' if $release =~ /CentOS release 4.6 \(Final\)/;
   print "OS: $os\n";
 
-  my @osver = split "\n", $ssh->exec('uname -r');
-  my $os_version = $osver[0];
+  warn "Unknown release: $release" if $os eq 'Linux' and length $release;
 
+  my $os_version = run('uname -r');
   print "OS VERSION: $os_version\n";  
 
-  my @tz = split "\n", $ssh->exec('date +%Z');
-  my $tz = $tz[0];
-
+  my $tz = run('date +%Z');
   print "TZ: $tz\n";
 
   my $possible = $hosts->by_name($host);
@@ -106,14 +103,12 @@ for my $host ( sort keys %machines ) {
     print " Update returned $ret\n";
   }
 
-=head2 foo
-
   # Linux   
 
   next unless $os eq 'Linux';
   
-  my $snmp = &is_running_linux($ssh,'snmpd');
-  my $ntp  = &is_running_linux($ssh,'ntpd');
+  my $snmp = &is_running_linux('snmpd');
+  my $ntp  = &is_running_linux('ntpd');
 
   my $ret = $hosts->update($id,{
     snmp => $snmp,
@@ -124,8 +119,7 @@ for my $host ( sort keys %machines ) {
   my $ntphost;
 
   if ( $ntp == 1 ) {
-    ($stdout,$stderr,$exit) = $ssh->cmd('egrep \'^server\' /etc/ntp.conf | grep -v 127.127.1.0 | head -1');
-    chomp $stdout;
+    my $stdout = run('egrep \'^server\' /etc/ntp.conf | grep -v 127.127.1.0 | head -1');
 
     if ( $stdout =~ /^server\s+(\S+)/ ) {
       $ntphost = $1;
@@ -137,8 +131,7 @@ for my $host ( sort keys %machines ) {
   my $snmp_community;
 
   if ( $snmp == 1 ) {
-    ($stdout,$stderr,$exit) = $ssh->cmd('egrep \'^com2sec.*notConfigUser.*default\' /etc/snmp/snmpd.conf');
-    chomp $stdout;
+    my $stdout = run('egrep \'^com2sec.*notConfigUser.*default\' /etc/snmp/snmpd.conf');
 
     if ( $stdout =~ /\s+(\S+)\s*$/ ) {
       $snmp_community = $1;
@@ -158,19 +151,31 @@ for my $host ( sort keys %machines ) {
       print " Insert returned $ret ($dev)\n";
     }
   }
-
-=cut 
 }
 
 ### Subroutines
 
-# is a service running
+# Run a command on the remote host
+sub run {
+  my $command = shift @_;
+  our $ssh;
 
+  if ( $use_expect ) {
+    my @ret = split "\n", $ssh->exec($command);
+    pop @ret;
+    return join("\n",@ret);
+  } else {
+    my ($stdout,$stderr,$exit) = $ssh->cmd($command);
+    chomp $stdout;
+    return $stdout;
+  }
+}
+
+# is a service running
 sub is_running_linux {
-  my $ssh  = shift @_;
   my $serv = shift @_;
-  my ($stdout, $stderr, $exit) = $ssh->cmd('chkconfig --list '.$serv);
-  chomp $stdout;
+
+  my $stdout = run('chkconfig --list '.$serv);
 
   return -1 unless $stdout =~ /\w+\s+0:\w+\s+1:\w+\s+2:\w+\s+3:(\w+)\s+4:\w+\s+5:(\w+)\s+6:\w+/;
 
@@ -183,8 +188,7 @@ sub is_running_linux {
 }
 
 sub net_devices_linux {
-  my $ssh  = shift @_;
-  my ($stdout, $stderr, $exit) = $ssh->cmd('ifconfig -a | grep HWaddr');
+  my $stdout = run('ifconfig -a | grep HWaddr');
 
   my %out;
 
