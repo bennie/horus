@@ -22,6 +22,8 @@ my @rows = (
     $cgi->td({-bgcolor=>'#666699'},'Host'),
     $cgi->td({-bgcolor=>'#666699'},'Customer'),
     $cgi->td({-bgcolor=>'#666699'},'OS'),
+    $cgi->td({-bgcolor=>'#666699'},'OS Version'),
+    $cgi->td({-bgcolor=>'#666699'},'Time Zone'),
     $cgi->td({-bgcolor=>'#666699'},'Last Update'),
     $cgi->td({-bgcolor=>'#666699'}, $cgi->start_form({-action=>'edit.cgi'}), $cgi->submit({-name=>'New'}), $cgi->end_form )
   )
@@ -34,6 +36,8 @@ for my $id ( sort { lc($hosts{$a}) cmp lc($hosts{$b}) } keys %hosts ) {
     $cgi->td({-bgcolor=>'#ffffff'}, "$hosts{$id}" ),
     $cgi->td({-bgcolor=>'#ffffff'}, "$rec{customer}" ),
     $cgi->td({-bgcolor=>'#ffffff'}, "$rec{os}" ),
+    $cgi->td({-bgcolor=>'#ffffff'}, "$rec{osversion}" ),
+    $cgi->td({-bgcolor=>'#ffffff'}, "$rec{tz}" ),
     $cgi->td({-bgcolor=>'#ffffff'}, "$rec{last_modified}" ),
     $cgi->td({-bgcolor=>'#ffffff'}, $cgi->start_form({-action=>'edit.cgi'}), $cgi->hidden({-name=>'id',-value=>$id}), $cgi->submit({-name=>'Edit'}), $cgi->end_form ),
   );

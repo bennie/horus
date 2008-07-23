@@ -1,27 +1,9 @@
 #!/usr/bin/perl -I../lib
 
-=head schema
-+----------------+--------------+------+-----+---------+----------------+
-| Field          | Type         | Null | Key | Default | Extra          |
-+----------------+--------------+------+-----+---------+----------------+
-| id             | int(11)      |      | PRI | NULL    | auto_increment |
-| name           | varchar(255) | YES  | MUL | unknown |                |
-| os             | varchar(64)  | YES  |     | NULL    |                |
-| osversion      | varchar(255) | YES  |     | NULL    |                |
-| arch           | varchar(24)  | YES  |     | NULL    |                |
-| tz             | char(3)      | YES  |     | NULL    |                |
-| snmp           | int(11)      | YES  |     | 0       |                |
-| snmp_community | varchar(24)  | YES  |     | NULL    |                |
-| ntp            | int(11)      | YES  |     | 0       |                |
-| ntphost        | varchar(255) | YES  |     | NULL    |                |
-+----------------+--------------+------+-----+---------+----------------+
-=cut
-
 use Fusionone::Ethernet;
 use Fusionone::Hosts;
 
-require Math::BigInt::GMP; # For speed on Net::SSH::Perl;
-use Net::SSH::Perl;
+use Net::SSH::Expect;
 
 use strict;
 
@@ -35,7 +17,7 @@ for my $cust ( qw/al bm nwh telus/ ) {
   }
 }
 
-map { $machines{$_} = undef; } qw/alqa dba dbb dbc dbd db-embarq dbwh2
+map { $machines{$_} = undef; } qw/dba dbb dbc dbd dbwh2
 demo-vm fms01-palmbeta fmsa fmsb fmse fms-embarq fmsf fmsg fmsh fmsi
 fmsj fmsk fmso fmsp fmsq fmsr fmss fmsp1 fmsp2 frogger log02-palmbeta
 pagea pageb pagec paged pagee pageg pageh pagej pageo pagep palmweb01
@@ -45,7 +27,9 @@ synch synci syncj synck syncl syncn syncp straylight frogger sawmill/;
 map { $machines{$_} = 'fusion123' } qw/vz-fms01 vz-fms02 vz-page01
 vz-page02 vz-sync01 vz-sync02 vz-db01 vz-db02/;
 
-# ducati fmsab fmsl pagel pageq vm-fms vm-page ops
+map { $machines{$_} = 'g00df3ll45' } qw/alqa/;
+
+# ducati fmsab fmsl pagel pageq vm-fms vm-page ops db-embarq
 
 my @telus = ();#qw/172.26.23.11 172.26.23.12 172.26.23.13 172.26.23.139/;
 
@@ -55,39 +39,52 @@ my $ethernet = new Fusionone::Ethernet;
 my $hosts    = new Fusionone::Hosts;
 
 for my $host ( sort keys %machines ) {
-  my ($stdout, $stderr, $exit, $ssh);
-
-  eval {
-    $ssh = Net::SSH::Perl->new($host,( protocol=>'2,1',  debug => 1 ));
-    $ssh->login('root',$machines{$host});
+  my $conf = {
+    host => $host,
+    user => 'root',
+    raw_pty => 1
   };
 
-  if ($@) { print "$host: connection failed.\n$@"; next; }
+  $conf->{password} = $machines{$host} if $machines{$host};
 
-  ($stdout, $stderr, $exit) = $ssh->cmd('uname -m');
+  print "\nTrying $host " .( $conf->{password} ? 'with' : 'without' ). " a password\n";
 
-  chomp $stdout;
-  my $arch = $stdout;
+  my $ssh = Net::SSH::Expect->new(%$conf);
 
-  ($stdout, $stderr, $exit) = $ssh->cmd('uname -s');
+  if ( $conf->{password} ) {
+    my $logintext = $ssh->login();
+    if ( $logintext !~ /Welcome/ ) {
+      die "Login failed: \n\n$logintext\n\n";
+    }
+  } else {
+    $ssh->run_ssh() or die "SSH Process couldn't start: $!";
+    my $read = $ssh->read_all(2);
+    ( $read =~ /[>\$\#]\s*\z/ ) or die "Where is the remote prompt? $read";
+  }
 
-  chomp $stdout;
-  my $os = $stdout;
+  $ssh->exec("stty raw -echo"); # Turn off echo
 
-  ($stdout, $stderr, $exit) = $ssh->cmd('uname -r');
+  my @arch = split "\n", $ssh->exec('uname -m');
+  my $arch = $arch[0];
 
-  chomp $stdout;
-  my $os_version = $stdout;
+  print "ARCH: $arch\n";
 
-  ($stdout, $stderr, $exit) = $ssh->cmd('date +%Z');
+  my @os = split "\n", $ssh->exec('uname -s');
+  my $os = $os[0];
 
-  chomp $stdout;
-  my $tz = $stdout;
+  print "OS: $os\n";
 
-  print "$host : $os $os_version ($arch)\n";
+  my @osver = split "\n", $ssh->exec('uname -r');
+  my $os_version = $osver[0];
+
+  print "OS VERSION: $os_version\n";  
+
+  my @tz = split "\n", $ssh->exec('date +%Z');
+  my $tz = $tz[0];
+
+  print "TZ: $tz\n";
 
   my $possible = $hosts->by_name($host);
-
   print " Possible hosts: " . join(',',@$possible) . "\n";
 
   my $id;
@@ -112,6 +109,8 @@ for my $host ( sort keys %machines ) {
     });
     print " Update returned $ret\n";
   }
+
+=head2 foo
 
   # Linux   
 
@@ -163,6 +162,8 @@ for my $host ( sort keys %machines ) {
       print " Insert returned $ret ($dev)\n";
     }
   }
+
+=cut 
 }
 
 ### Subroutines
