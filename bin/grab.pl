@@ -1,6 +1,6 @@
 #!/usr/bin/perl -I../lib
 
-# $Id: grab.pl,v 1.18 2008/07/23 19:09:02 ppollard Exp $
+# $Id: grab.pl,v 1.19 2008/07/23 19:26:26 ppollard Exp $
 
 use Fusionone::Ethernet;
 use Fusionone::Hosts;
@@ -27,6 +27,8 @@ alqa-sync01 bmqa-fms bmqa-page bmqa-sync nwhqa-fms nwhqa-page nwhqa-sync/;
 
 $machines{build} = 'dev3695';
 
+$machines{cits} = 'mypassword';
+
 ### Main
 
 my $ethernet = new Fusionone::Ethernet;
@@ -34,7 +36,7 @@ my $hosts    = new Fusionone::Hosts;
 
 our $ssh;
 
-for my $host ( sort keys %machines ) {
+for my $host ( scalar @ARGV ? @ARGV : sort keys %machines ) {
   my $conf = {
     host => $host,
     user => 'root',
