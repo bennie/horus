@@ -17,12 +17,11 @@ for my $cust ( qw/al bm nwh telus/ ) {
   }
 }
 
-map { $machines{$_} = undef; } qw/dba dbb dbc dbd dbwh2
-demo-vm fms01-palmbeta fmsa fmsb fmse fms-embarq fmsf fmsg fmsh fmsi
-fmsj fmsk fmso fmsp fmsq fmsr fmss fmsp1 fmsp2 frogger log02-palmbeta
-pagea pageb pagec paged pagee pageg pageh pagej pageo pagep palmweb01
-straylight sync02-palmbeta synca syncb synce sync-embarq syncf syncg
-synch synci syncj synck syncl syncn syncp straylight frogger sawmill/;
+map { $machines{$_} = undef; } qw/ dba dbb dbc dbd dbwh2 demo-vm fmsa
+fmsb fmse fmsf fmsg fmsh fmsi fmsj fmsk fmsp fmsp1 fmsp2 frogger pagea
+pageb pagec paged pagee pageg pageh pagej pageo pagep straylight synca
+syncb synce syncf syncg synch synci syncj synck syncl syncp straylight
+frogger sawmill/;
 
 map { $machines{$_} = 'fusion123' } qw/vz-fms01 vz-fms02 vz-page01
 vz-page02 vz-sync01 vz-sync02 vz-db01 vz-db02/;
@@ -85,7 +84,7 @@ for my $host ( sort keys %machines ) {
   print "TZ: $tz\n";
 
   my $possible = $hosts->by_name($host);
-  print " Possible hosts: " . join(',',@$possible) . "\n";
+  print " Possible host ids: " . join(',',@$possible) . "\n";
 
   my $id;
 
