@@ -1,2 +1,2 @@
 #!/bin/sh
-mysqldump -u horus -pnochaos horus > horus.sql
+mysqldump --complete-insert --skip-extended-insert -u horus -pnochaos horus > horus.sql
