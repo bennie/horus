@@ -33,7 +33,7 @@ if ( $cgi->param('Update') && $cgi->param('id') ) {
   my $id = $cgi->param('id');
 
   unless ($id) {
-    $id = $fh->add({ name => 'New Host' });
+    $id = $fh->add({ name => 'New Host', created => scalar(localtime) });
   }
 
   my %rec = $fh->get($id);

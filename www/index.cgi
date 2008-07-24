@@ -1,6 +1,6 @@
 #!/usr/bin/perl -I../lib
 
-# $Id: index.cgi,v 1.11 2008/07/24 23:35:37 ppollard Exp $
+# $Id: index.cgi,v 1.12 2008/07/24 23:59:11 ppollard Exp $
 
 use Horus::Network;
 use Horus::Hosts;
@@ -34,8 +34,9 @@ if ( $pathinfo[0] eq 'dashboard' ) {
 ### Pages
 
 sub dashboard {
-  print $cgi->header, $cgi->start_html( -title=> 'Horus - Dashboard view');
-  print $cgi->p('[',$cgi->a({-href=>'/index.cgi/report/network'},"Network Report"),']');
+  print $cgi->header, $cgi->start_html({-title=> 'Horus - Dashboard view'}),
+        $cgi->font({-size=>'+2'},"Horus"), $cgi->hr({-noshade=>undef});
+  print '[',$cgi->a({-href=>'/index.cgi/report/network'},"Network Report"),']';
   print $cgi->p("$total hosts in the system.");
 
   my @rows = (
@@ -79,22 +80,27 @@ sub dashboard {
 
 sub host {
   my $host = shift @_;
-  print $cgi->header, $cgi->start_html( -title=> 'Horus - Dashboard view'),
+  print $cgi->header, $cgi->start_html( -title=> 'Horus - Host view'),
         $cgi->font({-size=>'+2'},"Host: $host"), $cgi->hr({-noshade=>undef}),
         $cgi->font({-size=>1},$cgi->a({-href=>'/index.cgi/dashboard'},'Back to Dashboard'));
 
   my $possible = $fh->by_name($host);
   my %rec = $fh->get($possible->[0]);
 
+  my %used = map {$_,1} qw/last_modified id created/;
+
+  print $cgi->start_p;
   for my $key ( sort keys %rec ) {
-    next if $key eq 'last_modified' or $key eq 'id';
-    print $cgi->p($cgi->b($key),$rec{$key});
+    next if $used{$key};
+    print $cgi->b($key.': '), $rec{$key}, $cgi->br;
   }
+  print $cgi->end_p;
   
   print $cgi->hr({-noshade=>undef}),
         $cgi->font({-size=>1},
-          $cgi->p('Last Modified:',$rec{last_modified}),
-          $cgi->p('ID:',$rec{id}),
+            'ID:', $rec{id}, $cgi->br,
+            'Created:', $rec{created}, $cgi->br,
+             'Last Modified:', $rec{last_modified}, $cgi->br,
         );
 }
 
