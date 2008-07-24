@@ -14,25 +14,24 @@
 /*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
 
 --
--- Table structure for table `ethernet`
+-- Table structure for table `list_customer`
 --
 
-DROP TABLE IF EXISTS `ethernet`;
-CREATE TABLE `ethernet` (
-  `address` varchar(17) NOT NULL default '',
-  `host_id` int(11) default NULL,
-  `host_interface` varchar(10) default NULL,
-  `switch_id` int(11) default NULL,
-  `port` varchar(10) default NULL,
-  `current_speed` varchar(10) default NULL,
-  `max_speed` varchar(10) default NULL,
-  `link_detected` int(11) default '-1',
-  `notes` text,
-  `last_modified` timestamp NOT NULL default CURRENT_TIMESTAMP on update CURRENT_TIMESTAMP,
-  PRIMARY KEY  (`address`),
-  KEY `ethernet_host_id` (`host_id`),
-  KEY `ethernet_switch_id` (`switch_id`)
-) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+DROP TABLE IF EXISTS `list_customer`;
+CREATE TABLE `list_customer` (
+  `customer` varchar(100) NOT NULL,
+  PRIMARY KEY  (`customer`)
+) ENGINE=INNODB DEFAULT CHARSET=latin1;
+
+--
+-- Table structure for table `list_entitytype`
+--
+
+DROP TABLE IF EXISTS `list_entitytype`;
+CREATE TABLE `list_entitytype` (
+  `type` varchar(100) NOT NULL,
+  PRIMARY KEY  (`type`)
+) ENGINE=INNODB DEFAULT CHARSET=latin1;
 
 --
 -- Table structure for table `hosts`
@@ -41,44 +40,51 @@ CREATE TABLE `ethernet` (
 DROP TABLE IF EXISTS `hosts`;
 CREATE TABLE `hosts` (
   `id` int(11) NOT NULL auto_increment,
+  `customer` varchar(100),
   `name` varchar(255) default 'unknown',
   `os` varchar(64) default NULL,
   `osversion` varchar(255) default NULL,
+  `osrelease` varchar(255) default NULL,
   `arch` varchar(24) default NULL,
   `tz` char(3) default NULL,
+  `machine_brand` varchar(255) default NULL,
+  `notes` text,
   `snmp` int(11) default '-1',
   `snmp_community` varchar(24) default NULL,
   `ntp` int(11) default '-1',
   `ntphost` varchar(255) default NULL,
   `vm` int(11) default '-1',
   `vmhost` varchar(255) default NULL,
-  `notes` text,
+  `created` timestamp NOT NULL default '0000-00-00 00:00:00',
   `last_modified` timestamp NOT NULL default CURRENT_TIMESTAMP on update CURRENT_TIMESTAMP,
-  `customer` varchar(100) default NULL,
-  PRIMARY KEY  (`id`),
-  KEY `hosts_name` (`name`),
-  KEY `customer` (`customer`)
-) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+  INDEX (customer),
+  foreign key (customer) references list_customer (customer),
+  PRIMARY KEY  (`id`)
+) ENGINE=INNODB DEFAULT CHARSET=latin1;
 
 --
--- Table structure for table `list_customer`
+-- Table structure for table `ethernet`
 --
 
-DROP TABLE IF EXISTS `list_customer`;
-CREATE TABLE `list_customer` (
-  `customer` varchar(100) NOT NULL default '',
-  PRIMARY KEY  (`customer`)
-) ENGINE=MyISAM DEFAULT CHARSET=latin1;
-
---
--- Table structure for table `list_entitytype`
---
-
-DROP TABLE IF EXISTS `list_entitytype`;
-CREATE TABLE `list_entitytype` (
-  `type` varchar(100) NOT NULL default '',
-  PRIMARY KEY  (`type`)
-) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+DROP TABLE IF EXISTS `network`;
+CREATE TABLE `network` (
+  `address` varchar(17) NOT NULL default '',
+  `host_id` int(11),
+  `host_interface` varchar(10) default NULL,
+  `switch_id` int(11) default NULL,
+  `port` varchar(10) default NULL,
+  `current_speed` varchar(10) default NULL,
+  `max_speed` varchar(10) default NULL,
+  `link_detected` int(11) default '-1',
+  `notes` text,
+  `created` timestamp NOT NULL default '0000-00-00 00:00:00',
+  `last_modified` timestamp NOT NULL default CURRENT_TIMESTAMP on update CURRENT_TIMESTAMP,
+  index (host_id),
+  foreign key (host_id) references hosts (id),
+  PRIMARY KEY  (`address`),
+  KEY `ethernet_host_id` (`host_id`),
+  KEY `ethernet_switch_id` (`switch_id`)
+) ENGINE=INNODB DEFAULT CHARSET=latin1;
 
 --
 -- Table structure for table `switches`

@@ -1,8 +1,8 @@
 #!/usr/bin/perl -I../lib
 
-# $Id: index.cgi,v 1.10 2008/07/24 22:35:06 ppollard Exp $
+# $Id: index.cgi,v 1.11 2008/07/24 23:35:37 ppollard Exp $
 
-use Horus::Ethernet;
+use Horus::Network;
 use Horus::Hosts;
 
 use CGI;
@@ -10,7 +10,7 @@ use strict;
 
 my $cgi = new CGI;
 my $fh = new Horus::Hosts;
-my $fe = new Horus::Ethernet;
+my $fn = new Horus::Network;
 
 my $color_border = '#000000';
 
@@ -103,7 +103,7 @@ sub network_report {
         $cgi->font({-size=>'+2'},"Network Report"), $cgi->hr({-noshade=>undef}),
         $cgi->font({-size=>1},$cgi->a({-href=>'/index.cgi/dashboard'},'Back to Dashboard'));
 
-  my $all = $fe->all();
+  my $all = $fn->all();
 
   my @rows = (
     $cgi->Tr(

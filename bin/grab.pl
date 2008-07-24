@@ -1,8 +1,8 @@
 #!/usr/bin/perl -I../lib
 
-# $Id: grab.pl,v 1.23 2008/07/24 22:35:06 ppollard Exp $
+# $Id: grab.pl,v 1.24 2008/07/24 23:35:37 ppollard Exp $
 
-use Horus::Ethernet;
+use Horus::Network;
 use Horus::Hosts;
 
 use Net::SSH::Expect;
@@ -46,8 +46,8 @@ map { $machines{$_} = 'mypassword'; } qw/tickets horus/;
 
 ### Main
 
-my $ethernet = new Horus::Ethernet;
-my $hosts    = new Horus::Hosts;
+my $network = new Horus::Network;
+my $hosts   = new Horus::Hosts;
 
 our $ssh;
 
@@ -185,11 +185,11 @@ for my $host ( scalar @ARGV ? @ARGV : sort keys %machines ) {
   my %dev = &net_devices_linux($ssh);  
   for my $dev ( keys %dev ) {
     next if $dev{$dev} =~ /00.00.00.00.00.00/;
-    if ( $ethernet->exists($dev{$dev}) ) {
-      my $ret = $ethernet->update($dev{$dev},{ host_id => $id, host_interface => $dev });
+    if ( $network->exists($dev{$dev}) ) {
+      my $ret = $network->update($dev{$dev},{ host_id => $id, host_interface => $dev });
       print " Update returned $ret ($dev)\n";
     } else {
-      my $ret = $ethernet->add({ address => $dev{$dev}, host_id => $id, host_interface => $dev });
+      my $ret = $network->add({ address => $dev{$dev}, host_id => $id, host_interface => $dev });
       print " Insert returned $ret ($dev)\n";
     }
   }

@@ -1,12 +1,12 @@
 #!/usr/bin/perl -I../lib
 
-use Fusionone::Hosts;
+use Horus::Hosts;
 
 use CGI;
 use strict;
 
 my $cgi = new CGI;
-my $fh = new Fusionone::Hosts;
+my $fh = new Horus::Hosts;
 
 my %skip = map {$_,1;} qw/arch id last_modified ntphost osversion snmp_community tz/;
 
