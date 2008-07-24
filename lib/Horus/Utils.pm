@@ -1,4 +1,4 @@
-=head1 Fusionone::Utils (Utils.pm)
+=head1 Horus::Utils (Utils.pm)
 
 =head2 Summary:
 
@@ -9,8 +9,8 @@ This module has many exportable handy utilities as described below.
 use Exporter;
 use vars qw(@ISA @EXPORT_OK @EXPORT);
 
-package Fusionone::Utils;
-$Fusionone::Utils::VERSION = '$revision: $';
+package Horus::Utils;
+$Horus::Utils::VERSION = '$revision: $';
 
 @ISA       = qw/Exporter/;
 @EXPORT    = qw//;
@@ -189,10 +189,10 @@ sub zt {
 
 =head1 Authorship:
 
-  (c) 2007, Fusionone, Inc.
+  (c) 2007, Horus, Inc.
   
   Work by Phil Pollard
-  $Revision: 1.1 $ $Date: 2007/10/08 23:58:58 $
+  $Revision: 1.2 $ $Date: 2008/07/24 22:35:06 $
 
   The majority of this module is (c) 1999-2007, Phillip Pollard
   and released under GPL v2.

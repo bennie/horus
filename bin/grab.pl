@@ -1,9 +1,9 @@
 #!/usr/bin/perl -I../lib
 
-# $Id: grab.pl,v 1.22 2008/07/24 22:26:42 ppollard Exp $
+# $Id: grab.pl,v 1.23 2008/07/24 22:35:06 ppollard Exp $
 
-use Fusionone::Ethernet;
-use Fusionone::Hosts;
+use Horus::Ethernet;
+use Horus::Hosts;
 
 use Net::SSH::Expect;
 use Net::SSH::Perl;
@@ -23,7 +23,7 @@ $skip{fmsr} = 1;
 $skip{fmss} = 1;
 $skip{'sync-embarq'} = 1;
 
-my $fh = new Fusionone::Hosts;
+my $fh = new Horus::Hosts;
 my %all = $fh->all();
 
 for my $id ( keys %all ) {
@@ -46,8 +46,8 @@ map { $machines{$_} = 'mypassword'; } qw/tickets horus/;
 
 ### Main
 
-my $ethernet = new Fusionone::Ethernet;
-my $hosts    = new Fusionone::Hosts;
+my $ethernet = new Horus::Ethernet;
+my $hosts    = new Horus::Hosts;
 
 our $ssh;
 

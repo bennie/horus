@@ -1,4 +1,4 @@
-=head1 Fusionone::Hosts (Hosts.pm)
+=head1 Horus::Hosts (Hosts.pm)
 
 =head2 Summary
 
@@ -6,17 +6,17 @@ This module provides methods to interact with stored host information.
 
 =cut
 
-package Fusionone::Hosts;
+package Horus::Hosts;
 
-use Fusionone::DB;
+use Horus::DB;
 use strict;
 
-$Fusionone::Hosts::VERSION = '$Revision: 1.6 $';
+$Horus::Hosts::VERSION = '$Revision: 1.7 $';
 
 sub new {
   my $self = {};
   bless $self;
-  $self->{db} = new Fusionone::DB;
+  $self->{db} = new Horus::DB;
   return $self;
 }
 
@@ -107,10 +107,10 @@ sub update {
 
 =head1 Authorship:
  
-  (c) 2007, Fusionone, Inc.
+  (c) 2007, Horus, Inc.
 
   Work by Phil Pollard
-  $Revision: 1.6 $ $Date: 2008/07/21 22:22:52 $
+  $Revision: 1.7 $ $Date: 2008/07/24 22:35:06 $
     
 =cut
 

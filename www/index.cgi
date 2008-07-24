@@ -1,16 +1,16 @@
 #!/usr/bin/perl -I../lib
 
-# $Id: index.cgi,v 1.9 2008/07/24 22:26:42 ppollard Exp $
+# $Id: index.cgi,v 1.10 2008/07/24 22:35:06 ppollard Exp $
 
-use Fusionone::Ethernet;
-use Fusionone::Hosts;
+use Horus::Ethernet;
+use Horus::Hosts;
 
 use CGI;
 use strict;
 
 my $cgi = new CGI;
-my $fh = new Fusionone::Hosts;
-my $fe = new Fusionone::Ethernet;
+my $fh = new Horus::Hosts;
+my $fe = new Horus::Ethernet;
 
 my $color_border = '#000000';
 

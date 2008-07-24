@@ -1,14 +1,14 @@
-=head1 Fusionone::DB (DB.pm)
+=head1 Horus::DB (DB.pm)
 
 =cut
 
-package Fusionone::DB;
+package Horus::DB;
 
 use DBI;
-use Fusionone::Utils qw/zt/;
+use Horus::Utils qw/zt/;
 use strict;
 
-$Fusionone::DB::VERSION = '$Revision: 1.3 $';
+$Horus::DB::VERSION = '$Revision: 1.4 $';
 
 sub new {
   my     $self = {};
@@ -279,10 +279,10 @@ sub update {
 
 =head1 Authorship:
 
-  (c) 2007, Fusionone, Inc. 
+  (c) 2007, Horus, Inc. 
 
   Work by Phil Pollard
-  $Revision: 1.3 $ $Date: 2008/07/21 22:22:52 $
+  $Revision: 1.4 $ $Date: 2008/07/24 22:35:06 $
 
   Some portions of this module are (c) 1999-2007, Phillip Pollard
   and were released under GPL v2.
