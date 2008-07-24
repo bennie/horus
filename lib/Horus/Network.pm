@@ -11,7 +11,7 @@ package Fusionone::Ethernet;
 use Fusionone::DB;
 use strict;
 
-$Fusionone::Ethernet::VERSION = '$Revision: 1.2 $';
+$Fusionone::Ethernet::VERSION = '$Revision: 1.3 $';
 
 sub new {
   my $self = {};
@@ -44,7 +44,18 @@ sub add {
   return $id;
 }
 
+=head3 all()
 
+ Returns an array or arrayref that is composed of hashrefs of data for 
+ each network device of which there is info.
+
+=cut
+
+sub all {
+  my $self = shift @_;
+  return $self->{db}->all('select ethernet.*, hosts.name as host_name from ethernet, hosts where ethernet.host_id = hosts.id');
+}
+ 
 =head3 exists($address)
 
 Returns true if the address is known in the DB.
@@ -81,7 +92,7 @@ sub update {
   (c) 2007, Fusionone, Inc.
 
   Work by Phil Pollard
-  $Revision: 1.2 $ $Date: 2007/12/11 01:16:59 $
+  $Revision: 1.3 $ $Date: 2008/07/24 22:26:42 $
 
 =cut
 

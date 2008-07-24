@@ -1,6 +1,6 @@
 #!/usr/bin/perl -I../lib
 
-# $Id: grab.pl,v 1.21 2008/07/23 21:06:35 ppollard Exp $
+# $Id: grab.pl,v 1.22 2008/07/24 22:26:42 ppollard Exp $
 
 use Fusionone::Ethernet;
 use Fusionone::Hosts;
@@ -15,6 +15,13 @@ use strict;
 my $use_expect = 0;
 
 my %machines;
+my %skip;
+
+$skip{fmso} = 1;
+$skip{fmsq} = 1;
+$skip{fmsr} = 1;
+$skip{fmss} = 1;
+$skip{'sync-embarq'} = 1;
 
 my $fh = new Fusionone::Hosts;
 my %all = $fh->all();
@@ -31,8 +38,11 @@ alqa-sync01 bmqa-fms bmqa-page bmqa-sync nwhqa-fms nwhqa-page nwhqa-sync
 telus-fms01 telus-fms02 telus-page01 telus-page02 telus-sync01 telus-sync02/;
 
 $machines{build} = 'dev3695';
+$machines{ns1} = 'Bungie1';
 
 map { $machines{$_} = 'mypassword'; } qw/tickets horus/;
+
+# Dead? db-embarq, fms-embarq
 
 ### Main
 
@@ -42,7 +52,9 @@ my $hosts    = new Fusionone::Hosts;
 our $ssh;
 
 for my $host ( scalar @ARGV ? @ARGV : sort keys %machines ) {
-  &open_connection($host,'root',$machines{$host});
+  next if $skip{$host};
+  my $ret = &open_connection($host,'root',$machines{$host});
+  next unless $ret;
 
   my $arch = run('uname -m');
   print "ARCH: $arch\n";
@@ -209,25 +221,26 @@ sub open_connection {
     if ( $conf->{password} ) {
       my $logintext;
       eval { $logintext = $ssh->login(); };
-      if ( $@ ) { warn $@; next; }
+      if ( $@ ) { warn $@; return 0; }
 
       if ( $logintext !~ /Welcome/ and $logintext !~ /Last login/ ) {
-        die "Login failed: \n\n$logintext\n\n";
+        warn "Login failed: \n\n$logintext\n\n";
+        return 0;
       }
 
     } else {
       unless ( $ssh->run_ssh() ) {
         warn "SSH Process couldn't start: $!";
-        next;
+        return 0;
       }
 
       my $read;
       eval { $read = $ssh->read_all(2); };
-      if ( $@ ) { warn $@; next; }
+      if ( $@ ) { warn $@; return 0; }
 
       unless ( $read =~ /[>\$\#]\s*\z/ ) {
         warn "Where is the remote prompt? $read";
-        next;
+        return 0;
       }
 
       $ssh->exec("stty raw -echo"); # Turn off echo
@@ -236,9 +249,12 @@ sub open_connection {
   } else {
   
     our $ssh = Net::SSH::Perl->new($host, (protocol=>'2,1', debug=>0) );
-    $ssh->login($user,$pass);
+    eval { $ssh->login($user,$pass); };
+    if ( $@ ) { warn $@; return 0; }
 
   }
+  
+  return 1;
 }
 
 # Run a command on the remote host
