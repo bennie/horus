@@ -1,6 +1,6 @@
 #!/usr/bin/perl -I../lib
 
-# $Id: grab.pl,v 1.26 2008/07/25 07:16:31 ppollard Exp $
+# $Id: grab.pl,v 1.27 2008/07/25 07:44:08 ppollard Exp $
 
 use Horus::Network;
 use Horus::Hosts;
@@ -85,6 +85,9 @@ for my $host ( scalar @ARGV ? @ARGV : sort keys %machines ) {
   my $tz = run('date +%Z');
   print "TZ: $tz\n";
 
+  my $uptime = run('uptime');
+  print "UP: $uptime\n";
+
   my $possible = $hosts->by_name($host);
   print " Possible host ids: " . join(',',@$possible) . "\n";
 
@@ -97,6 +100,7 @@ for my $host ( scalar @ARGV ? @ARGV : sort keys %machines ) {
       os => $os,
       osrelease => $os_release,
       osversion => $os_version,
+      uptime => $uptime,
       tz => $tz
     });
     print " Added host: $id\n";
@@ -108,6 +112,7 @@ for my $host ( scalar @ARGV ? @ARGV : sort keys %machines ) {
       os => $os,
       osrelease => $os_release,
       osversion => $os_version,
+      uptime => $uptime,
       tz => $tz
     });
     print " Update returned $ret\n";

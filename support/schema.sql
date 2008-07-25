@@ -46,6 +46,7 @@ CREATE TABLE `hosts` (
   `tz` char(3) default NULL,
   `machine_brand` varchar(255) default NULL,
   `machine_model` varchar(255) default NULL,
+  `uptime` text,
   `notes` text,
   `snmp` int(11) default '-1',
   `snmp_community` varchar(24) default NULL,
