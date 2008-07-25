@@ -1,6 +1,6 @@
 #!/usr/bin/perl -I../lib
 
-# $Id: index.cgi,v 1.12 2008/07/24 23:59:11 ppollard Exp $
+# $Id: index.cgi,v 1.13 2008/07/25 01:32:34 ppollard Exp $
 
 use Horus::Network;
 use Horus::Hosts;
@@ -48,6 +48,7 @@ sub dashboard {
       $cgi->td({-bgcolor=>'#666699'},'Version'),
       $cgi->td({-bgcolor=>'#666699'},'Arch.'),
       $cgi->td({-bgcolor=>'#666699'},'Brand'),
+      $cgi->td({-bgcolor=>'#666699'},'Model'),
       $cgi->td({-bgcolor=>'#666699'},'Clock'),
       $cgi->td({-bgcolor=>'#666699'},'Last Update'),
       $cgi->td({-bgcolor=>'#666699'}, $cgi->start_form({-action=>'/edit.cgi'}), $cgi->submit({-name=>'New'}), $cgi->end_form )
@@ -60,6 +61,8 @@ sub dashboard {
     $rec{last_modified} =~ /(\d{4}-\d\d-\d\d)/;
     my $time = $1;
   
+    map { $rec{$_}=~s/\s/\&nbsp;/g } qw/osrelease osversion machine_model/;
+  
     push @rows, $cgi->Tr(
       $cgi->td({-bgcolor=>'#ffffff'}, $cgi->a({-href=>"/index.cgi/host/$hosts{$id}"},$hosts{$id}) ),
       $cgi->td({-bgcolor=>'#ffffff'}, "$rec{customer}" ),
@@ -68,6 +71,7 @@ sub dashboard {
       $cgi->td({-bgcolor=>'#ffffff'}, "$rec{osversion}" ),
       $cgi->td({-bgcolor=>'#ffffff'}, "$rec{arch}" ),
       $cgi->td({-bgcolor=>'#ffffff'}, "$rec{machine_brand}" ),
+      $cgi->td({-bgcolor=>'#ffffff'}, "$rec{machine_model}" ),
       $cgi->td({-bgcolor=>'#ffffff',-align=>'center'}, "$rec{tz}" ),
       $cgi->td({-bgcolor=>'#ffffff',-align=>'center'}, $time ),
       $cgi->td({-bgcolor=>'#ffffff',-align=>'center'}, $cgi->start_form({-action=>'/edit.cgi'}), $cgi->hidden({-name=>'id',-value=>$id}), $cgi->submit({-name=>'Edit'}), $cgi->end_form ),

@@ -11,7 +11,7 @@ package Horus::Hosts;
 use Horus::DB;
 use strict;
 
-$Horus::Hosts::VERSION = '$Revision: 1.7 $';
+$Horus::Hosts::VERSION = '$Revision: 1.8 $';
 
 sub new {
   my $self = {};
@@ -38,6 +38,7 @@ sub add {
   my $ret  = $self->{db}->insert('hosts',$ref);
   return undef unless $ret > 0;
   my $id   = $self->{db}->single('select last_insert_id()');
+  $self->{db}->execute('update hosts set created=now() where id=?',$id) if $id;
   return $id;
 }
 
@@ -110,7 +111,7 @@ sub update {
   (c) 2007, Horus, Inc.
 
   Work by Phil Pollard
-  $Revision: 1.7 $ $Date: 2008/07/24 22:35:06 $
+  $Revision: 1.8 $ $Date: 2008/07/25 01:32:34 $
     
 =cut
 

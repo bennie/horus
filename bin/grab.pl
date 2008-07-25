@@ -1,6 +1,6 @@
 #!/usr/bin/perl -I../lib
 
-# $Id: grab.pl,v 1.24 2008/07/24 23:35:37 ppollard Exp $
+# $Id: grab.pl,v 1.25 2008/07/25 01:32:34 ppollard Exp $
 
 use Horus::Network;
 use Horus::Hosts;
@@ -17,11 +17,7 @@ my $use_expect = 0;
 my %machines;
 my %skip;
 
-$skip{fmso} = 1;
-$skip{fmsq} = 1;
-$skip{fmsr} = 1;
-$skip{fmss} = 1;
-$skip{'sync-embarq'} = 1;
+map {$skip{$_}++} qw/fmso fmsq fmsr fmss sync-embarq syncn/;
 
 my $fh = new Horus::Hosts;
 my %all = $fh->all();
@@ -35,14 +31,13 @@ vz-page02 vz-sync01 vz-sync02 vz-db01 vz-db02/;
 
 map { $machines{$_} = 'g00df3ll45' } qw/alqa alqa-fms01 alqa-page01 
 alqa-sync01 bmqa-fms bmqa-page bmqa-sync nwhqa-fms nwhqa-page nwhqa-sync
-telus-fms01 telus-fms02 telus-page01 telus-page02 telus-sync01 telus-sync02/;
+telus-fms01 telus-fms02 telus-page01 telus-page02 telus-sync01 telus-sync02
+bmqa-base/;
 
 $machines{build} = 'dev3695';
 $machines{ns1} = 'Bungie1';
 
 map { $machines{$_} = 'mypassword'; } qw/tickets horus/;
-
-# Dead? db-embarq, fms-embarq
 
 ### Main
 
@@ -59,17 +54,29 @@ for my $host ( scalar @ARGV ? @ARGV : sort keys %machines ) {
   my $arch = run('uname -m');
   print "ARCH: $arch\n";
 
-  my $os = run('uname -s');
+  my $os; my $os_version; my $os_release;
+
+  $os = run('uname -s');
+  if ( $os =~ /CYGWIN/ ) {
+    $os_release = $os;    
+  
+    $os = 'Windows';
+    $os_release = 'Cyg NT 5.0' if $os_release eq 'CYGWIN_NT-5.0';
+  }
   print "OS: $os\n";
 
-  my $os_version = run('uname -r');
+  $os_version = run('uname -r');
   print "OS VERSION: $os_version\n";  
 
-  my $os_release = run('if [ -f /etc/redhat-release ]; then cat /etc/redhat-release; fi');
+  $os_release = run('if [ -f /etc/vmware-release ]; then cat /etc/vmware-release; else if [ -f /etc/redhat-release ]; then cat /etc/redhat-release; fi; fi') unless $os_release;
 
+  $os_release = 'CentOS '.$1 if $os_release =~ /CentOS release (\d(\.\d)?) \(Final\)/;
+
+  $os_release = 'RH 9' if $os_release =~ /Red Hat Linux release 9 \(Shrike\)/;
   $os_release = 'RH'.$1.'L 4' if $os_release =~ /Red Hat Enterprise Linux (\w)S release 4 \(Nahant\)/;
   $os_release = 'RH'.$1.'L 4.'.$2 if $os_release =~ /Red Hat Enterprise Linux (\w)S release 4 \(Nahant Update (\d)\)/;
-  $os_release = 'CentOS '.$1 if $os_release =~ /CentOS release (\d(\.\d)?) \(Final\)/;
+
+  $os_release = 'VM ESX '.$1 if $os_release =~ /VMware ESX Server (\d) \(Dali\)/;
 
   $os_release = "$os $os_version" if $os eq 'SunOS' and not $os_release;
 
@@ -145,13 +152,14 @@ for my $host ( scalar @ARGV ? @ARGV : sort keys %machines ) {
 
   # Brand of HW
 
-  my $machine_brand;
+  my $machine_brand; my $machine_model;
 
   my $stdout = run('cat /var/log/dmesg');
  
   # DL 360
   if ( $stdout =~ /ACPI:\s+MCFG\s+\(v001\s+HP\s+ProLiant/ ) {
     $machine_brand = 'HP';
+    $machine_model = 'DL 360';
   }
 
   # VZ DBs
@@ -162,22 +170,30 @@ for my $host ( scalar @ARGV ? @ARGV : sort keys %machines ) {
   # VZ Blade
   
   if ( $stdout =~ /ACPI: RSDP \(v000 IBM                                   \) \@ 0x00000000000fdfe0/ && $stdout =~ /ACPI: RSDT \(v001 IBM    SERLEWIS 0x00001000 IBM  0x45444f43\) \@ 0x00000000cffa7380/ && $stdout =~ /ACPI: FADT \(v002 IBM    SERLEWIS 0x00001000 IBM  0x45444f43\) \@ 0x00000000cffa72c0/ && $stdout =~ /ACPI: MADT \(v001 IBM    SERLEWIS 0x00001000 IBM  0x45444f43\) \@ 0x00000000cffa7200/ && $stdout =~ /ACPI: SRAT \(v001 AMD    HAMMER   0x00000001 AMD  0x00000001\) \@ 0x00000000cffa70c0/ && $stdout =~ /ACPI: DSDT \(v001 IBM    SERLEWIS 0x00001000 INTL 0x02002025\) \@ 0x0000000000000000/ ) {
-    $machine_brand = 'IBM Blade';
+    $machine_brand = 'IBM';
+    $machine_model = 'Blade';
   }
   
   # Penguin
   if ( $stdout =~ /ACPI: RSDP \(v000 ACPIAM                                \) \@ 0x00000000000f8140/ && $stdout =~ /ACPI: RSDT \(v001 A M I  OEMRSDT  0x05000631 MSFT 0x00000097\) \@ 0x00000000cfff0000/ && $stdout =~ /ACPI: FADT \(v002 A M I  OEMFACP  0x05000631 MSFT 0x00000097\) \@ 0x00000000cfff0200/ && $stdout =~ /ACPI: MADT \(v001 A M I  OEMAPIC  0x05000631 MSFT 0x00000097\) \@ 0x00000000cfff0390/ && $stdout =~ /ACPI: SPCR \(v001 A M I  OEMSPCR  0x05000631 MSFT 0x00000097\) \@ 0x00000000cfff0420/ && $stdout =~ /ACPI: OEMB \(v001 A M I  AMI_OEM  0x05000631 MSFT 0x00000097\) \@ 0x00000000cfffe040/ && $stdout =~ /ACPI: DSDT \(v001  TUNA_ TUNA_160 0x00000160 INTL 0x02002026\) \@ 0x0000000000000000/ ) {
     $machine_brand = 'Penguin';
+    $machine_model = 'Altus 1300';
   }
   
   # VM?
   if ( $stdout =~ /ACPI: FADT \(v001 INTEL  440BX/ && $stdout =~ /ACPI: BOOT \(v001 PTLTD  \$SBFTBL\$/ && $stdout =~ /ACPI: DSDT \(v001 PTLTD  Custom/ ) {
     $machine_brand = 'VM';
+    $machine_model = 'ESX';
   }
 
   if ( $machine_brand ) {
     my $ret = $hosts->update($id,{ machine_brand => $machine_brand });
     print " Update returned $ret (machine_brand)\n";
+  }
+
+  if ( $machine_model ) {
+    my $ret = $hosts->update($id,{ machine_model => $machine_model });
+    print " Update returned $ret (machine_model)\n";
   }
 
   # Net devices
