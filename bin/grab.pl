@@ -1,6 +1,6 @@
 #!/usr/bin/perl -I../lib
 
-# $Id: grab.pl,v 1.25 2008/07/25 01:32:34 ppollard Exp $
+# $Id: grab.pl,v 1.26 2008/07/25 07:16:31 ppollard Exp $
 
 use Horus::Network;
 use Horus::Hosts;
@@ -32,7 +32,7 @@ vz-page02 vz-sync01 vz-sync02 vz-db01 vz-db02/;
 map { $machines{$_} = 'g00df3ll45' } qw/alqa alqa-fms01 alqa-page01 
 alqa-sync01 bmqa-fms bmqa-page bmqa-sync nwhqa-fms nwhqa-page nwhqa-sync
 telus-fms01 telus-fms02 telus-page01 telus-page02 telus-sync01 telus-sync02
-bmqa-base/;
+bmqa-base nwh-fms01/;
 
 $machines{build} = 'dev3695';
 $machines{ns1} = 'Bungie1';
@@ -126,6 +126,8 @@ for my $host ( scalar @ARGV ? @ARGV : sort keys %machines ) {
   });
   print " Update returned $ret (ntp,snmp)\n";
 
+  # NTP host
+
   my $ntphost;
 
   if ( $ntp == 1 ) {
@@ -137,6 +139,8 @@ for my $host ( scalar @ARGV ? @ARGV : sort keys %machines ) {
       print " Update returned $ret (ntphost)\n";
     }
   }
+
+  # SNMP host
 
   my $snmp_community;
 
@@ -194,6 +198,16 @@ for my $host ( scalar @ARGV ? @ARGV : sort keys %machines ) {
   if ( $machine_model ) {
     my $ret = $hosts->update($id,{ machine_model => $machine_model });
     print " Update returned $ret (machine_model)\n";
+  }
+
+  # configs
+
+  for my $config ( qw@/etc/fstab /etc/named.conf /etc/sudoers /etc/issue /etc/passwd /etc/snmp/snmp.conf@ ) {
+    my $data = run("if [ -f $config ]; then cat $config; fi");
+    if ( $data ) {
+      $hosts->config_set($id,$config,$data);
+      print " Update returned $ret ($config)\n";
+    }
   }
 
   # Net devices

@@ -8,10 +8,11 @@ This module provides methods to interact with stored host information.
 
 package Horus::Hosts;
 
+use Digest::MD5 qw/md5_hex/;
 use Horus::DB;
 use strict;
 
-$Horus::Hosts::VERSION = '$Revision: 1.8 $';
+$Horus::Hosts::VERSION = '$Revision: 1.9 $';
 
 sub new {
   my $self = {};
@@ -106,12 +107,64 @@ sub update {
   return $self->{db}->update('hosts','id',$id,$ref);
 }
 
+=head3 config_set($hostid,$configname,$configdata)
+
+=cut
+
+sub config_set {
+  my $self = shift @_;
+  my $host = shift @_;
+  my $conf = shift @_;
+  my $data = shift @_;
+
+  unless ( defined $self->{cache}->{$host} ) {
+    $self->{cache}->{$host} = {};
+    for my $name ( $self->config_list($host) ) {
+      $self->{cache}->{$host}->{$name} = 1;
+    }
+  }
+
+  unless ( $self->{cache}->{$host}->{$conf} ) {
+    $self->{db}->execute('insert into host_configs (host_id,config_name) values (?,?)',$host,$conf);
+    $self->{cache}->{$host}->{$conf} = 1;
+  }
+  
+  my $hash = md5_hex($data);
+  
+  return $self->{db}->execute('update host_configs set config_text=?, hash=? where host_id=? and config_name=?',$data,$hash,$host,$conf);
+}
+
+=head3 config_get($hostid,$configname)
+
+Returns the config data for the given host and config name.
+
+=cut
+
+sub config_get {
+  my $self = shift @_;
+  my $host = shift @_;
+  my $conf = shift @_;
+  return $self->{db}->single('select config_text from host_configs where host_id=? and config_name=?',$host,$conf);
+}
+
+=head3 config_list($host_id)
+
+Returns an array or arrayref of configs stored for that host_id
+
+=cut
+
+sub config_list {
+  my $self = shift @_;
+  my $host = shift @_;
+  return $self->{db}->column('select config_name from host_configs where host_id=?',$host);
+}
+
 =head1 Authorship:
  
   (c) 2007, Horus, Inc.
 
   Work by Phil Pollard
-  $Revision: 1.8 $ $Date: 2008/07/25 01:32:34 $
+  $Revision: 1.9 $ $Date: 2008/07/25 07:16:31 $
     
 =cut
 

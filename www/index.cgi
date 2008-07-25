@@ -1,6 +1,6 @@
 #!/usr/bin/perl -I../lib
 
-# $Id: index.cgi,v 1.13 2008/07/25 01:32:34 ppollard Exp $
+# $Id: index.cgi,v 1.14 2008/07/25 07:16:31 ppollard Exp $
 
 use Horus::Network;
 use Horus::Hosts;
@@ -61,7 +61,7 @@ sub dashboard {
     $rec{last_modified} =~ /(\d{4}-\d\d-\d\d)/;
     my $time = $1;
   
-    map { $rec{$_}=~s/\s/\&nbsp;/g } qw/osrelease osversion machine_model/;
+    map { $rec{$_}=~s/\s/\&nbsp;/g } qw/osrelease osversion machine_model customer/;
   
     push @rows, $cgi->Tr(
       $cgi->td({-bgcolor=>'#ffffff'}, $cgi->a({-href=>"/index.cgi/host/$hosts{$id}"},$hosts{$id}) ),
