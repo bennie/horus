@@ -20,7 +20,7 @@
 DROP TABLE IF EXISTS `host_configs`;
 CREATE TABLE `host_configs` (
   `host_id` int(11) NOT NULL default '0',
-  `config_name` varchar(25) NOT NULL default '',
+  `config_name` varchar(255) NOT NULL default '',
   `config_text` text,
   `hash` varchar(32) default NULL,
   `created` timestamp NOT NULL default '0000-00-00 00:00:00',
