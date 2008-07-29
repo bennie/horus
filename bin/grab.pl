@@ -1,6 +1,6 @@
 #!/usr/bin/perl -I../lib
 
-# $Id: grab.pl,v 1.29 2008/07/29 00:06:06 ppollard Exp $
+# $Id: grab.pl,v 1.30 2008/07/29 00:22:43 ppollard Exp $
 
 use Horus::Network;
 use Horus::Hosts;
@@ -14,10 +14,10 @@ require Math::BigInt::GMP; # For speed on Net::SSH::Perl;
 
 use strict;
 
-my $ver = (split ' ', '$Revision: 1.29 $')[1];
+my $ver = (split ' ', '$Revision: 1.30 $')[1];
 
 my $use_expect = 0;
-my $quiet = 1;
+my $quiet = 0;
 
 my %machines;
 my %skip;
@@ -216,8 +216,14 @@ for my $host ( scalar @ARGV ? @ARGV : sort keys %machines ) {
 
   # configs
   
-  #for my $config ( qw@/etc/fstab /etc/named.conf /etc/sudoers /etc/issue /etc/passwd /etc/snmp/snmp.conf /etc/sysconfig/network@ ) {
-  for my $config ( qw@/etc/sysconfig/network@ ) {
+  my @configs = qw@/etc/fstab /etc/named.conf /etc/sudoers /etc/issue /etc/passwd /etc/snmp/snmp.conf /etc/sysconfig/network@;
+  for my $type ( qw/ifcfg route/ ) {
+    for my $eth ( qw/eth0 eth1/ ) {
+      push @configs, "/etc/sysconfig/network-scripts/$type-$eth";
+    }
+  }
+
+  for my $config ( @configs ) {
     my $data = run("if [ -f $config ]; then cat $config; fi");
     if ( $data ) {
       my $old = $hosts->config_get($id,$config);
@@ -227,7 +233,7 @@ for my $host ( scalar @ARGV ? @ARGV : sort keys %machines ) {
         $diff = "Note: No data previously stored for this file.\n" . $diff unless $old;      
         $changes{$host}{changes}{$config} = $diff;
       }
-      #my $ret = $hosts->config_set($id,$config,$data);
+      my $ret = $hosts->config_set($id,$config,$data);
       debug(" Update returned $ret ($config)\n");
     }
   }
@@ -272,10 +278,10 @@ sub change_report {
     }
   }
 
-  print "<pre>\n\n";
+  #print "<pre>\n\n";
   print "CHANGE REPORT: ($ver)\n\nThe following hosts have no identified changes: ", join(', ',@nochange), "\n\n";
   print "CHANGE DETAIL:$detail" if $detail;
-  print "\n\n<\\pre>\n";
+  #print "\n\n<\\pre>\n";
 }
 
 # Open a connection
