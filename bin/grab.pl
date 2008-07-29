@@ -1,6 +1,6 @@
 #!/usr/bin/perl -I../lib
 
-# $Id: grab.pl,v 1.28 2008/07/28 23:44:27 ppollard Exp $
+# $Id: grab.pl,v 1.29 2008/07/29 00:06:06 ppollard Exp $
 
 use Horus::Network;
 use Horus::Hosts;
@@ -13,6 +13,8 @@ use Text::Diff;
 require Math::BigInt::GMP; # For speed on Net::SSH::Perl;
 
 use strict;
+
+my $ver = (split ' ', '$Revision: 1.29 $')[1];
 
 my $use_expect = 0;
 my $quiet = 1;
@@ -49,10 +51,14 @@ my $hosts   = new Horus::Hosts;
 
 our $ssh;
 
+my %changes;
+
 for my $host ( scalar @ARGV ? @ARGV : sort keys %machines ) {
   next if $skip{$host};
   my $ret = &open_connection($host,'root',$machines{$host});
   next unless $ret;
+
+  $changes{$host}{changes} = {};
 
   my $arch = run('uname -m');
   debug("ARCH: $arch\n");
@@ -210,9 +216,6 @@ for my $host ( scalar @ARGV ? @ARGV : sort keys %machines ) {
 
   # configs
   
-  &change_report("\n===================== HOST: $host ================\n");
-  my $change = 0;
-
   #for my $config ( qw@/etc/fstab /etc/named.conf /etc/sudoers /etc/issue /etc/passwd /etc/snmp/snmp.conf /etc/sysconfig/network@ ) {
   for my $config ( qw@/etc/sysconfig/network@ ) {
     my $data = run("if [ -f $config ]; then cat $config; fi");
@@ -222,15 +225,12 @@ for my $host ( scalar @ARGV ? @ARGV : sort keys %machines ) {
 
       if ( $diff ) {
         $diff = "Note: No data previously stored for this file.\n" . $diff unless $old;      
-        &change_report("\nFile: $config\n$diff\n");
-        $change++;
+        $changes{$host}{changes}{$config} = $diff;
       }
-      my $ret = $hosts->config_set($id,$config,$data);
+      #my $ret = $hosts->config_set($id,$config,$data);
       debug(" Update returned $ret ($config)\n");
     }
   }
-
-  &change_report("\nNo config changes found.\n") unless $change;
 
   # Net devices
 
@@ -247,6 +247,8 @@ for my $host ( scalar @ARGV ? @ARGV : sort keys %machines ) {
   }
 }
 
+&change_report();
+
 ### SSH Subroutines
 
 sub debug {
@@ -255,7 +257,25 @@ sub debug {
 }
 
 sub change_report {
-  print @_;
+  my $detail;
+  my @nochange;
+  for my $host ( sort keys %changes ) {
+    my $count = scalar(keys %{$changes{$host}{changes}});
+    if ( $count ) {
+      $detail .= "\n================== $host ==================\n";
+      $detail .= "\n$count config changes noted.\n";
+      for my $file ( sort keys %{$changes{$host}{changes}} ) {
+        $detail .= "\nFile: $file\n$changes{$host}{changes}{$file}\n";
+      }
+    } else {
+      push @nochange, $host;
+    }
+  }
+
+  print "<pre>\n\n";
+  print "CHANGE REPORT: ($ver)\n\nThe following hosts have no identified changes: ", join(', ',@nochange), "\n\n";
+  print "CHANGE DETAIL:$detail" if $detail;
+  print "\n\n<\\pre>\n";
 }
 
 # Open a connection
