@@ -5,12 +5,14 @@
 
 # --noconfigsave will stop the config save
 # --config=foo Deal only with the textconfig foo.
+# --noreport will skip emailing the change report.
 
-# $Id: grab.pl,v 1.33 2008/07/30 20:15:41 ppollard Exp $
+# $Id: grab.pl,v 1.57 2008/07/30 21:00:58 ppollard Exp $
 
 use Horus::Network;
 use Horus::Hosts;
 
+use Getopt::Long;
 use Net::SSH::Expect;
 use Net::SSH::Perl;
 
@@ -20,70 +22,71 @@ require Math::BigInt::GMP; # For speed on Net::SSH::Perl;
 
 use strict;
 
-my $ver = (split ' ', '$Revision: 1.33 $')[1];
+### Parse ARGV
 
 my $use_expect = 0;
 
-my $quiet = 0;
-my $configsave = 1;
+my $config_to_save = undef;           # --config=foo, Override what config to process
+my $email = 'dcops@fusionone.com';    # --email=foo, Email that change report is sent to
+my $noconfigsave = 0;                 # --noconfigsave, do not update configs in the DB
+my $noreport = 0;                     # --noreport, supress emailing the change report
+my $subject = 'Server Change Report'; # --subject, change the report email subject line
+my $quiet = 0;                        # --quiet, supress STDOUT run-time info
 
-my $config_to_save = undef;
+my $ret = GetOptions(
+            'config=s' => \$config_to_save, 'email=s' => \$email,  noconfigsave => \$noconfigsave,
+            noreport => \$noreport, 'subject=s' => \$subject, quiet => \$quiet
+);
 
-my %machines;
-my %skip;
+debug( $noreport ? "Report will NOT be sent.\n" : "Report will go to $email\n" );
+debug("Configs will NOT be saved.\n") if $noconfigsave;
+debug("Only checking for the following config: $config_to_save\n") if $config_to_save;
+debug("\n");
 
-map {$skip{$_}++} qw/fmso fmsq fmsr fmss sync-embarq syncn/;
+### Global Vars
+
+my $ver = (split ' ', '$Revision: 1.57 $')[1];
+
+my %uptime; # Track uptimes for the report
+
+my $co = '/usr/bin/co'; # RCS utils
+my $ci = '/usr/bin/ci';
+
+### Sort out the hosts
 
 my $fh = new Horus::Hosts;
 my %all = $fh->all();
 
-for my $id ( keys %all ) {
-  $machines{$all{$id}} = undef;
+my @override;
+
+if ( scalar @ARGV ) {
+  for my $name (@ARGV) {
+    my @possible = $fh->by_name($name);
+    push @override, $possible[0] if $possible[0];
+  }
 }
-
-map { $machines{$_} = 'fusion123' } qw/vz-fms01 vz-fms02 vz-page01
-vz-page02 vz-sync01 vz-sync02 vz-db01 vz-db02/;
-
-map { $machines{$_} = 'g00df3ll45' } qw/alqa alqa-fms01 alqa-page01 
-alqa-sync01 bmqa-fms bmqa-page bmqa-sync nwhqa-fms nwhqa-page nwhqa-sync
-telus-fms01 telus-fms02 telus-page01 telus-page02 telus-sync01 telus-sync02
-bmqa-base nwh-fms01/;
-
-$machines{build} = 'dev3695';
-$machines{ns1} = 'Bungie1';
-
-map { $machines{$_} = 'mypassword'; } qw/tickets horus/;
-
-map { $machines{$_} = 'password'; } qw/f1vm01 f1vm02 f1vm03 f1vm04 f1vm05/;
 
 ### Main
 
 my $network = new Horus::Network;
-my $hosts   = new Horus::Hosts;
+my $hosts = new Horus::Hosts;
 
 our $ssh;
 
 my %changes;
+my %skipped;
 
-my @args;
-for my $argv ( @ARGV ) {
-  if ( $argv eq '--quiet' ) {
-    $quiet = 1;
-  } elsif ( $argv eq '--noconfigsave' ) {
-    $configsave = 0;
-  } elsif ( $argv =~ /--config=(.+)/ ) {
-    $config_to_save = $1;
-  } else {
-    push @args, $argv;
+for my $hostid ( scalar @override ? sort @override : sort { lc($all{$a}) cmp lc($all{$b}) } keys %all ) {
+  my $ref = $fh->get($hostid);
+  if ( $ref->{skip} > 0 ) {
+    $skipped{$hostid}++;
+    next;
   }
-}
 
-for my $host ( scalar @args ? @args : sort keys %machines ) {
-  next if $skip{$host};
-  my $ret = &open_connection($host,'root',$machines{$host});
+  my $ret = &open_connection($hostid);
   next unless $ret;
 
-  $changes{$host}{changes} = {};
+  $changes{$hostid}{changes} = {};
 
   my $arch = run('uname -m');
   debug("ARCH: $arch\n");
@@ -122,44 +125,181 @@ for my $host ( scalar @args ? @args : sort keys %machines ) {
   my $uptime = run('uptime');
   debug("UP: $uptime\n");
 
-  my $possible = $hosts->by_name($host);
-  debug(" Possible host ids: " . join(',',@$possible) . "\n");
-
-  my $id;
-
-  if ( scalar(@$possible) < 1 ) {
-    $id = $hosts->add({
+  my $ret = $hosts->update($hostid,{
       arch => $arch,
-      name => $host,
+      #name => $host,
       os => $os,
       osrelease => $os_release,
       osversion => $os_version,
       uptime => $uptime,
       tz => $tz
-    });
-    debug(" Added host: $id\n");
-  } elsif ( scalar(@$possible) == 1 ) {
-    $id = $possible->[0];
-    my $ret = $hosts->update($id,{
-      arch => $arch,
-      name => $host,
-      os => $os,
-      osrelease => $os_release,
-      osversion => $os_version,
-      uptime => $uptime,
-      tz => $tz
-    });
-    debug(" Update returned $ret\n");
+  });
+  debug(" Update returned $ret\n");
+
+  # Type
+
+  unless ( $ref->{type} ) {
+    my $type;
+    $type = 'DB'   if $ref->{name} =~ /db/i;
+    $type = 'SMFE' if $ref->{name} =~ /smfe/i;
+    $type = 'Page' if $ref->{name} =~ /page/i;
+    $type = 'Sync' if $ref->{name} =~ /sync/i;
+    $type = 'FMS'  if $ref->{name} =~ /fms/i;
+    if ( $type ) {
+      $ret = $hosts->update($hostid,{ type => $type });
+      debug(" Update returned $ret (type)\n");
+    }
   }
 
-  # Linux   
+  # Category
+
+  unless ( $ref->{category} ) {
+    my $category;
+    $category = 'Demo'       if $ref->{name} =~ /demo/i;
+    $category = 'Production' if $ref->{name} =~ /prod/i;
+    $category = 'QA'         if $ref->{name} =~ /qa/i;
+    $category = 'Test'       if $ref->{name} =~ /test/i;
+    $category = 'Validation' if $ref->{name} =~ /v-(fms|page|sync|smfe|db)/i and not $category;
+    if ( $category ) {
+      $ret = $hosts->update($hostid,{ category => $category });
+      debug(" Update returned $ret (category)\n");
+    }
+  }
+
+  # Remember uptimes for the change report
+
+  if ( $uptime ) {
+    warn "Can't parse the uptime string for time info." unless $uptime =~ /up(\s.+\s)\d+ user/;
+    my $up = $1;
+
+    my $years = 0;
+    my $days  = 0;
+    my $hours = 0;
+    my $mins  = 0;    
+    
+    $hours = $1 and $mins = $2 if $up =~ / (\d+):(\d+),/;    
+
+    $days  = $1 if $up =~ / (\d+) day/;
+    $hours = $1 if $up =~ / (\d+) hour/;
+    $mins  = $1 if $up =~ / (\d+) min/;
+
+    if ( $days > 365 ) {
+      $years = int($days/365);
+      $days = $days - ($years * 365);
+    }
+
+    $uptime{$hostid}{years} = $years;
+    $uptime{$hostid}{days} = $days;    
+    $uptime{$hostid}{hours} = $hours;    
+    $uptime{$hostid}{mins} = $mins;
+    $uptime{$hostid}{string} = $years ? sprintf('%d years, %d days, %02d:%02d', $years, $days, $hours, $mins)
+                             : $days  ? sprintf('%d days, %02d:%02d', $days, $hours, $mins)
+                             : sprintf('%02d:%02d', $hours, $mins);
+  }
+
+  # configs
+  
+  my @configs = qw@/etc/fstab /etc/vfstab /etc/named.conf /etc/sudoers /etc/issue /etc/passwd /etc/snmp/snmpd.conf 
+                   /etc/sysconfig/network /etc/resolv.conf /etc/ssh/sshd_config /etc/selinux/config 
+                   /etc/yum.conf /etc/hosts /fusionone/tomcat/conf/server.xml /etc/motd /etc/issue.net
+                   /fusionone/apache/conf/httpd.conf /etc/bashrc /etc/profile /etc/rc.d/rc.local
+                   /fusionone/bin/f1 /etc/nsswitch.conf /etc/pam.d/system-auth /etc/sysconfig/authconfig
+                   /root/.bash_profile /root/.bash_logout /root/.bashrc /etc/sysconfig/iptables-config
+                   /etc/sysconfig/iptables /etc/sysconfig/vmware-release /etc/httpd/conf/httpd.conf
+                   /fusionone/smfe/server/default/data/pingfederate-admin-user.xml
+                   /fusionone/webapp/mb/WEB-INF/classes/pfagent.propertries
+                   /root/.ssh/authorized_keys /root/.ssh/authorized_keys2
+                   /fusionone/webapps/admin/WEB-INF/classes/papi.properties
+                   /etc/vmware/license.cfg  /etc/vmware/esx.conf
+                   /etc/VRTSvcs/conf/config/main.cf /fusionone/sync/classes_ce.inf
+                   /fusionone/webapps/fms/WEB-INF/classes/f1papi.conf@;
+
+  for my $type ( qw/ifcfg route/ ) {
+    for my $eth ( qw/eth0 eth1/ ) {
+      push @configs, "/etc/sysconfig/network-scripts/$type-$eth";
+    }
+  }
+
+  for my $n ( 0 .. 8 ) {
+    for my $eth ( qw/hme qfe/ ) {
+      push @configs, '/etc/hostname.' . $eth . $n;
+    }
+  }
+
+  @configs = ( $config_to_save ) if $config_to_save;
+
+  for my $config ( @configs ) {
+    my $data = run("if [ -f $config ]; then cat $config; fi");
+    if ( $data ) {
+
+      # Config
+      
+      my $old = $hosts->config_get($hostid,$config);
+      my $diff = diff(\$old,\$data, { STYLE => "Table" });
+
+      if ( $diff ) {
+        $diff = "Note: No data previously stored for this file.\n" . $diff unless $old;      
+        $changes{$hostid}{changes}{$config} = $diff;
+      }
+      my $ret = $noconfigsave ? 'X' : $hosts->config_set($hostid,$config,$data);
+      debug(" Update returned $ret ($config)\n");
+
+      # RCS
+
+      my $oldrcs = $hosts->config_get_rcs($hostid,$config);
+      my $newrcs;
+
+      unlink('/tmp/rcs') if -f '/tmp/rcs';
+      unlink('/tmp/rcs,v') if -f '/tmp/rcs,v';
+
+      if ( $oldrcs =~ /^\s*$/ ) {
+        open TMPFILE, '>/tmp/rcs';
+        print TMPFILE $data;
+        close TMPFILE;
+
+        system("echo 'Initial import' | $ci -i -q /tmp/rcs");
+
+        open RCSFILE, '</tmp/rcs,v';
+        $newrcs = join('',<RCSFILE>);
+        close RCSFILE;
+
+      } else {
+
+        open RCSFILE, '>/tmp/rcs,v';
+        print RCSFILE $oldrcs;
+        close RCSFILE;
+
+        system("$co -l -q /tmp/rcs");
+
+        open TMPFILE, '>/tmp/rcs';
+        print TMPFILE $data;
+        close TMPFILE;
+
+        system("$ci -u -q -m'Updated by grab.pl' /tmp/rcs");
+        
+        open RCSFILE, '</tmp/rcs,v';
+        $newrcs = join('',<RCSFILE>);
+        close RCSFILE;
+      }
+
+      if ( $newrcs and $newrcs ne $oldrcs ) {
+        my $ret = $noconfigsave ? 'X' : $hosts->config_set_rcs($hostid,$config,$newrcs);
+        debug(" RCS update returned $ret ($config)\n");
+      }
+
+      unlink('/tmp/rcs');
+      unlink('/tmp/rcs,v');
+    }
+  }
+  
+  # Linux
 
   next unless $os eq 'Linux';
   
   my $snmp = &is_running_linux('snmpd');
   my $ntp  = &is_running_linux('ntpd');
 
-  my $ret = $hosts->update($id,{
+  my $ret = $hosts->update($hostid,{
     snmp => $snmp,
     ntp  => $ntp,
   });
@@ -174,7 +314,7 @@ for my $host ( scalar @args ? @args : sort keys %machines ) {
 
     if ( $stdout =~ /^server\s+(\S+)/ ) {
       $ntphost = $1;
-      my $ret = $hosts->update($id,{ ntphost => $ntphost });
+      my $ret = $hosts->update($hostid,{ ntphost => $ntphost });
       debug(" Update returned $ret (ntphost)\n");
     }
   }
@@ -188,7 +328,7 @@ for my $host ( scalar @args ? @args : sort keys %machines ) {
 
     if ( $stdout =~ /\s+(\S+)\s*$/ ) {
       $snmp_community = $1;
-      my $ret = $hosts->update($id,{ snmp_community => $snmp_community });
+      my $ret = $hosts->update($hostid,{ snmp_community => $snmp_community });
       debug(" Update returned $ret (snmp_community)\n");
     }
   }
@@ -199,7 +339,7 @@ for my $host ( scalar @args ? @args : sort keys %machines ) {
     my $file = '/var/run/f1/' . $run;
     my $data = run("if [ -f $file ]; then cat $file; fi");
     next unless $data;
-    my $ret = $hosts->data_set($id,$run,$data);
+    my $ret = $hosts->data_set($hostid,$run,$data);
     debug(" Update returned $ret ($run)\n");
   }
 
@@ -240,39 +380,13 @@ for my $host ( scalar @args ? @args : sort keys %machines ) {
   }
 
   if ( $machine_brand ) {
-    my $ret = $hosts->update($id,{ machine_brand => $machine_brand });
+    my $ret = $hosts->update($hostid,{ machine_brand => $machine_brand });
     debug(" Update returned $ret (machine_brand)\n");
   }
 
   if ( $machine_model ) {
-    my $ret = $hosts->update($id,{ machine_model => $machine_model });
+    my $ret = $hosts->update($hostid,{ machine_model => $machine_model });
     debug(" Update returned $ret (machine_model)\n");
-  }
-
-  # configs
-  
-  my @configs = qw@/etc/fstab /etc/named.conf /etc/sudoers /etc/issue /etc/passwd /etc/snmp/snmpd.conf /etc/sysconfig/network@;
-  for my $type ( qw/ifcfg route/ ) {
-    for my $eth ( qw/eth0 eth1/ ) {
-      push @configs, "/etc/sysconfig/network-scripts/$type-$eth";
-    }
-  }
-
-  @configs = ( $config_to_save ) if $config_to_save;
-
-  for my $config ( @configs ) {
-    my $data = run("if [ -f $config ]; then cat $config; fi");
-    if ( $data ) {
-      my $old = $hosts->config_get($id,$config);
-      my $diff = diff(\$old,\$data, { STYLE => "Table" });
-
-      if ( $diff ) {
-        $diff = "Note: No data previously stored for this file.\n" . $diff unless $old;      
-        $changes{$host}{changes}{$config} = $diff;
-      }
-      my $ret = $configsave ? $hosts->config_set($id,$config,$data) : 'X';
-      debug(" Update returned $ret ($config)\n");
-    }
   }
 
   # Net devices
@@ -281,10 +395,10 @@ for my $host ( scalar @args ? @args : sort keys %machines ) {
   for my $dev ( keys %dev ) {
     next if $dev{$dev} =~ /00.00.00.00.00.00/;
     if ( $network->exists($dev{$dev}) ) {
-      my $ret = $network->update($dev{$dev},{ host_id => $id, host_interface => $dev });
+      my $ret = $network->update($dev{$dev},{ host_id => $hostid, host_interface => $dev });
       debug(" Update returned $ret ($dev)\n");
     } else {
-      my $ret = $network->add({ address => $dev{$dev}, host_id => $id, host_interface => $dev });
+      my $ret = $network->add({ address => $dev{$dev}, host_id => $hostid, host_interface => $dev });
       debug(" Insert returned $ret ($dev)\n");
     }
   }
@@ -294,46 +408,18 @@ for my $host ( scalar @args ? @args : sort keys %machines ) {
 
 ### SSH Subroutines
 
-sub debug {
-  return if $quiet;
-  print STDERR @_;
-}
-
-sub change_report {
-  my $detail;
-  my @nochange;
-  for my $host ( sort keys %changes ) {
-    my $count = scalar(keys %{$changes{$host}{changes}});
-    if ( $count ) {
-      $detail .= "\n================== $host ==================\n";
-      $detail .= "\n$count config changes noted.\n";
-      for my $file ( sort keys %{$changes{$host}{changes}} ) {
-        $detail .= "\nFile: $file\n$changes{$host}{changes}{$file}\n";
-      }
-    } else {
-      push @nochange, $host;
-    }
-  }
-
-  open REPORT, '>/tmp/change.html';
-  print REPORT "To: ppollard\@fusionone.com\nFrom: horus\@horus.fusionone.com\nSubject: Server Change Report\nContent-Type: text/html; charset=\"us-ascii\"\n\n";
-
-  print REPORT "<html><body><pre>\n\n";
-  print REPORT "CHANGE REPORT: ($ver)\n\nThe following hosts have no identified changes: ", join(', ',@nochange), "\n\n";
-  print REPORT "CHANGE DETAIL:$detail" if $detail;
-  print REPORT "\n\n<\\pre>\n</body></html>\n";
-  close REPORT;
-
-  exec('/usr/sbin/sendmail ppollard@fusionone.com < /tmp/change.html')
-}
-
 # Open a connection
 sub open_connection {
-  my $host = shift @_;
-  my $user = shift @_;
-  my $pass = shift @_;
+  my $hostid = shift @_;
+  my $ref = $fh->get($hostid);
 
-  debug("\nTrying $host " .( $pass ? 'with' : 'without' ). " a password\n");
+  my $host = $ref->{name};
+  my $user = $ref->{username};
+  my $pass = $ref->{password};
+
+  $user = 'root' unless length $user;
+
+  debug("\nTrying $host " .( $user && $pass ? 'with' : 'without' ). " a password\n");
 
   if ( $use_expect ) {
 
@@ -344,7 +430,7 @@ sub open_connection {
       timeout => 2
     };
 
-    $conf->{password} = $machines{$host} if $machines{$host};
+    $conf->{password} = $pass if $pass;
 
     our $ssh = Net::SSH::Expect->new(%$conf);
 
@@ -421,7 +507,7 @@ sub is_running_linux {
   return -1;
 }
 
-# Whar are the net devices
+# Where are the net devices
 sub net_devices_linux {
   my $stdout = run('ifconfig -a | grep HWaddr');
 
@@ -433,4 +519,205 @@ sub net_devices_linux {
   }
 
   return %out;
+}
+
+### Subroutines
+
+sub change_report {
+  my $detail;
+  
+  # Uptimes
+ 
+  my @uptimes = sort { $uptime{$b}{years} <=> $uptime{$a}{years} || $uptime{$b}{days} <=> $uptime{$a}{days} || $uptime{$b}{hours} <=> $uptime{$a}{hours} || $uptime{$b}{mins} <=> $uptime{$a}{mins} } keys %uptime;
+  my @best_uptime = map { $uptimes[$_] if  $uptimes[$_] } ( 0 .. 9 );
+  my @worst_uptime = map { pop @uptimes if scalar(@uptimes) } ( 0 .. 9 );
+ 
+  my $best_uptime = '<ul>';
+  for my $up (@best_uptime) {
+    $best_uptime .= "<li> $uptime{$up}{string} - <b>".&href($all{$up})."</b>\n";
+  }
+  $best_uptime .= '</ul>';
+
+  my $worst_uptime = '<ul>';
+  for my $up (@worst_uptime) {
+    $worst_uptime .= "<li> $uptime{$up}{string} - <b>".&href($all{$up})."</b>\n";
+  }
+  $worst_uptime .= '</ul>';
+   
+  # Sort out what hosts changed, didn't change, and were skipped
+ 
+  my @nochange; my @change;
+  for my $hostid ( sort keys %changes ) {
+    my $count = scalar(keys %{$changes{$hostid}{changes}});
+    my $host = $all{$hostid};
+    if ( $count ) {
+      push @change, $host; #"<a href='#$host'>$host</a>";
+      $detail .= "\n<p><b><font size='+1'><a name='#$host'></a>$host</font></b></p>\n";
+      $detail .= "\n<p>$count config changes noted.</p>\n";
+      for my $file ( sort keys %{$changes{$hostid}{changes}} ) {
+        my $table = &reformat_table($changes{$hostid}{changes}{$file});
+        $detail .= "\nFile: <tt>$file</tt><br />\n$table\n";
+      }
+    } else {
+      push @nochange, $host unless $skipped{$hostid};
+    }
+  }
+
+  my @skip = sort map { $all{$_} } keys %skipped;
+
+  # Print the report
+
+  open REPORT, '>/tmp/change.html';
+  print REPORT "To: $email\nFrom: horus\@horus.fusionone.com\nSubject: $subject\nContent-Type: text/html; charset=\"us-ascii\"\n\n";
+  print REPORT "<html><body>\n\n";
+
+  print REPORT "<hr noshade /><font size='+2'><b>Change Report</b></font><hr noshade />\n"
+             . scalar(localtime)."<br /><small>Report version $ver</small>\n"
+             . "<p>Changes were found on these hosts:</p><blockquote>" . join(', ', map {&href($_)} @change ) . "</blockquote>\n"
+             . "<p>We skipped checking the following hosts:</p><blockquote>" . join(', ', map {&href($_)} @skip ) . "</blockquote>\n"
+             . "<p>The following hosts appear unchaged:</p><blockquote>".  join(', ', map {&href($_)} @nochange ) . "</blockquote>\n";
+
+  print REPORT "<hr noshade /><font size='+2'><b>General Stats</b></font><hr noshade />\n"
+             . "<p>Highest uptimes:</p>$best_uptime<p>Lowest uptimes:</p>$worst_uptime";
+
+  print REPORT "<hr noshade /><font size='+2'><b>Change Detail</b></font><hr noshade />\n" if $detail;
+
+  print REPORT '<table border="0" bgcolor="#000000" cellpadding="0" cellspacing="0"><tr><td><table border="0" bgcolor="#000000" cellpadding="5" cellspacing="1">'
+             . '<tr><td bgcolor="#666699"><b>Color Key</b></td></tr>'
+             . '<tr><td bgcolor="#FFFACD">This is a modified line.</td></tr>'
+             . '<tr><td bgcolor="#99CC99">This is a new line.</td></tr>'
+             . '<tr><td bgcolor="#CC9999">This is a deleted line.</td></tr>'
+             . '</table></td></tr></table>' if $detail;
+
+  print REPORT $detail if $detail;
+  
+  print REPORT "\n</body></html>\n";
+  close REPORT;
+
+  exec("/usr/sbin/sendmail $email < /tmp/change.html") unless $noreport;
+  
+  print "Skipping emaling the report.\n";
+}
+
+sub debug {
+  return if $quiet;
+  print STDERR @_;
+}
+
+sub href {
+  return '<a href=\'http://horus.fusionone.com/index.cgi/host/'.$_[0].'\'>'.$_[0]."</a>\n";
+}
+
+# Reformat the diff table to HTML
+sub reformat_table {
+  my $raw = shift @_;
+  chomp $raw;
+  
+  my $out = '<table border="0" bgcolor="#000000" cellpadding="0" cellspacing="0"><tr><td><table border="0" bgcolor="#000000" cellpadding="5" cellspacing="1">';
+  my $header = '<tr><td bgcolor="#666699">Line</td><td bgcolor="#666699">Old Data</td><td bgcolor="#666699">Line</td><td bgcolor="#666699">New Data</td></tr>';
+
+  $out .= $header;
+
+  my @lines = split "\n", $raw;
+
+  if ( $lines[0] =~ /^Note/ ) { # new file
+
+    $header = '<tr><td bgcolor="#666699">Line</td><td bgcolor="#666699">New Data</td></tr>';
+    $out = ( shift @lines ) ."\n". '<table border="0" bgcolor="#000000" cellpadding="0" cellspacing="0"><tr><td><table border="0" bgcolor="#000000" cellpadding="5" cellspacing="1">' . $header;
+
+    $lines[0] =~ /\+([\-]+)\+([\-]+)\+([\-]+)\+([\-]+)\+/ or die "Bad parse on new lines?!";
+
+    my $l1 = length($1); # Use the top line to measure
+    my $v1 = length($2); # text width to parse out line
+    my $l2 = length($3); # numbers and data
+    my $v2 = length($4);
+
+    shift @lines; pop @lines; # remove top and bottom border
+
+    for my $line ( @lines ) {
+      warn "BAD TABLE PARSE!" and return '<pre>'.$raw.'</pre>' unless
+        $line =~ /([\|\*\+])(.{$l1})([\|\*\+])(.{$v1})([\|\*\+])(.{$l2})([\|\*\+])(.{$v2})([\|\*\+])/;
+      my ($col1,$line1,$col2,$val1,$col3,$line2,$col4,$val2,$col5) = ($1,$2,$3,$4,$5,$6,$7,$8,$9);
+
+      $out .= $header and next if $col1 eq '+'; # Breaker row.
+
+      $val1 =~ s/</&lt;/g;   $val1 =~ s/>/&gt;/g;   # Safe HTML viewing
+      $val2 =~ s/</&lt;/g;   $val2 =~ s/>/&gt;/g;   #
+      $val1 =~ s/ /&nbsp;/g; $val2 =~ s/ /&nbsp;/g; #
+
+      $out .= "<tr><td bgcolor='#99CC99' align='center'><tt>$line2</tt></td>\n<td bgcolor='#99CC99' nowrap><tt>$val2</tt></td></tr>\n";
+      }
+    $out .= '</table></td></tr></table>';
+
+    return $out;
+
+
+  } elsif ( $lines[0] =~ /\+([\-]+)\+([\-]+)\+([\-]+)\+([\-]+)\+/ ) { # 4 column change table
+    my $l1 = length($1); # Use the top line to measure
+    my $v1 = length($2); # text width to parse out line
+    my $l2 = length($3); # numbers and data
+    my $v2 = length($4);
+    
+    shift @lines; pop @lines; # remove top and bottom border
+    
+    for my $line ( @lines ) {
+      warn "BAD TABLE PARSE!" and return '<pre>'.$raw.'</pre>' unless
+        $line =~ /([\|\*\+])(.{$l1})([\|\*\+])(.{$v1})([\|\*\+])(.{$l2})([\|\*\+])(.{$v2})([\|\*\+])/;
+      my ($col1,$line1,$col2,$val1,$col3,$line2,$col4,$val2,$col5) = ($1,$2,$3,$4,$5,$6,$7,$8,$9);
+
+      $out .= $header and next if $col1 eq '+'; # Breaker row.
+
+      $val1 =~ s/</&lt;/g;   $val1 =~ s/>/&gt;/g;   # Safe HTML viewing
+      $val2 =~ s/</&lt;/g;   $val2 =~ s/>/&gt;/g;   #
+      $val1 =~ s/ /&nbsp;/g; $val2 =~ s/ /&nbsp;/g; #
+
+      my $color1 = '#FFFFFF';
+      my $color2 = '#FFFFFF';
+
+      $color1 = $color2 = '#FFFACD' if $col1 eq '*' and $col5 eq '*'; # Line modified
+      $color1 = '#CC9999' if $col1 eq '*' and $col3 eq '*' and $col5 eq '|'; # Line deleted
+      $color2 = '#99CC99' if $col1 eq '|' and $col3 eq '*' and $col5 eq '*'; # Line added
+      
+      $out .= "<tr><td bgcolor='$color1' align='center'><tt>$line1</tt></td>\n<td bgcolor='$color1' nowrap><tt>$val1</tt></td>\n<td bgcolor='$color2' align='center'><tt>$line2</tt></td>\n<td bgcolor='$color2' nowrap><tt>$val2</tt></td></tr>\n"
+    }
+    $out .= '</table></td></tr></table>';
+
+    return $out;
+
+  } elsif ( $lines[0] =~ /\+([\-]+)\+([\-]+)\+([\-]+)\+/ ) { # 3 column change table
+    my $l1 = length($1); # Use the top line to measure
+    my $v1 = length($2); # text width to parse out line
+    my $v2 = length($3); # numbers and data
+
+    shift @lines; pop @lines; # remove top and bottom border
+    
+    for my $line ( @lines ) {
+      warn "BAD TABLE PARSE!" and return '<pre>'.$raw.'</pre>' unless
+        $line =~ /([\|\*\+])(.{$l1})([\|\*\+])(.{$v1})([\|\*\+])(.{$v2})([\|\*\+])/;
+      my ($col1,$line1,$col2,$val1,$col3,$val2,$col5) = ($1,$2,$3,$4,$5,$6,$7);
+
+      my $line2 = $line1; # This format omits the second line number columns
+
+      $out .= $header and next if $col1 eq '+'; # Breaker row.
+
+      $val1 =~ s/</&lt;/g;   $val1 =~ s/>/&gt;/g;   # Safe HTML viewing
+      $val2 =~ s/</&lt;/g;   $val2 =~ s/>/&gt;/g;   #
+      $val1 =~ s/ /&nbsp;/g; $val2 =~ s/ /&nbsp;/g; #
+
+      my $color1 = '#FFFFFF';
+      my $color2 = '#FFFFFF';
+
+      $color1 = $color2 = '#FFFACD' if $col1 eq '*' and $col5 eq '*'; # Line modified
+      $color1 = '#CC9999' if $col1 eq '*' and $col3 eq '*' and $col5 eq '|'; # Line deleted
+      $color2 = '#99CC99' if $col1 eq '|' and $col3 eq '*' and $col5 eq '*'; # Line added
+      
+      $out .= "<tr><td bgcolor='$color1' align='center'><tt>$line1</tt></td>\n<td bgcolor='$color1' nowrap><tt>$val1</tt></td>\n<td bgcolor='$color2' align='center'><tt>$line2</tt></td>\n<td bgcolor='$color2' nowrap><tt>$val2</tt></td></tr>\n"
+    }
+    $out .= '</table></td></tr></table>';
+
+    return $out;
+
+  } else {
+    return '<pre>'.$raw.'</pre>';
+  }
 }

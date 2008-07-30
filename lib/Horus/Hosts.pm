@@ -12,7 +12,7 @@ use Digest::MD5 qw/md5_hex/;
 use Horus::DB;
 use strict;
 
-$Horus::Hosts::VERSION = '$Revision: 1.10 $';
+$Horus::Hosts::VERSION = '$Revision: 1.11 $';
 
 sub new {
   my $self = {};
@@ -136,6 +136,27 @@ sub config_set {
   return $self->{db}->execute('update host_configs set config_text=?, hash=? where host_id=? and config_name=?',$data,$hash,$host,$conf);
 }
 
+sub config_set_rcs {
+  my $self = shift @_;
+  my $host = shift @_;
+  my $conf = shift @_;
+  my $rcs  = shift @_;
+
+  unless ( defined $self->{cache}->{configs}->{$host} ) {
+    $self->{cache}->{configs}->{$host} = {};
+    for my $name ( $self->config_list($host) ) {
+      $self->{cache}->{configs}->{$host}->{$name} = 1;
+    }
+  }
+
+  unless ( $self->{cache}->{configs}->{$host}->{$conf} ) {
+    $self->{db}->execute('insert into host_configs (host_id,config_name) values (?,?)',$host,$conf);
+    $self->{cache}->{configs}->{$host}->{$conf} = 1;
+  }
+    
+  return $self->{db}->execute('update host_configs set config_rcs=? where host_id=? and config_name=?',$rcs,$host,$conf);
+}
+
 =head3 config_get($hostid,$configname)
 
 Returns the config data for the given host and config name.
@@ -147,6 +168,13 @@ sub config_get {
   my $host = shift @_;
   my $conf = shift @_;
   return $self->{db}->single('select config_text from host_configs where host_id=? and config_name=?',$host,$conf);
+}
+
+sub config_get_rcs {
+  my $self = shift @_;
+  my $host = shift @_;
+  my $conf = shift @_;
+  return $self->{db}->single('select config_rcs from host_configs where host_id=? and config_name=?',$host,$conf);
 }
 
 =head3 config_list($host_id)
@@ -218,7 +246,7 @@ sub data_list {
   (c) 2007-2008, Horus, Inc.
 
   Work by Phil Pollard
-  $Revision: 1.10 $ $Date: 2008/07/30 18:48:49 $
+  $Revision: 1.11 $ $Date: 2008/07/30 21:00:58 $
     
 =cut
 
