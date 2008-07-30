@@ -6,7 +6,7 @@
 # --noconfigsave will stop the config save
 # --config=foo Deal only with the textconfig foo.
 
-# $Id: grab.pl,v 1.32 2008/07/30 18:48:49 ppollard Exp $
+# $Id: grab.pl,v 1.33 2008/07/30 20:15:41 ppollard Exp $
 
 use Horus::Network;
 use Horus::Hosts;
@@ -20,7 +20,7 @@ require Math::BigInt::GMP; # For speed on Net::SSH::Perl;
 
 use strict;
 
-my $ver = (split ' ', '$Revision: 1.32 $')[1];
+my $ver = (split ' ', '$Revision: 1.33 $')[1];
 
 my $use_expect = 0;
 
@@ -198,7 +198,8 @@ for my $host ( scalar @args ? @args : sort keys %machines ) {
   for my $run( qw/last_backup last_ostune last_yum/ ) {
     my $file = '/var/run/f1/' . $run;
     my $data = run("if [ -f $file ]; then cat $file; fi");
-    my $ret = $hosts->data_set($id,$run,$data) if $data;
+    next unless $data;
+    my $ret = $hosts->data_set($id,$run,$data);
     debug(" Update returned $ret ($run)\n");
   }
 
@@ -314,10 +315,16 @@ sub change_report {
     }
   }
 
-  #print "<pre>\n\n";
-  print "CHANGE REPORT: ($ver)\n\nThe following hosts have no identified changes: ", join(', ',@nochange), "\n\n";
-  print "CHANGE DETAIL:$detail" if $detail;
-  #print "\n\n<\\pre>\n";
+  open REPORT, '>/tmp/change.html';
+  print REPORT "To: ppollard\@fusionone.com\nFrom: horus\@horus.fusionone.com\nSubject: Server Change Report\nContent-Type: text/html; charset=\"us-ascii\"\n\n";
+
+  print REPORT "<html><body><pre>\n\n";
+  print REPORT "CHANGE REPORT: ($ver)\n\nThe following hosts have no identified changes: ", join(', ',@nochange), "\n\n";
+  print REPORT "CHANGE DETAIL:$detail" if $detail;
+  print REPORT "\n\n<\\pre>\n</body></html>\n";
+  close REPORT;
+
+  exec('/usr/sbin/sendmail ppollard@fusionone.com < /tmp/change.html')
 }
 
 # Open a connection
