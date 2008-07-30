@@ -5,8 +5,9 @@
 
 # --noconfigsave will stop the config save
 # --config=foo Deal only with the textconfig foo.
+# --noreport will skip emailing the change report.
 
-# $Id: grab.pl,v 1.34 2008/07/30 22:40:55 ppollard Exp $
+# $Id: grab.pl,v 1.35 2008/07/30 23:50:20 ppollard Exp $
 
 use Horus::Network;
 use Horus::Hosts;
@@ -20,17 +21,23 @@ require Math::BigInt::GMP; # For speed on Net::SSH::Perl;
 
 use strict;
 
-my $ver = (split ' ', '$Revision: 1.34 $')[1];
+my $ver = (split ' ', '$Revision: 1.35 $')[1];
 
 my $use_expect = 0;
 
-my $quiet = 0;
-my $configsave = 1;
+my $quiet       = 0; # Set by --quiet and can supress STDOUT run-time info
+my $configsave  = 1; # Set by --noconfigsave and will stop us from updating hos configs in the DB
+my $emailreport = 1; # Set by --noreport to supress emailing the change report
 
-my $config_to_save = undef;
+my $config_to_save = undef; # Used to override what confis to process (--config=foo)
 
-my %machines;
-my %skip;
+my %machines; # Machines to process
+my %skip;     # Machines to skip
+
+my %uptime; # Track uptimes for the report
+
+#my $email = 'dcops@fusionone.com';
+my $email = 'ppollard@fusionone.com';
 
 map {$skip{$_}++} qw/fmso fmsq fmsr fmss sync-embarq syncn sync15/;
 
@@ -71,6 +78,8 @@ for my $argv ( @ARGV ) {
     $quiet = 1;
   } elsif ( $argv eq '--noconfigsave' ) {
     $configsave = 0;
+  } elsif ( $argv eq '--noreport' ) {
+    $emailreport = 0;
   } elsif ( $argv =~ /--config=(.+)/ ) {
     $config_to_save = $1;
   } else {
@@ -152,7 +161,37 @@ for my $host ( scalar @args ? @args : sort keys %machines ) {
     debug(" Update returned $ret\n");
   }
 
-  # Linux   
+  # Remember uptimes for the change report
+
+  if ( $uptime ) {
+    warn "Can't parse the uptime string for time info." unless $uptime =~ /up(\s.+\s)\d+ user/;
+    my $up = $1;
+
+    my $years = 0;
+    my $days  = 0;
+    my $hours = 0;
+    my $mins  = 0;    
+    
+    $hours = $1 and $mins = $2 if $up =~ / (\d+):(\d+),/;    
+
+    $days  = $1 if $up =~ / (\d+) day/;
+    $hours = $1 if $up =~ / (\d+) hour/;
+    $mins  = $1 if $up =~ / (\d+) min/;
+
+    if ( $days > 365 ) {
+      my $years = int($days/365);
+      $days = $days - ($years * 365);
+    }
+
+    $uptime{$host}{days} = $days;    
+    $uptime{$host}{hours} = $hours;    
+    $uptime{$host}{mins} = $mins;
+    $uptime{$host}{string} = $years ? sprintf('%d years, %d days, %02d:%02d', $years, $days, $hours, $mins)
+                           : $days  ? sprintf('%d days, %02d:%02d', $days, $hours, $mins)
+                           : sprintf('%02d:%02d', $hours, $mins);
+  }
+
+  # Linux
 
   next unless $os eq 'Linux';
   
@@ -251,7 +290,9 @@ for my $host ( scalar @args ? @args : sort keys %machines ) {
 
   # configs
   
-  my @configs = qw@/etc/fstab /etc/named.conf /etc/sudoers /etc/issue /etc/passwd /etc/snmp/snmpd.conf /etc/sysconfig/network@;
+  my @configs = qw@/etc/fstab /etc/named.conf /etc/sudoers /etc/issue /etc/passwd /etc/snmp/snmpd.conf 
+                   /etc/sysconfig/network /etc/resolv.conf /etc/ssh/sshd_config /etc/selinux/config 
+                   /etc/yum.conf /etc/hosts@;
   for my $type ( qw/ifcfg route/ ) {
     for my $eth ( qw/eth0 eth1/ ) {
       push @configs, "/etc/sysconfig/network-scripts/$type-$eth";
@@ -301,6 +342,27 @@ sub debug {
 
 sub change_report {
   my $detail;
+  
+  # Uptimes
+ 
+  my @uptimes = sort { $uptime{$b}{days} <=> $uptime{$a}{days} || $uptime{$b}{hours} <=> $uptime{$a}{hours} || $uptime{$b}{mins} <=> $uptime{$a}{mins} } keys %uptime;
+  my @best_uptime = map { $uptimes[$_] if  $uptimes[$_] } ( 0 .. 4 );
+  my @worst_uptime = map { pop @uptimes if scalar(@uptimes) } ( 0 .. 4 );
+ 
+  my $best_uptime = '<ul>';
+  for my $up (@best_uptime) {
+    $best_uptime .= "<li> $uptime{$up}{string} - <b>$up</b>\n";
+  }
+  $best_uptime .= '</ul>';
+
+  my $worst_uptime = '<ul>';
+  for my $up (@worst_uptime) {
+    $worst_uptime .= "<li> $uptime{$up}{string} - <b>$up</b>\n";
+  }
+  $worst_uptime .= '</ul>';
+   
+  # Sort out what hosts changed, didn't change, and were skipped
+ 
   my @nochange; my @change;
   for my $host ( sort keys %changes ) {
     my $count = scalar(keys %{$changes{$host}{changes}});
@@ -313,19 +375,28 @@ sub change_report {
         $detail .= "\nFile: <tt>$file</tt>\n$table\n";
       }
     } else {
-      push @nochange, $host;
+      push @nochange, $host unless $skip{$host};
     }
   }
 
+  my @skip = sort keys %skip;
+
+  # Print the report
+
   open REPORT, '>/tmp/change.html';
-  print REPORT "To: ppollard\@fusionone.com\nFrom: horus\@horus.fusionone.com\nSubject: Server Change Report\nContent-Type: text/html; charset=\"us-ascii\"\n\n";
+  print REPORT "To: $email\nFrom: horus\@horus.fusionone.com\nSubject: Server Change Report\nContent-Type: text/html; charset=\"us-ascii\"\n\n";
   print REPORT "<html><body>\n\n";
 
   print REPORT "<hr noshade /><font size='+2'><b>Change Report</b></font><hr noshade />\n"
              . scalar(localtime)."<br /><small>Report version $ver</small>\n"
-             . "<p>Changes found on these hosts:</p><blockquote>" . join(', ',@change) . "</blockquote>\n<hr noshade />\n"
-             . "<p>The following hosts appear unchaged:</p><blockquote>".  join(', ',@nochange) . "</blockquote>\n<hr noshade />\n";
-  print REPORT "<font size='+2'><b>Change Detail</b></font><hr noshade />" if $detail;
+             . "<p>Changes were found on these hosts:</p><blockquote>" . join(', ',@change) . "</blockquote>\n"
+             . "<p>We skipped checking the following hosts:</p><blockquote>" . join(', ',@skip) . "</blockquote>\n"
+             . "<p>The following hosts appear unchaged:</p><blockquote>".  join(', ',@nochange) . "</blockquote>\n";
+
+  print REPORT "<hr noshade /><font size='+2'><b>General Stats</b></font><hr noshade />\n"
+             . "<p>Highest uptimes:</p>$best_uptime<p>Lowest uptimes:</p>$worst_uptime";
+
+  print REPORT "<hr noshade /><font size='+2'><b>Change Detail</b></font><hr noshade />\n" if $detail;
 
   print REPORT '<table border="0" bgcolor="#000000" cellpadding="0" cellspacing="0"><tr><td><table border="0" bgcolor="#000000" cellpadding="5" cellspacing="1">'
              . '<tr><td bgcolor="#666699"><b>Color Key</b></td></tr>'
@@ -339,7 +410,9 @@ sub change_report {
   print REPORT "\n</body></html>\n";
   close REPORT;
 
-  exec('/usr/sbin/sendmail ppollard@fusionone.com < /tmp/change.html')
+  exec("/usr/sbin/sendmail $email < /tmp/change.html") if $emailreport;
+  
+  print "Skipping emaling the report.\n";
 }
 
 # Open a connection
@@ -414,6 +487,11 @@ sub reformat_table {
   $out .= $header;
 
   my @lines = split "\n", $raw;
+
+  if ( $lines[0] =~ /^Note/ ) { # Note about new files
+    $out = ( shift @lines ) ."\n". $out;
+  }
+
   if ( $lines[0] =~ /\+([\-]+)\+([\-]+)\+([\-]+)\+([\-]+)\+/ ) {
     my $l1 = length($1); # Use the top line to measure
     my $v1 = length($2); # text width to parse out line
