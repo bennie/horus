@@ -4,8 +4,9 @@
 # Other argv's will become the machines to process
 
 # --noconfigsave will stop the config save
+# --config=foo Deal only with the textconfig foo.
 
-# $Id: grab.pl,v 1.31 2008/07/30 00:15:28 ppollard Exp $
+# $Id: grab.pl,v 1.32 2008/07/30 18:48:49 ppollard Exp $
 
 use Horus::Network;
 use Horus::Hosts;
@@ -19,12 +20,14 @@ require Math::BigInt::GMP; # For speed on Net::SSH::Perl;
 
 use strict;
 
-my $ver = (split ' ', '$Revision: 1.31 $')[1];
+my $ver = (split ' ', '$Revision: 1.32 $')[1];
 
 my $use_expect = 0;
 
 my $quiet = 0;
 my $configsave = 1;
+
+my $config_to_save = undef;
 
 my %machines;
 my %skip;
@@ -68,6 +71,8 @@ for my $argv ( @ARGV ) {
     $quiet = 1;
   } elsif ( $argv eq '--noconfigsave' ) {
     $configsave = 0;
+  } elsif ( $argv =~ /--config=(.+)/ ) {
+    $config_to_save = $1;
   } else {
     push @args, $argv;
   }
@@ -188,6 +193,15 @@ for my $host ( scalar @args ? @args : sort keys %machines ) {
     }
   }
 
+  # Last run times
+  
+  for my $run( qw/last_backup last_ostune last_yum/ ) {
+    my $file = '/var/run/f1/' . $run;
+    my $data = run("if [ -f $file ]; then cat $file; fi");
+    my $ret = $hosts->data_set($id,$run,$data) if $data;
+    debug(" Update returned $ret ($run)\n");
+  }
+
   # Brand of HW
 
   my $machine_brand; my $machine_model;
@@ -236,12 +250,14 @@ for my $host ( scalar @args ? @args : sort keys %machines ) {
 
   # configs
   
-  my @configs = qw@/etc/fstab /etc/named.conf /etc/sudoers /etc/issue /etc/passwd /etc/snmp/snmp.conf /etc/sysconfig/network@;
+  my @configs = qw@/etc/fstab /etc/named.conf /etc/sudoers /etc/issue /etc/passwd /etc/snmp/snmpd.conf /etc/sysconfig/network@;
   for my $type ( qw/ifcfg route/ ) {
     for my $eth ( qw/eth0 eth1/ ) {
       push @configs, "/etc/sysconfig/network-scripts/$type-$eth";
     }
   }
+
+  @configs = ( $config_to_save ) if $config_to_save;
 
   for my $config ( @configs ) {
     my $data = run("if [ -f $config ]; then cat $config; fi");
@@ -253,7 +269,7 @@ for my $host ( scalar @args ? @args : sort keys %machines ) {
         $diff = "Note: No data previously stored for this file.\n" . $diff unless $old;      
         $changes{$host}{changes}{$config} = $diff;
       }
-      my $ret = $hosts->config_set($id,$config,$data) if $configsave;
+      my $ret = $configsave ? $hosts->config_set($id,$config,$data) : 'X';
       debug(" Update returned $ret ($config)\n");
     }
   }

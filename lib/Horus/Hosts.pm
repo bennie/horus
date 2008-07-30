@@ -12,7 +12,7 @@ use Digest::MD5 qw/md5_hex/;
 use Horus::DB;
 use strict;
 
-$Horus::Hosts::VERSION = '$Revision: 1.9 $';
+$Horus::Hosts::VERSION = '$Revision: 1.10 $';
 
 sub new {
   my $self = {};
@@ -109,6 +109,8 @@ sub update {
 
 =head3 config_set($hostid,$configname,$configdata)
 
+Sets the config date for the given host and name. It will create new configs if there was not one before.
+
 =cut
 
 sub config_set {
@@ -117,16 +119,16 @@ sub config_set {
   my $conf = shift @_;
   my $data = shift @_;
 
-  unless ( defined $self->{cache}->{$host} ) {
-    $self->{cache}->{$host} = {};
+  unless ( defined $self->{cache}->{configs}->{$host} ) {
+    $self->{cache}->{configs}->{$host} = {};
     for my $name ( $self->config_list($host) ) {
-      $self->{cache}->{$host}->{$name} = 1;
+      $self->{cache}->{configs}->{$host}->{$name} = 1;
     }
   }
 
-  unless ( $self->{cache}->{$host}->{$conf} ) {
+  unless ( $self->{cache}->{configs}->{$host}->{$conf} ) {
     $self->{db}->execute('insert into host_configs (host_id,config_name) values (?,?)',$host,$conf);
-    $self->{cache}->{$host}->{$conf} = 1;
+    $self->{cache}->{configs}->{$host}->{$conf} = 1;
   }
   
   my $hash = md5_hex($data);
@@ -159,12 +161,64 @@ sub config_list {
   return $self->{db}->column('select config_name from host_configs where host_id=?',$host);
 }
 
+=head3 data_set($hostid,$name,$data)
+
+Sets the text data value for the given host and name. If the value is new, it creates it.
+
+=cut
+
+sub data_set {
+  my $self = shift @_;
+  my $host = shift @_;
+  my $name = shift @_;
+  my $data = shift @_;
+
+  unless ( defined $self->{cache}->{data}->{$host} ) {
+    $self->{cache}->{data}->{$host} = {};
+    for my $cache ( $self->data_list($host) ) {
+      $self->{cache}->{data}->{$host}->{$cache} = 1;
+    }
+  }
+
+  unless ( $self->{cache}->{data}->{$host}->{$name} ) {
+    $self->{db}->execute('insert into host_data_text (host_id,data_name) values (?,?)',$host,$name);
+    $self->{cache}->{data}->{$host}->{$name} = 1;
+  }
+  
+  return $self->{db}->execute('update host_data_text set data_value=? where host_id=? and data_name=?',$data,$host,$name);
+}
+
+=head3 data_get($hostid,$name)
+
+Returns the text data for the given host and name.
+
+=cut
+
+sub data_get {
+  my $self = shift @_;
+  my $host = shift @_;
+  my $name = shift @_;
+  return $self->{db}->single('select data_value from host_data_text where host_id=? and data_name=?',$host,$name);
+}
+
+=head3 data_list($host_id)
+
+Returns an array or arrayref of text data values stored for that host_id
+
+=cut
+
+sub data_list {
+  my $self = shift @_;
+  my $host = shift @_;
+  return $self->{db}->column('select data_name from host_data_text where host_id=?',$host);
+}
+
 =head1 Authorship:
  
-  (c) 2007, Horus, Inc.
+  (c) 2007-2008, Horus, Inc.
 
   Work by Phil Pollard
-  $Revision: 1.9 $ $Date: 2008/07/25 07:16:31 $
+  $Revision: 1.10 $ $Date: 2008/07/30 18:48:49 $
     
 =cut
 
