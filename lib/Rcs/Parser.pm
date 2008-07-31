@@ -24,91 +24,6 @@ To retrieve a specific version:
   
   my $specific_version = $rcs->get('1.2');
 
-=head1 METHODS:
-
-=head2 author($version)
-
-my $author = $rcs->author($version);
-
-The author method returns the author name of the given version. If
-no version is given it returns the author of the current loaded version.
-
-=head2 date($version)
-
-my $date = $rcs->date($version);
-
-The date method returns the revision date of the given version. If
-no version is given it returns the date of the current version.
-
-=head2 get($version)
-
-my $ret = $rcs->get($version);
-
-This method causes the given version to be retrieved from the archive
-
-=head2 load($filename)
-
-my $ret = $rcs->load($filename);
-
-The load command reads in and parses the given filename. If the
-file does not exist or is unreadable by the script, undef is 
-returned. Otherwise, 1 is returned upon success.
-
-=head2 notate()
-
-my $ret = $rcs->notate()
-
-This method builds and assembled statistical information for veriosn.
-
-=head2 previous_version()
-
-my $ver = $rcs->previous_version();
-
-This method returns the version previous to the currently instanced version.
-
-=head2 recent_version()
-
-my $ver = $rcs->recent_version();
-
-This method returns the most current revision of the file.
-
-=head2 version()
-
-my $ver = $rcs->version();
-
-This method returns the currently instanced version.
-
-=head1 KNOWN ISSUES:
-
-Beta Code:
-
-This code is beta. It has yet to fully understand binary formats stored
-in RCS and will treat them as text. Consquently, you'll see warnings. That
-being said, there shouldn't be any large scale bugs that will cause
-segfaulting or crashing. Only warnings.
-
-The RCS file format:
-
-There is an astounding lack of good documentation of the RCS format. About
-the only thing that can be found is the rcsfile(5) man page. The layout is
-mostly reverse engineered in this module. I have yet to have the time, or
-the skill and patience to disassemble the RCS portions of the code for GNU
-CVS. Maybe soon. :)
-
-=head1 ERATTA:
-
-  Q: Why 'Rcs' and not 'RCS'
-
-  A: Because the any directory named 'RCS' is usually ignored by most 
-     versioning software and some developer tools. 
-
-=head1 AUTHORSHIP:
-
-    Rcs::Parser v0.02 2004/04/02
-
-    (c) 2001-2004, Phillip Pollard <bennie@cpan.org>
-    Released under the Perl Artistic License
-
 =cut
 
 # shorthand document of memory structure
@@ -134,17 +49,45 @@ sub new {
   bless {}, $_[0]
 }
 
+=head1 METHODS:
+
+=head2 author($version)
+
+my $author = $rcs->author($version);
+
+The author method returns the author name of the given version. If
+no version is given it returns the author of the current loaded version.
+
+=cut 
+
 sub author {
   my $self = shift @_;
   my $ver  = shift @_ || $self->version;
   return $self->{rcs}->{$ver}->{author} || undef;
 }
 
+=head2 date($version)
+
+my $date = $rcs->date($version);
+
+The date method returns the revision date of the given version. If
+no version is given it returns the date of the current version.
+
+=cut
+
 sub date {
   my $self = shift @_;
   my $ver  = shift @_ || $self->recent_version;
   return $self->{rcs}->{$ver}->{date} || undef;
 }
+
+=head2 get($version)
+
+my $ret = $rcs->get($version);
+
+This method causes the given version to be retrieved from the archive
+
+=cut
 
 sub get {
   my $self = shift @_;
@@ -162,6 +105,16 @@ sub get {
 
   return $self->_dump;
 }
+
+=head2 load($filename)
+
+my $ret = $rcs->load($filename);
+
+The load command reads in and parses the given filename. If the
+file does not exist or is unreadable by the script, undef is 
+returned. Otherwise, 1 is returned upon success.
+
+=cut
 
 sub load {
   my $self      = shift @_;
@@ -202,6 +155,14 @@ sub _grab_note {
 
   return 1;
 }
+
+=head2 notate()
+
+my $ret = $rcs->notate()
+
+This method builds and assembled statistical information for verions.
+
+=cut
 
 sub notate {
   my $self = shift @_;
@@ -254,23 +215,47 @@ sub notate {
   return $note;
 }
 
+=head2 previous_version()
+
+my $ver = $rcs->previous_version();
+
+This method returns the version previous to the currently instanced version.
+
+=cut
+
 sub previous_version {
   my $self = shift @_;
   my $ver  = shift @_ || $self->recent_version;
   return $self->{rcs}->{revision_path}->{$ver};
 }
 
+=head2 recent_version()
+
+my $ver = $rcs->recent_version();
+
+This method returns the most current revision of the file.
+
+=cut
+
 sub recent_version {
   my $self = shift @_;
   return $self->{rcs}->{header}->{head};
 }
+
+=head2 version()
+
+my $ver = $rcs->version();
+
+This method returns the currently instanced version.
+
+=cut
 
 sub version {
   my $self = shift @_;
   return $self->{current_document}->{version};
 }
 
-####
+#### Private methods
 
 sub _apply_delta {
   my $self = shift @_;
@@ -488,3 +473,34 @@ sub _unquote {
 }
 
 1;
+
+=head1 KNOWN ISSUES:
+
+Beta Code:
+
+This code is beta. It has yet to fully understand binary formats stored
+in RCS and will treat them as text. Consquently, you'll see warnings. That
+being said, there shouldn't be any large scale bugs that will cause
+segfaulting or crashing. Only warnings.
+
+The RCS file format:
+
+There is an astounding lack of good documentation of the RCS format. About
+the only thing that can be found is the rcsfile(5) man page. The layout is
+mostly reverse engineered in this module. I have yet to have the time, or
+the skill and patience to disassemble the RCS portions of the code for GNU
+CVS. Maybe soon. :)
+
+=head1 ERATTA:
+
+  Q: Why 'Rcs' and not 'RCS'
+
+  A: Because the any directory named 'RCS' is usually ignored by most 
+     versioning software and some developer tools. 
+
+=head1 AUTHORSHIP:
+
+    Rcs::Parser v0.02 2004/04/02
+
+    (c) 2001-2008, Phillip Pollard <bennie@cpan.org>
+    Released under the Perl Artistic License
