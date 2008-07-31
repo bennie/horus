@@ -146,17 +146,29 @@ sub load {
   return 1;
 }
 
-sub _grab_note {
-  my $self = shift @_;
-  my $ref  = shift @_;  
-  my $ver = $self->{current_document}->{version};
-  for my $line ( keys %{ $self->{current_document}->{body} } ) {
-    $ref->{$ver}->{body}->{$line}->{line}   = length $self->{current_document}->{body}->{$line}->{line};
-    $ref->{$ver}->{body}->{$line}->{origin} = $self->{current_document}->{body}->{$line}->{origin};  
+sub load_scalar {
+  my $self  = shift @_;
+  my $data  = shift @_;
+
+  my $doc_header;
+  $self->{rcs} = {};
+
+  my @raw = map { "$_\n" } split "\n", $data;
+
+  $self->{rawfile} = \@raw; # The rawfile is steadily deleted as it is parsed
+  $self->_parse_in_rcs($self->{rcs});
+
+  # populate the current doc
+  
+  $self->{current_document}->{version} = $self->recent_version;
+
+  for my $line ( split /\n/, $self->{rcs}->{$self->recent_version}->{text} ) {
+    push @{ $self->{current_document}->{body}->{1}->{new_lines} }, $self->_unquote($line) . "\n";
   }
-  for my $map ( keys %{ $self->{current_document}->{line_map} } ) {
-    $ref->{$ver}->{line_map}->{$map} = $self->{current_document}->{line_map}->{$map};
-  }
+
+  # resort it
+
+  $self->_sort;
 
   return 1;
 }
@@ -218,6 +230,21 @@ sub notate {
   }
 
   return $note;
+}
+
+sub _grab_note {
+  my $self = shift @_;
+  my $ref  = shift @_;  
+  my $ver = $self->{current_document}->{version};
+  for my $line ( keys %{ $self->{current_document}->{body} } ) {
+    $ref->{$ver}->{body}->{$line}->{line}   = length $self->{current_document}->{body}->{$line}->{line};
+    $ref->{$ver}->{body}->{$line}->{origin} = $self->{current_document}->{body}->{$line}->{origin};  
+  }
+  for my $map ( keys %{ $self->{current_document}->{line_map} } ) {
+    $ref->{$ver}->{line_map}->{$map} = $self->{current_document}->{line_map}->{$map};
+  }
+
+  return 1;
 }
 
 =head2 all_versions()
@@ -405,6 +432,7 @@ sub _parse_in_rcs {
     }
 
     #$rcs{$version}{raw_text} .= $line;
+    $self->_debug("Line for delta in $version : $line");
   }
 
   ### clean the leftover quoting
