@@ -7,7 +7,7 @@
 # --config=foo Deal only with the textconfig foo.
 # --noreport will skip emailing the change report.
 
-# $Id: grab.pl,v 1.35 2008/07/30 23:50:20 ppollard Exp $
+# $Id: grab.pl,v 1.36 2008/07/31 00:55:14 ppollard Exp $
 
 use Horus::Network;
 use Horus::Hosts;
@@ -21,7 +21,7 @@ require Math::BigInt::GMP; # For speed on Net::SSH::Perl;
 
 use strict;
 
-my $ver = (split ' ', '$Revision: 1.35 $')[1];
+my $ver = (split ' ', '$Revision: 1.36 $')[1];
 
 my $use_expect = 0;
 
@@ -57,6 +57,7 @@ telus-fms01 telus-fms02 telus-page01 telus-page02 telus-sync01 telus-sync02
 bmqa-base nwh-fms01/;
 
 $machines{build} = 'dev3695';
+$machines{ducati} = 'M1ghtyOP$1';
 $machines{ns1} = 'Bungie1';
 
 map { $machines{$_} = 'mypassword'; } qw/tickets horus/;
@@ -179,10 +180,11 @@ for my $host ( scalar @args ? @args : sort keys %machines ) {
     $mins  = $1 if $up =~ / (\d+) min/;
 
     if ( $days > 365 ) {
-      my $years = int($days/365);
+      $years = int($days/365);
       $days = $days - ($years * 365);
     }
 
+    $uptime{$host}{years} = $years;
     $uptime{$host}{days} = $days;    
     $uptime{$host}{hours} = $hours;    
     $uptime{$host}{mins} = $mins;
@@ -191,6 +193,35 @@ for my $host ( scalar @args ? @args : sort keys %machines ) {
                            : sprintf('%02d:%02d', $hours, $mins);
   }
 
+  # configs
+  
+  my @configs = qw@/etc/fstab /etc/named.conf /etc/sudoers /etc/issue /etc/passwd /etc/snmp/snmpd.conf 
+                   /etc/sysconfig/network /etc/resolv.conf /etc/ssh/sshd_config /etc/selinux/config 
+                   /etc/yum.conf /etc/hosts /fusionone/tomcat/conf/server.xml /etc/motd
+                   /fusionone/apache/conf/httpd.conf@;
+  for my $type ( qw/ifcfg route/ ) {
+    for my $eth ( qw/eth0 eth1/ ) {
+      push @configs, "/etc/sysconfig/network-scripts/$type-$eth";
+    }
+  }
+
+  @configs = ( $config_to_save ) if $config_to_save;
+
+  for my $config ( @configs ) {
+    my $data = run("if [ -f $config ]; then cat $config; fi");
+    if ( $data ) {
+      my $old = $hosts->config_get($id,$config);
+      my $diff = diff(\$old,\$data, { STYLE => "Table" });
+
+      if ( $diff ) {
+        $diff = "Note: No data previously stored for this file.\n" . $diff unless $old;      
+        $changes{$host}{changes}{$config} = $diff;
+      }
+      my $ret = $configsave ? $hosts->config_set($id,$config,$data) : 'X';
+      debug(" Update returned $ret ($config)\n");
+    }
+  }
+  
   # Linux
 
   next unless $os eq 'Linux';
@@ -288,34 +319,6 @@ for my $host ( scalar @args ? @args : sort keys %machines ) {
     debug(" Update returned $ret (machine_model)\n");
   }
 
-  # configs
-  
-  my @configs = qw@/etc/fstab /etc/named.conf /etc/sudoers /etc/issue /etc/passwd /etc/snmp/snmpd.conf 
-                   /etc/sysconfig/network /etc/resolv.conf /etc/ssh/sshd_config /etc/selinux/config 
-                   /etc/yum.conf /etc/hosts@;
-  for my $type ( qw/ifcfg route/ ) {
-    for my $eth ( qw/eth0 eth1/ ) {
-      push @configs, "/etc/sysconfig/network-scripts/$type-$eth";
-    }
-  }
-
-  @configs = ( $config_to_save ) if $config_to_save;
-
-  for my $config ( @configs ) {
-    my $data = run("if [ -f $config ]; then cat $config; fi");
-    if ( $data ) {
-      my $old = $hosts->config_get($id,$config);
-      my $diff = diff(\$old,\$data, { STYLE => "Table" });
-
-      if ( $diff ) {
-        $diff = "Note: No data previously stored for this file.\n" . $diff unless $old;      
-        $changes{$host}{changes}{$config} = $diff;
-      }
-      my $ret = $configsave ? $hosts->config_set($id,$config,$data) : 'X';
-      debug(" Update returned $ret ($config)\n");
-    }
-  }
-
   # Net devices
 
   my %dev = &net_devices_linux($ssh);  
@@ -345,7 +348,7 @@ sub change_report {
   
   # Uptimes
  
-  my @uptimes = sort { $uptime{$b}{days} <=> $uptime{$a}{days} || $uptime{$b}{hours} <=> $uptime{$a}{hours} || $uptime{$b}{mins} <=> $uptime{$a}{mins} } keys %uptime;
+  my @uptimes = sort { $uptime{$b}{years} <=> $uptime{$a}{years} || $uptime{$b}{days} <=> $uptime{$a}{days} || $uptime{$b}{hours} <=> $uptime{$a}{hours} || $uptime{$b}{mins} <=> $uptime{$a}{mins} } keys %uptime;
   my @best_uptime = map { $uptimes[$_] if  $uptimes[$_] } ( 0 .. 4 );
   my @worst_uptime = map { pop @uptimes if scalar(@uptimes) } ( 0 .. 4 );
  
@@ -372,7 +375,7 @@ sub change_report {
       $detail .= "\n<p>$count config changes noted.</p>\n";
       for my $file ( sort keys %{$changes{$host}{changes}} ) {
         my $table = &reformat_table($changes{$host}{changes}{$file});
-        $detail .= "\nFile: <tt>$file</tt>\n$table\n";
+        $detail .= "\nFile: <tt>$file</tt><br />\n$table\n";
       }
     } else {
       push @nochange, $host unless $skip{$host};
@@ -507,6 +510,9 @@ sub reformat_table {
 
       $out .= $header and next if $col1 eq '+'; # Breaker row.
 
+      $val1 =~ s/</&lt;/g; $val1 =~ s/>/&gt;/g; # Safe HTML viewing
+      $val2 =~ s/</&lt;/g; $val2 =~ s/>/&gt;/g; #
+
       my $color1 = '#FFFFFF';
       my $color2 = '#FFFFFF';
 
@@ -535,6 +541,9 @@ sub reformat_table {
       my $line2 = $line1; # This format omits the second line number columns
 
       $out .= $header and next if $col1 eq '+'; # Breaker row.
+
+      $val1 =~ s/</&lt;/g; $val1 =~ s/>/&gt;/g; # Safe HTML viewing
+      $val2 =~ s/</&lt;/g; $val2 =~ s/>/&gt;/g; #
 
       my $color1 = '#FFFFFF';
       my $color2 = '#FFFFFF';
