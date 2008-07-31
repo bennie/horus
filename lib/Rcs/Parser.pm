@@ -124,7 +124,12 @@ sub load {
   my $doc_header;
   $self->{rcs} = {};
 
-  $self->_parse_in_rcs($self->{file},$self->{rcs});
+  open RCSFILE, '<', $self->{file};
+  my @raw = <RCSFILE>;
+  close RCSFILE;
+
+  $self->{rawfile} = \@raw; # The rawfile is steadily deleted as it is parsed
+  $self->_parse_in_rcs($self->{rcs});
 
   # populate the current doc
   
@@ -346,16 +351,13 @@ sub _dump {
 
 sub _parse_in_rcs {
   my $self = shift @_;
-  my $file = shift @_;
   my $rcs  = shift @_;
- 
-  open RCSFILE, '<', $file;
 
   ### Parse in the RCS file header
 
   my $rcs_header;
 
-  while ( my $line = <RCSFILE> ) {
+  while ( my $line = shift @{$self->{rawfile}} ) {
     last if $line =~ /^$/;
     $rcs_header .= $line;
   }
@@ -371,7 +373,7 @@ sub _parse_in_rcs {
   ### Parse in the individual version headers
 
   my $version = 'error';
-  while ( my $line = <RCSFILE> ) {
+  while ( my $line = shift @{$self->{rawfile}} ) {
     last if $line =~ /^desc$/;
 
     if ( $line =~ /^([\d|\.]+)/ ) {
@@ -382,7 +384,7 @@ sub _parse_in_rcs {
     }
   }
 
-  my $garbage_double_quote = <RCSFILE>;
+  my $garbage_double_quote = shift @{$self->{rawfile}};
 
   ### Parse in the individual deltas
 
@@ -390,7 +392,7 @@ sub _parse_in_rcs {
   my $directive = 0;
   my $quote = 0;
 
-  while ( my $line = <RCSFILE> ) {
+  while ( my $line = shift @{$self->{rawfile}} ) {
     $version = $1 if $line =~ /^([\d|\.]+)/ && $quote == 0;
     if ( $line =~ /^\@(?!\@)/ ) { $quote = $quote == 0 ? 1 : 0; }
     next if $line =~ /^$/ && $quote == 0;
@@ -404,8 +406,6 @@ sub _parse_in_rcs {
 
     #$rcs{$version}{raw_text} .= $line;
   }
-  
-  close RCSFILE;
 
   ### clean the leftover quoting
 
