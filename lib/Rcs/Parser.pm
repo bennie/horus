@@ -42,7 +42,7 @@ package Rcs::Parser;
 our $VERSION = '0.02';
 
 use 5.006;
-#use warnings; Soon!
+use warnings;
 use strict;
 
 sub new {
@@ -332,7 +332,7 @@ sub _parse_in_rcs {
   my $file = shift @_;
   my $rcs  = shift @_;
  
-  open RCSFILE, $file;
+  open RCSFILE, '<', $file;
 
   ### Parse in the RCS file header
 
@@ -402,7 +402,8 @@ sub _parse_in_rcs {
   ### disassemble header
 
   for my $version ( keys %$rcs ) {
-    my @commands = split ';', $rcs->{$version}->{header};
+    my @commands;
+    @commands = split ';', $rcs->{$version}->{header} if defined $rcs->{$version}->{header};
     for my $command ( @commands ) {
       chomp $command;
       $rcs->{$version}->{$1} = $2 if $command =~ /\s*(.+)\s+(.+)$/;
