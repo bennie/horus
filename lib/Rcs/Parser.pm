@@ -215,6 +215,23 @@ sub notate {
   return $note;
 }
 
+=head2 all_versions()
+
+my @versions = $rcs->all_versions();
+
+This method returns an array or arrayref of all versions stored in the RCS file.
+
+=cut
+
+sub all_versions {
+  my $self = shift @_;
+  our @versions;
+  unless ( defined @versions ) {
+    @versions = sort { my @a = split '\.', $a; my @b = split '\.', $b; $b[0] <=> $a[0] || $b[1] <=> $a[1] } grep !/header/, keys %{$self->{rcs}};
+  }
+  return wantarray ? @versions : \@versions;
+}
+
 =head2 previous_version()
 
 my $ver = $rcs->previous_version();
