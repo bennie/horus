@@ -12,14 +12,14 @@ CVS and as documented by the rcsfile(5) man page.
 
 Retrieve the most recent file from an archive:
 
-  my $rcs = new RCS;
+  my $rcs = new Rcs::Parser;
   my $ret = $rcs->load($filename);
   
   my $current = $rcs->recent_version;
 
 To retrieve a specific version:
 
-  my $rcs = new RCS;
+  my $rcs = new Rcs::Parser;
   my $ret = $rcs->load($filename);
   
   my $specific_version = $rcs->get('1.2');
@@ -82,7 +82,7 @@ This method returns the currently instanced version.
 
 Beta Code:
 
-This code is alpha. It has yet to fully understand binary formats stored
+This code is beta. It has yet to fully understand binary formats stored
 in RCS and will treat them as text. Consquently, you'll see warnings. That
 being said, there shouldn't be any large scale bugs that will cause
 segfaulting or crashing. Only warnings.
