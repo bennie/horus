@@ -1,11 +1,13 @@
 #!/usr/bin/perl -I../lib
 
-# $Id: index.cgi,v 1.18 2008/07/29 19:49:26 ppollard Exp $
+# $Id: index.cgi,v 1.19 2008/08/01 20:21:26 ppollard Exp $
 
 use Horus::Network;
 use Horus::Hosts;
 
 use CGI;
+use Rcs::Parser;
+
 use strict;
 
 my $cgi = new CGI;
@@ -52,6 +54,15 @@ sub config {
   print $cgi->header, $cgi->start_html({-title=> "Horus: $host config $config"}),
         $cgi->font({-size=>'+2'},"Horus - $host config $config"), $cgi->hr({-noshade=>undef}),
         $cgi->font({-size=>1},$cgi->a({-href=>'/index.cgi/host/'.$host},'Back to host view'));
+
+  my $rcs = new Rcs::Parser;
+  my $rcstext = $fh->config_get_rcs($possible->[0],$config);
+
+  $rcs->load_scalar($rcstext);
+
+  print $cgi->font({-size=>1},$cgi->p('RCS Version',$rcs->version));
+
+  print $cgi->hr({-noshade=>undef});
 
   my $conftext = $fh->config_get($possible->[0],$config);
 
