@@ -146,6 +146,15 @@ sub load {
   return 1;
 }
 
+=head2 load_scalar($data)
+
+my $ret = $rcs->load_scalar($data);
+
+The load command reads in and parses the provided RCS file in scalar 
+form. 1 is returned upon success.
+
+=cut
+
 sub load_scalar {
   my $self  = shift @_;
   my $data  = shift @_;
@@ -535,7 +544,7 @@ There is an astounding lack of good documentation of the RCS format. About
 the only thing that can be found is the rcsfile(5) man page. The layout is
 mostly reverse engineered in this module. I have yet to have the time, or
 the skill and patience to disassemble the RCS portions of the code for GNU
-CVS. Maybe soon. :)
+CVS.
 
 =head1 ERATTA:
 
