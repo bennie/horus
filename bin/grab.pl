@@ -7,7 +7,7 @@
 # --config=foo Deal only with the textconfig foo.
 # --noreport will skip emailing the change report.
 
-# $Id: grab.pl,v 1.37 2008/08/04 19:58:54 ppollard Exp $
+# $Id: grab.pl,v 1.38 2008/08/04 21:38:06 ppollard Exp $
 
 use Horus::Network;
 use Horus::Hosts;
@@ -44,7 +44,7 @@ debug("\n");
 
 ### Global Vars
 
-my $ver = (split ' ', '$Revision: 1.37 $')[1];
+my $ver = (split ' ', '$Revision: 1.38 $')[1];
 
 my %machines; # Machines to process
 my %skip;     # Machines to skip
@@ -491,11 +491,39 @@ sub reformat_table {
 
   my @lines = split "\n", $raw;
 
-  if ( $lines[0] =~ /^Note/ ) { # Note about new files
-    $out = ( shift @lines ) ."\n". $out;
-  }
+  if ( $lines[0] =~ /^Note/ ) { # new file
 
-  if ( $lines[0] =~ /\+([\-]+)\+([\-]+)\+([\-]+)\+([\-]+)\+/ ) {
+    $header = '<tr><td bgcolor="#666699">Line</td><td bgcolor="#666699">New Data</td></tr>';
+    $out = ( shift @lines ) ."\n". '<table border="0" bgcolor="#000000" cellpadding="0" cellspacing="0"><tr><td><table border="0" bgcolor="#000000" cellpadding="5" cellspacing="1">' . $header;
+
+    $lines[0] =~ /\+([\-]+)\+([\-]+)\+([\-]+)\+([\-]+)\+/ or die "Bad parse on new lines?!";
+
+    my $l1 = length($1); # Use the top line to measure
+    my $v1 = length($2); # text width to parse out line
+    my $l2 = length($3); # numbers and data
+    my $v2 = length($4);
+
+    shift @lines; pop @lines; # remove top and bottom border
+
+    for my $line ( @lines ) {
+      warn "BAD TABLE PARSE!" and return '<pre>'.$raw.'</pre>' unless
+        $line =~ /([\|\*\+])(.{$l1})([\|\*\+])(.{$v1})([\|\*\+])(.{$l2})([\|\*\+])(.{$v2})([\|\*\+])/;
+      my ($col1,$line1,$col2,$val1,$col3,$line2,$col4,$val2,$col5) = ($1,$2,$3,$4,$5,$6,$7,$8,$9);
+
+      $out .= $header and next if $col1 eq '+'; # Breaker row.
+
+      $val1 =~ s/</&lt;/g;   $val1 =~ s/>/&gt;/g;   # Safe HTML viewing
+      $val2 =~ s/</&lt;/g;   $val2 =~ s/>/&gt;/g;   #
+      $val1 =~ s/ /&nbsp;/g; $val2 =~ s/ /&nbsp;/g; #
+
+      $out .= "<tr><td bgcolor='#99CC99' align='center'><tt>$line2</tt></td><td bgcolor='#99CC99' nowrap><tt>$val2</tt></td></tr>\n";
+      }
+    $out .= '</table></td></tr></table>';
+
+    return $out;
+
+
+  } elsif ( $lines[0] =~ /\+([\-]+)\+([\-]+)\+([\-]+)\+([\-]+)\+/ ) { # 4 column change table
     my $l1 = length($1); # Use the top line to measure
     my $v1 = length($2); # text width to parse out line
     my $l2 = length($3); # numbers and data
@@ -510,8 +538,9 @@ sub reformat_table {
 
       $out .= $header and next if $col1 eq '+'; # Breaker row.
 
-      $val1 =~ s/</&lt;/g; $val1 =~ s/>/&gt;/g; # Safe HTML viewing
-      $val2 =~ s/</&lt;/g; $val2 =~ s/>/&gt;/g; #
+      $val1 =~ s/</&lt;/g;   $val1 =~ s/>/&gt;/g;   # Safe HTML viewing
+      $val2 =~ s/</&lt;/g;   $val2 =~ s/>/&gt;/g;   #
+      $val1 =~ s/ /&nbsp;/g; $val2 =~ s/ /&nbsp;/g; #
 
       my $color1 = '#FFFFFF';
       my $color2 = '#FFFFFF';
@@ -526,7 +555,7 @@ sub reformat_table {
 
     return $out;
 
-  } elsif ( $lines[0] =~ /\+([\-]+)\+([\-]+)\+([\-]+)\+/ ) {
+  } elsif ( $lines[0] =~ /\+([\-]+)\+([\-]+)\+([\-]+)\+/ ) { # 3 column change table
     my $l1 = length($1); # Use the top line to measure
     my $v1 = length($2); # text width to parse out line
     my $v2 = length($3); # numbers and data
@@ -542,8 +571,9 @@ sub reformat_table {
 
       $out .= $header and next if $col1 eq '+'; # Breaker row.
 
-      $val1 =~ s/</&lt;/g; $val1 =~ s/>/&gt;/g; # Safe HTML viewing
-      $val2 =~ s/</&lt;/g; $val2 =~ s/>/&gt;/g; #
+      $val1 =~ s/</&lt;/g;   $val1 =~ s/>/&gt;/g;   # Safe HTML viewing
+      $val2 =~ s/</&lt;/g;   $val2 =~ s/>/&gt;/g;   #
+      $val1 =~ s/ /&nbsp;/g; $val2 =~ s/ /&nbsp;/g; #
 
       my $color1 = '#FFFFFF';
       my $color2 = '#FFFFFF';
