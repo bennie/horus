@@ -7,7 +7,7 @@
 # --config=foo Deal only with the textconfig foo.
 # --noreport will skip emailing the change report.
 
-# $Id: grab.pl,v 1.39 2008/08/05 22:21:57 ppollard Exp $
+# $Id: grab.pl,v 1.40 2008/08/05 22:38:11 ppollard Exp $
 
 use Horus::Network;
 use Horus::Hosts;
@@ -44,7 +44,7 @@ debug("\n");
 
 ### Global Vars
 
-my $ver = (split ' ', '$Revision: 1.39 $')[1];
+my $ver = (split ' ', '$Revision: 1.40 $')[1];
 
 my %machines; # Machines to process
 my %skip;     # Machines to skip
@@ -77,7 +77,7 @@ $machines{ns1} = 'Bungie1';
 map { $machines{$_} = 'mypassword'; } qw/tickets horus/;
 
 map { $machines{$_} = 'password'; } qw/f1vm01 f1vm02 f1vm03 f1vm04 f1vm05
-demo-page01 demo-fms01 demo-sync01/;
+demo-page01 demo-fms01 demo-sync01 test-page01 test-fms01 test-sync01/;
 
 ### Main
 
@@ -349,8 +349,8 @@ sub change_report {
   # Uptimes
  
   my @uptimes = sort { $uptime{$b}{years} <=> $uptime{$a}{years} || $uptime{$b}{days} <=> $uptime{$a}{days} || $uptime{$b}{hours} <=> $uptime{$a}{hours} || $uptime{$b}{mins} <=> $uptime{$a}{mins} } keys %uptime;
-  my @best_uptime = map { $uptimes[$_] if  $uptimes[$_] } ( 0 .. 4 );
-  my @worst_uptime = map { pop @uptimes if scalar(@uptimes) } ( 0 .. 4 );
+  my @best_uptime = map { $uptimes[$_] if  $uptimes[$_] } ( 0 .. 9 );
+  my @worst_uptime = map { pop @uptimes if scalar(@uptimes) } ( 0 .. 9 );
  
   my $best_uptime = '<ul>';
   for my $up (@best_uptime) {
