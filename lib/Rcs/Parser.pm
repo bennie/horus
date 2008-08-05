@@ -27,7 +27,8 @@ To retrieve a specific version:
 =cut
 
 # shorthand document of memory structure
-#
+# - rcs
+#  - *
 # - version
 # - body
 #   - line #
@@ -35,6 +36,8 @@ To retrieve a specific version:
 #     - origin
 #     - new_lines
 # - line_map
+# - rawfile
+# - desc
 
 #*************************************************************************
 
@@ -121,14 +124,13 @@ sub load {
   $self->{file} = shift @_;
   return undef unless -f $self->{file};
 
-  my $doc_header;
   $self->{rcs} = {};
+  $self->{desc} = {};
 
   open RCSFILE, '<', $self->{file};
-  my @raw = <RCSFILE>;
+  $self->{rawfile} = join('',<RCSFILE>);
   close RCSFILE;
 
-  $self->{rawfile} = \@raw; # The rawfile is steadily deleted as it is parsed
   $self->_parse_in_rcs($self->{rcs});
 
   # populate the current doc
@@ -156,15 +158,13 @@ form. 1 is returned upon success.
 =cut
 
 sub load_scalar {
-  my $self  = shift @_;
-  my $data  = shift @_;
-
-  my $doc_header;
+  my $self = shift @_;
+  $self->{rawfile} = shift @_;
+  return undef unless length $self->{rawfile};
+  
   $self->{rcs} = {};
+  $self->{desc} = {};
 
-  my @raw = map { "$_\n" } split "\n", $data;
-
-  $self->{rawfile} = \@raw; # The rawfile is steadily deleted as it is parsed
   $self->_parse_in_rcs($self->{rcs});
 
   # populate the current doc
@@ -376,6 +376,7 @@ sub _create_full_revision_path {
 sub _debug {
   my $self = shift @_;
   my $mesg = shift @_;
+  chomp $mesg;
   print "DEBUG: $mesg\n" if $self->{debug};
 }
 
@@ -393,10 +394,12 @@ sub _parse_in_rcs {
 
   my $rcs_header;
 
-  while ( my $line = shift @{$self->{rawfile}} ) {
-    last if $line =~ /^$/;
-    $rcs_header .= $line;
+  while ( $self->{rawfile} =~ /\G(.+)\n/gcm ) {
+    $rcs_header .= $1;
+    $self->_debug("Adding line to the raw header.");
   }
+
+  warn "Header did not parse" unless $rcs_header;
 
   for my $chunk ( split /;/, $rcs_header ) {
     $chunk =~ s/\n//g;
@@ -406,52 +409,49 @@ sub _parse_in_rcs {
 
   $rcs_header = undef;
 
+  ### Blank lines
+  
+  1 while ( $self->{rawfile} =~ /\G\n/gcm );
+  
   ### Parse in the individual version headers
 
-  my $version = 'error';
-  while ( my $line = shift @{$self->{rawfile}} ) {
-    last if $line =~ /^desc$/;
-
-    if ( $line =~ /^([\d|\.]+)/ ) {
-      $version = $1;
-    } else {
-      next if $line =~ /^$/;
-      $rcs->{$version}->{header} .= $line;
-    }
+  while ( $self->{rawfile} =~ /\G(\d(\.|\d)+)(.+?)\n\n/gcs ) {
+    $rcs->{$1}->{header} = $3;    
+    $self->_debug("vheader $1 is ".length($1)." chars in size") if $self->{debug};
   }
 
-  my $garbage_double_quote = shift @{$self->{rawfile}};
+  ### Blank lines
+  
+  1 while ( $self->{rawfile} =~ /\G\n/gcm );
 
-  ### Parse in the individual deltas
+  ### Parse in the desc
 
-  $version  = 'error';
-  my $directive = 0;
-  my $quote = 0;
-
-  while ( my $line = shift @{$self->{rawfile}} ) {
-    $version = $1 if $line =~ /^([\d|\.]+)/ && $quote == 0;
-    if ( $line =~ /^\@(?!\@)/ ) { $quote = $quote == 0 ? 1 : 0; }
-    next if $line =~ /^$/ && $quote == 0;
-
-    if ( $quote == 0 ) {
-      $line =~ /^(.+)$/;
-      $directive = $1;
-    } else {
-      $rcs->{$version}->{$directive} .= $line;
-    }
-
-    #$rcs{$version}{raw_text} .= $line;
-    $self->_debug("Line for delta in $version : $line");
+  if ( $self->{rawfile} =~ /\Gdesc\n\@\@\n/gcs || $self->{rawfile} =~ /\Gdesc\n\@(.+?)(?<!\@)\@\n/gcs ) {
+    $self->{desc} = $1;
   }
 
-  ### clean the leftover quoting
+  ### Blank lines
+  
+  1 while ( $self->{rawfile} =~ /\G\n/gcm );
 
-  for my $version ( keys %$rcs ) {
-    for my $directive ( keys %{$rcs->{$version}} ) {
-      $rcs->{$version}->{$directive} = $1 if $rcs->{$version}->{$directive} =~ /^\@(.*)$/s;
-      $rcs->{$version}->{$directive} = $1 if $rcs->{$version}->{$directive} =~ /^(.*)\@$/s;
+  ### Change directives
+
+  while ( $self->{rawfile} =~ /\G(\d(\.|\d)+)\n/gcm ) {
+    my $version = $1;
+
+    while ( $self->{rawfile} =~ /\G(\w+)\n\@\@\n/gcs || $self->{rawfile} =~ /\G(\w+)\n\@(.+?)(?<!\@)\@\n/gcs ) {
+      $rcs->{$version}->{$1} = $2;
+      $self->_debug("directive '$1' for ver $version is ".length($2)." chars in size") if $self->{debug};
     }
+
+    1 while ( $self->{rawfile} =~ /\G\n/gcm ); # Blank lines
   }
+
+  ### blank lines
+
+  1 while ( $self->{rawfile} =~ /\G\n/gcm );
+
+  $self->{finalpos} = pos($self->{rawfile}); # Done parsing? Remember position.
 
   ### disassemble header
 

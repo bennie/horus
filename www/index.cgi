@@ -1,11 +1,12 @@
 #!/usr/bin/perl -I../lib
 
-# $Id: index.cgi,v 1.19 2008/08/01 20:21:26 ppollard Exp $
+# $Id: index.cgi,v 1.20 2008/08/05 16:32:31 ppollard Exp $
 
 use Horus::Network;
 use Horus::Hosts;
 
 use CGI;
+use Data::Dumper;
 use Rcs::Parser;
 
 use strict;
@@ -57,19 +58,29 @@ sub config {
 
   my $rcs = new Rcs::Parser;
   my $rcstext = $fh->config_get_rcs($possible->[0],$config);
-
+ 
   $rcs->load_scalar($rcstext);
 
-  print $cgi->font({-size=>1},$cgi->p('RCS Version',$rcs->version));
+  my $currentver = $rcs->version;
+  my @versions = $rcs->all_versions();
+
+  print $cgi->font({-size=>1},$cgi->p('RCS Version',$currentver));
+
+  print $cgi->font({-size=>1},$cgi->p(join(', ',@versions)));
 
   print $cgi->hr({-noshade=>undef});
 
   my $conftext = $fh->config_get($possible->[0],$config);
 
-  $conftext =~ s/</&lt;/g;
-  $conftext =~ s/>/&gt;/g;
+  print $cgi->pre(&htmlclean($conftext));
 
-  print $cgi->pre($conftext);
+  print $cgi->hr({-noshade=>undef});
+
+  print $cgi->pre(&htmlclean($rcstext));
+  
+  print $cgi->hr({-noshade=>undef});
+
+  print $cgi->pre(&htmlclean(Dumper($rcs->{rcs})));
   
   print $cgi->end_html;
 }
@@ -341,4 +352,11 @@ sub box {
        . 'bgcolor="' . $color_border . "\" cellpadding=\"5\" cellspacing=\"1\">\n"
        . join('',@rows)
        . "</table>\n</td></tr>\n</table>\n<br />\n";
+}
+
+sub htmlclean {
+  my $text = shift @_;
+  $text =~ s/</&lt;/g;
+  $text =~ s/>/&gt;/g;
+  return $text;
 }
