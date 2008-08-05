@@ -7,7 +7,7 @@
 # --config=foo Deal only with the textconfig foo.
 # --noreport will skip emailing the change report.
 
-# $Id: grab.pl,v 1.38 2008/08/04 21:38:06 ppollard Exp $
+# $Id: grab.pl,v 1.39 2008/08/05 22:21:57 ppollard Exp $
 
 use Horus::Network;
 use Horus::Hosts;
@@ -44,7 +44,7 @@ debug("\n");
 
 ### Global Vars
 
-my $ver = (split ' ', '$Revision: 1.38 $')[1];
+my $ver = (split ' ', '$Revision: 1.39 $')[1];
 
 my %machines; # Machines to process
 my %skip;     # Machines to skip
@@ -516,7 +516,7 @@ sub reformat_table {
       $val2 =~ s/</&lt;/g;   $val2 =~ s/>/&gt;/g;   #
       $val1 =~ s/ /&nbsp;/g; $val2 =~ s/ /&nbsp;/g; #
 
-      $out .= "<tr><td bgcolor='#99CC99' align='center'><tt>$line2</tt></td><td bgcolor='#99CC99' nowrap><tt>$val2</tt></td></tr>\n";
+      $out .= "<tr><td bgcolor='#99CC99' align='center'><tt>$line2</tt></td>\n<td bgcolor='#99CC99' nowrap><tt>$val2</tt></td></tr>\n";
       }
     $out .= '</table></td></tr></table>';
 
@@ -549,7 +549,7 @@ sub reformat_table {
       $color1 = '#CC9999' if $col1 eq '*' and $col3 eq '*' and $col5 eq '|'; # Line deleted
       $color2 = '#99CC99' if $col1 eq '|' and $col3 eq '*' and $col5 eq '*'; # Line added
       
-      $out .= "<tr><td bgcolor='$color1' align='center'><tt>$line1</tt></td><td bgcolor='$color1' nowrap><tt>$val1</tt></td><td bgcolor='$color2' align='center'><tt>$line2</tt></td><td bgcolor='$color2' nowrap><tt>$val2</tt></td></tr>\n"
+      $out .= "<tr><td bgcolor='$color1' align='center'><tt>$line1</tt></td>\n<td bgcolor='$color1' nowrap><tt>$val1</tt></td>\n<td bgcolor='$color2' align='center'><tt>$line2</tt></td>\n<td bgcolor='$color2' nowrap><tt>$val2</tt></td></tr>\n"
     }
     $out .= '</table></td></tr></table>';
 
@@ -582,7 +582,7 @@ sub reformat_table {
       $color1 = '#CC9999' if $col1 eq '*' and $col3 eq '*' and $col5 eq '|'; # Line deleted
       $color2 = '#99CC99' if $col1 eq '|' and $col3 eq '*' and $col5 eq '*'; # Line added
       
-      $out .= "<tr><td bgcolor='$color1' align='center'><tt>$line1</tt></td><td bgcolor='$color1' nowrap><tt>$val1</tt></td><td bgcolor='$color2' align='center'><tt>$line2</tt></td><td bgcolor='$color2' nowrap><tt>$val2</tt></td></tr>\n"
+      $out .= "<tr><td bgcolor='$color1' align='center'><tt>$line1</tt></td>\n<td bgcolor='$color1' nowrap><tt>$val1</tt></td>\n<td bgcolor='$color2' align='center'><tt>$line2</tt></td>\n<td bgcolor='$color2' nowrap><tt>$val2</tt></td></tr>\n"
     }
     $out .= '</table></td></tr></table>';
 
