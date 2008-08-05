@@ -1,6 +1,6 @@
 #!/usr/bin/perl -I../lib
 
-# $Id: index.cgi,v 1.20 2008/08/05 16:32:31 ppollard Exp $
+# $Id: index.cgi,v 1.21 2008/08/05 18:36:37 ppollard Exp $
 
 use Horus::Network;
 use Horus::Hosts;
@@ -51,7 +51,7 @@ sub config {
   my $host = shift @_;
   my $config = shift @_;
   my $possible = $fh->by_name($host);
-
+  
   print $cgi->header, $cgi->start_html({-title=> "Horus: $host config $config"}),
         $cgi->font({-size=>'+2'},"Horus - $host config $config"), $cgi->hr({-noshade=>undef}),
         $cgi->font({-size=>1},$cgi->a({-href=>'/index.cgi/host/'.$host},'Back to host view'));
@@ -61,27 +61,41 @@ sub config {
  
   $rcs->load_scalar($rcstext);
 
-  my $currentver = $rcs->version;
+  my $currentver = $rcs->version; # Most current version in the RCS file
   my @versions = $rcs->all_versions();
 
-  print $cgi->font({-size=>1},$cgi->p('RCS Version',$currentver));
+  my $ver = $cgi->param('version') || $currentver; # The version we are displaying
 
-  print $cgi->font({-size=>1},$cgi->p(join(', ',@versions)));
-
-  print $cgi->hr({-noshade=>undef});
-
-  my $conftext = $fh->config_get($possible->[0],$config);
-
-  print $cgi->pre(&htmlclean($conftext));
+  print $cgi->font({-size=>1},$cgi->p('Stored Versions:', join(', ', map { $ver eq $_ ? $_ : $cgi->a({-href=>'/index.cgi/host/'.$host.'?config='.$config.'&version='.$_},$_) } @versions)));
 
   print $cgi->hr({-noshade=>undef});
+  
+  my $date = 'unknown';
+  
+  for my $subver ( @versions ) {
+    next unless $rcs->{rcs}->{$subver}->{next} eq $ver;
+    $date = $rcs->{rcs}->{$subver}->{date};
+  }
+  
+  print $cgi->p("This version of the config ($ver) " .( $ver eq $currentver ? 'is the version currently in use.' : 'was last seen in production on ' . $date ) );
 
-  print $cgi->pre(&htmlclean($rcstext));
+  print $cgi->p("This version was first seen in production on " . $rcs->{rcs}->{$ver}->{date} );
   
   print $cgi->hr({-noshade=>undef});
+    
+  my $display;
 
-  print $cgi->pre(&htmlclean(Dumper($rcs->{rcs})));
+  if ( $ver ne $currentver ) {
+    $display = $rcs->get($ver); 
+  } else {
+    $display = $fh->config_get($possible->[0],$config);
+  }
+
+  print $cgi->pre(&htmlclean($display));
   
+  #print $cgi->hr({-noshade=>undef});
+  #print $cgi->p($cgi->pre(&htmlclean(Dumper($rcs->{rcs}))));
+
   print $cgi->end_html;
 }
 
