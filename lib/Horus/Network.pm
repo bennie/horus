@@ -11,7 +11,7 @@ package Horus::Network;
 use Horus::DB;
 use strict;
 
-$Horus::Network::VERSION = '$Revision: 1.5 $';
+$Horus::Network::VERSION = '$Revision: 1.6 $';
 
 sub new {
   my $self = {};
@@ -68,6 +68,34 @@ sub exists {
   return $self->{db}->single('select count(*) from network where address=?',$addr);
 }
 
+=head3 get($addr) 
+
+Returns a hash or hasref of all information lined to the given hardware address.
+=cut
+
+sub get {
+  my $self = shift @_;
+  my $addr = shift @_;
+  my $sth  = $self->{db}->handle('select * from network where address=?',$addr);
+  if ( my $ref = $sth->fetchrow_hashref ) {
+    return wantarray ? %{$ref} : $ref;
+  } else {
+    return undef;
+  }
+}
+
+=head3 host_list($hostid)
+
+Returns an array or arrayref of addresses that are linked to the given host id.
+
+=cut
+
+sub host_list {
+  my $self = shift @_;
+  my $id = shift @_;
+  return $self->{db}->column('select address from network where host_id=?',$id);
+}
+
 =head3 update($address,$ref)
 
 Returns the sql return code of the update dictated by the given id and hasref of 
@@ -92,7 +120,7 @@ sub update {
   (c) 2007, Horus, Inc.
 
   Work by Phil Pollard
-  $Revision: 1.5 $ $Date: 2008/07/24 23:35:37 $
+  $Revision: 1.6 $ $Date: 2008/08/07 20:32:31 $
 
 =cut
 
