@@ -7,7 +7,7 @@
 # --config=foo Deal only with the textconfig foo.
 # --noreport will skip emailing the change report.
 
-# $Id: grab.pl,v 1.41 2008/08/07 20:32:31 ppollard Exp $
+# $Id: grab.pl,v 1.42 2008/08/07 20:38:51 ppollard Exp $
 
 use Horus::Network;
 use Horus::Hosts;
@@ -33,7 +33,7 @@ my $noreport = 0;                  # --noreport, supress emailing the change rep
 my $quiet = 0;                     # --quiet, supress STDOUT run-time info
 
 my $ret = GetOptions(
-            config => \$config_to_save, "email=s" => \$email,  noconfigsave => \$noconfigsave,
+            'config=s' => \$config_to_save, 'email=s' => \$email,  noconfigsave => \$noconfigsave,
             noreport => \$noreport, quiet => \$quiet
 );
 
@@ -44,7 +44,7 @@ debug("\n");
 
 ### Global Vars
 
-my $ver = (split ' ', '$Revision: 1.41 $')[1];
+my $ver = (split ' ', '$Revision: 1.42 $')[1];
 
 my %machines; # Machines to process
 my %skip;     # Machines to skip
@@ -198,7 +198,7 @@ for my $host ( scalar @ARGV ? sort @ARGV : sort keys %machines ) {
   my @configs = qw@/etc/fstab /etc/named.conf /etc/sudoers /etc/issue /etc/passwd /etc/snmp/snmpd.conf 
                    /etc/sysconfig/network /etc/resolv.conf /etc/ssh/sshd_config /etc/selinux/config 
                    /etc/yum.conf /etc/hosts /fusionone/tomcat/conf/server.xml /etc/motd
-                   /fusionone/apache/conf/httpd.conf@;
+                   /fusionone/apache/conf/httpd.conf /etc/bashrc /etc/profile@;
   for my $type ( qw/ifcfg route/ ) {
     for my $eth ( qw/eth0 eth1/ ) {
       push @configs, "/etc/sysconfig/network-scripts/$type-$eth";
