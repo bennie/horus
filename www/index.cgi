@@ -1,6 +1,6 @@
 #!/usr/bin/perl -I../lib
 
-# $Id: index.cgi,v 1.15 2008/08/07 20:32:31 ppollard Exp $
+# $Id: index.cgi,v 1.16 2008/08/07 22:20:44 ppollard Exp $
 
 use Horus::Network;
 use Horus::Hosts;
@@ -12,8 +12,13 @@ my $cgi = new CGI;
 my $fh = new Horus::Hosts;
 my $fn = new Horus::Network;
 
-my $color_border = '#000000';
+my $color_back    = '#FFFFFF';
+my $color_border  = '#000000';
+my $color_header  = '#666699';
+my $color_subhead = '#CCCCCC';
 
+my $good = '<img width="32" height="32" alt="[ + ]" src="http://horus.fusionone.com/images/good.png" />';
+my $bad  = '<img width="32" height="32" alt="[ - ]" src="http://horus.fusionone.com/images/bad.png" />';
 
 my %hosts = $fh->all();
 my $total = scalar keys %hosts;
@@ -40,7 +45,7 @@ sub config {
   my $config = shift @_;
   my $possible = $fh->by_name($host);
 
-  print $cgi->header, $cgi->start_html({-title=> "Horus - $host config $config"}),
+  print $cgi->header, $cgi->start_html({-title=> "Horus: $host config $config"}),
         $cgi->font({-size=>'+2'},"Horus - $host config $config"), $cgi->hr({-noshade=>undef}),
         $cgi->font({-size=>1},$cgi->a({-href=>'/index.cgi/host/'.$host},'Back to host view'));
 
@@ -55,24 +60,24 @@ sub config {
 }
 
 sub dashboard {
-  print $cgi->header, $cgi->start_html({-title=> 'Horus - Dashboard view'}),
+  print $cgi->header, $cgi->start_html({-title=> 'Horus: Dashboard view'}),
         $cgi->font({-size=>'+2'},"Horus"), $cgi->hr({-noshade=>undef});
   print '[',$cgi->a({-href=>'/index.cgi/report/network'},"Network Report"),']';
   print $cgi->p("$total hosts in the system.");
 
   my @rows = (
     $cgi->Tr(
-      $cgi->td({-bgcolor=>'#666699'},'Host'),
-      $cgi->td({-bgcolor=>'#666699'},'Customer'),
-      $cgi->td({-bgcolor=>'#666699'},'OS'),
-      $cgi->td({-bgcolor=>'#666699'},'Release'),
-      $cgi->td({-bgcolor=>'#666699'},'Version'),
-      $cgi->td({-bgcolor=>'#666699'},'Arch.'),
-      $cgi->td({-bgcolor=>'#666699'},'Brand'),
-      $cgi->td({-bgcolor=>'#666699'},'Model'),
-      $cgi->td({-bgcolor=>'#666699'},'Clock'),
-      $cgi->td({-bgcolor=>'#666699'},'Last Update'),
-      $cgi->td({-bgcolor=>'#666699'}, $cgi->start_form({-action=>'/edit.cgi'}), $cgi->submit({-name=>'New'}), $cgi->end_form )
+      $cgi->td({-bgcolor=>$color_header},'Host'),
+      $cgi->td({-bgcolor=>$color_header},'Customer'),
+      $cgi->td({-bgcolor=>$color_header},'OS'),
+      $cgi->td({-bgcolor=>$color_header},'Release'),
+      $cgi->td({-bgcolor=>$color_header},'Version'),
+      $cgi->td({-bgcolor=>$color_header},'Arch.'),
+      $cgi->td({-bgcolor=>$color_header},'Brand'),
+      $cgi->td({-bgcolor=>$color_header},'Model'),
+      $cgi->td({-bgcolor=>$color_header},'Clock'),
+      $cgi->td({-bgcolor=>$color_header},'Last Update'),
+      $cgi->td({-bgcolor=>$color_header}, $cgi->start_form({-action=>'/edit.cgi'}), $cgi->submit({-name=>'New'}), $cgi->end_form )
     )
   );
 
@@ -85,17 +90,17 @@ sub dashboard {
     map { $rec{$_}=~s/\s/\&nbsp;/g } qw/osrelease osversion machine_model customer/;
   
     push @rows, $cgi->Tr(
-      $cgi->td({-bgcolor=>'#ffffff'}, $cgi->a({-href=>"/index.cgi/host/$hosts{$id}"},$hosts{$id}) ),
-      $cgi->td({-bgcolor=>'#ffffff'}, "$rec{customer}" ),
-      $cgi->td({-bgcolor=>'#ffffff'}, "$rec{os}" ),
-      $cgi->td({-bgcolor=>'#ffffff'}, "$rec{osrelease}" ),
-      $cgi->td({-bgcolor=>'#ffffff'}, "$rec{osversion}" ),
-      $cgi->td({-bgcolor=>'#ffffff'}, "$rec{arch}" ),
-      $cgi->td({-bgcolor=>'#ffffff'}, "$rec{machine_brand}" ),
-      $cgi->td({-bgcolor=>'#ffffff'}, "$rec{machine_model}" ),
-      $cgi->td({-bgcolor=>'#ffffff',-align=>'center'}, "$rec{tz}" ),
-      $cgi->td({-bgcolor=>'#ffffff',-align=>'center'}, $time ),
-      $cgi->td({-bgcolor=>'#ffffff',-align=>'center'}, $cgi->start_form({-action=>'/edit.cgi'}), $cgi->hidden({-name=>'id',-value=>$id}), $cgi->submit({-name=>'Edit'}), $cgi->end_form ),
+      $cgi->td({-bgcolor=>$color_back}, $cgi->a({-href=>"/index.cgi/host/$hosts{$id}"},$hosts{$id}) ),
+      $cgi->td({-bgcolor=>$color_back}, "$rec{customer}" ),
+      $cgi->td({-bgcolor=>$color_back}, "$rec{os}" ),
+      $cgi->td({-bgcolor=>$color_back}, "$rec{osrelease}" ),
+      $cgi->td({-bgcolor=>$color_back}, "$rec{osversion}" ),
+      $cgi->td({-bgcolor=>$color_back}, "$rec{arch}" ),
+      $cgi->td({-bgcolor=>$color_back}, "$rec{machine_brand}" ),
+      $cgi->td({-bgcolor=>$color_back}, "$rec{machine_model}" ),
+      $cgi->td({-bgcolor=>$color_back,-align=>'center'}, "$rec{tz}" ),
+      $cgi->td({-bgcolor=>$color_back,-align=>'center'}, $time ),
+      $cgi->td({-bgcolor=>$color_back,-align=>'center'}, $cgi->start_form({-action=>'/edit.cgi'}), $cgi->hidden({-name=>'id',-value=>$id}), $cgi->submit({-name=>'Edit'}), $cgi->end_form ),
     );
   }
 
@@ -105,7 +110,7 @@ sub dashboard {
 
 sub host {
   my $host = shift @_;
-  print $cgi->header, $cgi->start_html( -title=> 'Horus - Host view'),
+  print $cgi->header, $cgi->start_html( -title=> 'Horus: Host view'),
         $cgi->font({-size=>'+2'},"Host: $host"), $cgi->hr({-noshade=>undef}),
         $cgi->font({-size=>1},$cgi->a({-href=>'/index.cgi/dashboard'},'Back to Dashboard'));
 
@@ -124,20 +129,20 @@ sub host {
   print $cgi->p(
     box(
       $cgi->Tr( 
-        $cgi->td({-bgcolor=>'#666699'},'Customer'), $cgi->td({-bgcolor=>'#FFFFFF'},$rec{customer}),
-        $cgi->td({-bgcolor=>'#666699'},'Hostname'), $cgi->td({-bgcolor=>'#FFFFFF'},$rec{name})
+        $cgi->td({-bgcolor=>$color_header},'Customer'), $cgi->td({-bgcolor=>$color_back},$rec{customer}),
+        $cgi->td({-bgcolor=>$color_header},'Hostname'), $cgi->td({-bgcolor=>$color_back},$rec{name})
       ),
       $cgi->Tr(
-        $cgi->td({-bgcolor=>'#666699'},'Machine Brand'), $cgi->td({-bgcolor=>'#FFFFFF'},$rec{machine_brand}),
-        $cgi->td({-bgcolor=>'#666699'},'OS'), $cgi->td({-bgcolor=>'#FFFFFF'},$rec{os})
+        $cgi->td({-bgcolor=>$color_header},'Machine Brand'), $cgi->td({-bgcolor=>$color_back},$rec{machine_brand}),
+        $cgi->td({-bgcolor=>$color_header},'OS'), $cgi->td({-bgcolor=>$color_back},$rec{os})
       ),
       $cgi->Tr(
-        $cgi->td({-bgcolor=>'#666699'},'Machine Model'), $cgi->td({-bgcolor=>'#FFFFFF'},$rec{machine_model}),
-        $cgi->td({-bgcolor=>'#666699'},'OS Release'), $cgi->td({-bgcolor=>'#FFFFFF'},$rec{osrelease})
+        $cgi->td({-bgcolor=>$color_header},'Machine Model'), $cgi->td({-bgcolor=>$color_back},$rec{machine_model}),
+        $cgi->td({-bgcolor=>$color_header},'OS Release'), $cgi->td({-bgcolor=>$color_back},$rec{osrelease})
       ),
       $cgi->Tr(
-        $cgi->td({-bgcolor=>'#666699'},'Machine Arch'), $cgi->td({-bgcolor=>'#FFFFFF'},$rec{arch}),
-        $cgi->td({-bgcolor=>'#666699'},'OS Version'), $cgi->td({-bgcolor=>'#FFFFFF'},$rec{osversion})
+        $cgi->td({-bgcolor=>$color_header},'Machine Arch'), $cgi->td({-bgcolor=>$color_back},$rec{arch}),
+        $cgi->td({-bgcolor=>$color_header},'OS Version'), $cgi->td({-bgcolor=>$color_back},$rec{osversion})
       )
     )
   );
@@ -149,12 +154,12 @@ sub host {
 
   for my $addr (@addrs) {
     my %net = $fn->get($addr);
-    push @rows, $cgi->Tr($cgi->td({-bgcolor=>'#FFFFFF',-align=>'center'},$net{host_interface}), $cgi->td({-bgcolor=>'#FFFFFF'},$net{address}));
+    push @rows, $cgi->Tr($cgi->td({-bgcolor=>$color_back,-align=>'center'},$net{host_interface}), $cgi->td({-bgcolor=>$color_back},$net{address}));
   }
 
   if ( scalar(@rows) ) {
     print $cgi->p(box(
-            $cgi->Tr($cgi->td({-bgcolor=>'#666699'},'Interface'), $cgi->td({-bgcolor=>'#666699'},'Hardware Address')),
+            $cgi->Tr($cgi->td({-bgcolor=>$color_header},'Interface'), $cgi->td({-bgcolor=>$color_header},'Hardware Address')),
             @rows
           ));
   }
@@ -164,13 +169,13 @@ sub host {
   print $cgi->p(
     box(
       $cgi->Tr( 
-        $cgi->td({-bgcolor=>'#666699'},'Service Name'), $cgi->td({-bgcolor=>'#666699'},'Service Status'), $cgi->td({-bgcolor=>'#666699'},'Service Detail'),
+        $cgi->td({-bgcolor=>$color_header},'Service Name'), $cgi->td({-bgcolor=>$color_header},'Status'), $cgi->td({-bgcolor=>$color_header},'Detail'),
       ),
       $cgi->Tr(
-        $cgi->td({-bgcolor=>'#CCCCCC'},'NTP'), $cgi->td({-bgcolor=>'#FFFFFF',-align=>'center'},$rec{ntp}), $cgi->td({-bgcolor=>'#FFFFFF'},$rec{ntphost}),
+        $cgi->td({-bgcolor=>$color_subhead},'NTP'), $cgi->td({-bgcolor=>$color_back,-align=>'center'},( $rec{ntp} == 1 ?$good:$bad)), $cgi->td({-bgcolor=>$color_back},$rec{ntphost}),
       ),
       $cgi->Tr(
-        $cgi->td({-bgcolor=>'#CCCCCC'},'SNMP'), $cgi->td({-bgcolor=>'#FFFFFF',-align=>'center'},$rec{snmp}), $cgi->td({-bgcolor=>'#FFFFFF'},$rec{snmp_community}),
+        $cgi->td({-bgcolor=>$color_subhead},'SNMP'), $cgi->td({-bgcolor=>$color_back,-align=>'center'},( $rec{snmp} == 1 ?$good:$bad)), $cgi->td({-bgcolor=>$color_back},$rec{snmp_community}),
       ),
     )
   );
@@ -211,22 +216,22 @@ sub host {
 
 sub network_report {
   print $cgi->header, $cgi->start_html( -title=> 'Horus - Network Report'),
-        $cgi->font({-size=>'+2'},"Network Report"), $cgi->hr({-noshade=>undef}),
+        $cgi->font({-size=>'+2'},"Horus: Network Report"), $cgi->hr({-noshade=>undef}),
         $cgi->font({-size=>1},$cgi->a({-href=>'/index.cgi/dashboard'},'Back to Dashboard'));
 
   my $all = $fn->all();
 
   my @rows = (
     $cgi->Tr(
-      $cgi->td({-bgcolor=>'#666699'},'Host'),
-      $cgi->td({-bgcolor=>'#666699'},'Interface'),
-      $cgi->td({-bgcolor=>'#666699'},'Address'),
-      $cgi->td({-bgcolor=>'#666699'},'Switch'),
-      $cgi->td({-bgcolor=>'#666699'},'Port'),
-      $cgi->td({-bgcolor=>'#666699'},'Current Speed'),
-      $cgi->td({-bgcolor=>'#666699'},'Max Speed'),
-      $cgi->td({-bgcolor=>'#666699'},'Link Detected'),
-      $cgi->td({-bgcolor=>'#666699'},'Last Update'),
+      $cgi->td({-bgcolor=>$color_header},'Host'),
+      $cgi->td({-bgcolor=>$color_header},'Interface'),
+      $cgi->td({-bgcolor=>$color_header},'Address'),
+      $cgi->td({-bgcolor=>$color_header},'Switch'),
+      $cgi->td({-bgcolor=>$color_header},'Port'),
+      $cgi->td({-bgcolor=>$color_header},'Current Speed'),
+      $cgi->td({-bgcolor=>$color_header},'Max Speed'),
+      $cgi->td({-bgcolor=>$color_header},'Link Detected'),
+      $cgi->td({-bgcolor=>$color_header},'Last Update'),
     )
   );
 
@@ -236,15 +241,15 @@ sub network_report {
     my $time = $1;
 
     push @rows, $cgi->Tr(
-      $cgi->td({-bgcolor=>'#ffffff'}, $cgi->a({-href=>"/index.cgi/host/$rec->{host_name}"},$rec->{host_name}) ),
-      $cgi->td({-bgcolor=>'#ffffff',-align=>'center'}, "$rec->{host_interface}" ),
-      $cgi->td({-bgcolor=>'#ffffff'}, "$rec->{address}" ),
-      $cgi->td({-bgcolor=>'#ffffff'}, "$rec->{switch_id}" ),
-      $cgi->td({-bgcolor=>'#ffffff'}, "$rec->{port}" ),
-      $cgi->td({-bgcolor=>'#ffffff'}, "$rec->{current_speed}" ),
-      $cgi->td({-bgcolor=>'#ffffff'}, "$rec->{max_speed}" ),
-      $cgi->td({-bgcolor=>'#ffffff',-align=>'center'}, "$rec->{link_detected}" ),
-      $cgi->td({-bgcolor=>'#ffffff',-align=>'center'}, "$time" ),
+      $cgi->td({-bgcolor=>$color_back}, $cgi->a({-href=>"/index.cgi/host/$rec->{host_name}"},$rec->{host_name}) ),
+      $cgi->td({-bgcolor=>$color_back,-align=>'center'}, "$rec->{host_interface}" ),
+      $cgi->td({-bgcolor=>$color_back}, "$rec->{address}" ),
+      $cgi->td({-bgcolor=>$color_back}, "$rec->{switch_id}" ),
+      $cgi->td({-bgcolor=>$color_back}, "$rec->{port}" ),
+      $cgi->td({-bgcolor=>$color_back}, "$rec->{current_speed}" ),
+      $cgi->td({-bgcolor=>$color_back}, "$rec->{max_speed}" ),
+      $cgi->td({-bgcolor=>$color_back,-align=>'center'}, ($rec->{link_detected}==1?$good:$bad) ),
+      $cgi->td({-bgcolor=>$color_back,-align=>'center'}, "$time" ),
     );
   }
 

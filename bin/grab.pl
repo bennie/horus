@@ -7,7 +7,7 @@
 # --config=foo Deal only with the textconfig foo.
 # --noreport will skip emailing the change report.
 
-# $Id: grab.pl,v 1.42 2008/08/07 20:38:51 ppollard Exp $
+# $Id: grab.pl,v 1.43 2008/08/07 22:20:44 ppollard Exp $
 
 use Horus::Network;
 use Horus::Hosts;
@@ -44,7 +44,7 @@ debug("\n");
 
 ### Global Vars
 
-my $ver = (split ' ', '$Revision: 1.42 $')[1];
+my $ver = (split ' ', '$Revision: 1.43 $')[1];
 
 my %machines; # Machines to process
 my %skip;     # Machines to skip
@@ -53,7 +53,7 @@ my %uptime; # Track uptimes for the report
 
 ### Sort out the hosts and skips
 
-map {$skip{$_}++} qw/fmso fmsq fmsr fmss sync-embarq syncn sync15/;
+map {$skip{$_}++} qw/fmso fmsq fmsr fmss sync-embarq syncn sync15 alqa-fms01/;
 
 my $fh = new Horus::Hosts;
 my %all = $fh->all();
