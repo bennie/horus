@@ -7,7 +7,7 @@
 # --config=foo Deal only with the textconfig foo.
 # --noreport will skip emailing the change report.
 
-# $Id: grab.pl,v 1.43 2008/08/07 22:20:44 ppollard Exp $
+# $Id: grab.pl,v 1.44 2008/08/08 00:06:26 ppollard Exp $
 
 use Horus::Network;
 use Horus::Hosts;
@@ -26,15 +26,16 @@ use strict;
 
 my $use_expect = 0;
 
-my $config_to_save = undef;        # --config=foo, Override what config to process
-my $email = 'dcops@fusionone.com'; # --email=foo, Email that change report is sent to
-my $noconfigsave = 0;              # --noconfigsave, do not update configs in the DB
-my $noreport = 0;                  # --noreport, supress emailing the change report
-my $quiet = 0;                     # --quiet, supress STDOUT run-time info
+my $config_to_save = undef;           # --config=foo, Override what config to process
+my $email = 'dcops@fusionone.com';    # --email=foo, Email that change report is sent to
+my $noconfigsave = 0;                 # --noconfigsave, do not update configs in the DB
+my $noreport = 0;                     # --noreport, supress emailing the change report
+my $subject = 'Server Change Report'; # --subject, change the report email subject line
+my $quiet = 0;                        # --quiet, supress STDOUT run-time info
 
 my $ret = GetOptions(
             'config=s' => \$config_to_save, 'email=s' => \$email,  noconfigsave => \$noconfigsave,
-            noreport => \$noreport, quiet => \$quiet
+            noreport => \$noreport, 'subject=s' => \$subject, quiet => \$quiet
 );
 
 debug( $noreport ? "Report will NOT be sent.\n" : "Report will go to $email\n" );
@@ -44,7 +45,7 @@ debug("\n");
 
 ### Global Vars
 
-my $ver = (split ' ', '$Revision: 1.43 $')[1];
+my $ver = (split ' ', '$Revision: 1.44 $')[1];
 
 my %machines; # Machines to process
 my %skip;     # Machines to skip
@@ -197,8 +198,10 @@ for my $host ( scalar @ARGV ? sort @ARGV : sort keys %machines ) {
   
   my @configs = qw@/etc/fstab /etc/named.conf /etc/sudoers /etc/issue /etc/passwd /etc/snmp/snmpd.conf 
                    /etc/sysconfig/network /etc/resolv.conf /etc/ssh/sshd_config /etc/selinux/config 
-                   /etc/yum.conf /etc/hosts /fusionone/tomcat/conf/server.xml /etc/motd
-                   /fusionone/apache/conf/httpd.conf /etc/bashrc /etc/profile@;
+                   /etc/yum.conf /etc/hosts /fusionone/tomcat/conf/server.xml /etc/motd /etc/issue.net
+                   /fusionone/apache/conf/httpd.conf /etc/bashrc /etc/profile /etc/rc.d/rc.local
+                   /fusionone/bin/f1 /etc/nsswitch.conf /etc/pam.d/system-auth /etc/sysconfig/authconfig
+                   /root/.bash_profile /root/.bash_logout /root/.bashrc@;
   for my $type ( qw/ifcfg route/ ) {
     for my $eth ( qw/eth0 eth1/ ) {
       push @configs, "/etc/sysconfig/network-scripts/$type-$eth";
@@ -492,7 +495,7 @@ sub change_report {
   # Print the report
 
   open REPORT, '>/tmp/change.html';
-  print REPORT "To: $email\nFrom: horus\@horus.fusionone.com\nSubject: Server Change Report\nContent-Type: text/html; charset=\"us-ascii\"\n\n";
+  print REPORT "To: $email\nFrom: horus\@horus.fusionone.com\nSubject: $subject\nContent-Type: text/html; charset=\"us-ascii\"\n\n";
   print REPORT "<html><body>\n\n";
 
   print REPORT "<hr noshade /><font size='+2'><b>Change Report</b></font><hr noshade />\n"
