@@ -7,9 +7,8 @@
 # --config=foo Deal only with the textconfig foo.
 # --noreport will skip emailing the change report.
 
-# $Id: grab.pl,v 1.61 2008/08/08 16:44:45 ppollard Exp $
+# $Id: grab.pl,v 1.45 2008/08/08 23:06:24 ppollard Exp $
 
-use Horus::Conf;
 use Horus::Network;
 use Horus::Hosts;
 
@@ -46,49 +45,56 @@ debug("\n");
 
 ### Global Vars
 
-my $ver = (split ' ', '$Revision: 1.61 $')[1];
+my $ver = (split ' ', '$Revision: 1.45 $')[1];
+
+my %machines; # Machines to process
+my %skip;     # Machines to skip
 
 my %uptime; # Track uptimes for the report
 
-my $co = '/usr/bin/co'; # RCS utils
-my $ci = '/usr/bin/ci';
+### Sort out the hosts and skips
 
-### Sort out the hosts
+map {$skip{$_}++} qw/fmso fmsq fmsr fmss sync-embarq syncn sync15 alqa-fms01/;
 
 my $fh = new Horus::Hosts;
 my %all = $fh->all();
 
-my @override;
-
-if ( scalar @ARGV ) {
-  for my $name (@ARGV) {
-    my @possible = $fh->by_name($name);
-    push @override, $possible[0] if $possible[0];
-  }
+for my $id ( keys %all ) {
+  $machines{$all{$id}} = undef;
 }
+
+map { $machines{$_} = 'fusion123' } qw/vz-fms01 vz-fms02 vz-page01
+vz-page02 vz-sync01 vz-sync02 vz-db01 vz-db02/;
+
+map { $machines{$_} = 'g00df3ll45' } qw/alqa alqa-fms01 alqa-page01 
+alqa-sync01 bmqa-fms bmqa-page bmqa-sync nwhqa-fms nwhqa-page nwhqa-sync
+telus-fms01 telus-fms02 telus-page01 telus-page02 telus-sync01 telus-sync02
+bmqa-base nwh-fms01 opsdev/;
+
+$machines{build} = 'dev3695';
+$machines{ducati} = 'M1ghtyOP$1';
+$machines{ns1} = 'Bungie1';
+
+map { $machines{$_} = 'mypassword'; } qw/tickets horus/;
+
+map { $machines{$_} = 'password'; } qw/f1vm01 f1vm02 f1vm03 f1vm04 f1vm05
+demo-page01 demo-fms01 demo-sync01 test-page01 test-fms01 test-sync01/;
 
 ### Main
 
-my $conf    = new Horus::Conf;
-my $hosts   = new Horus::Hosts;
 my $network = new Horus::Network;
+my $hosts   = new Horus::Hosts;
 
 our $ssh;
 
 my %changes;
-my %skipped;
 
-for my $hostid ( scalar @override ? sort @override : sort { lc($all{$a}) cmp lc($all{$b}) } keys %all ) {
-  my $ref = $fh->get($hostid);
-  if ( $ref->{skip} > 0 ) {
-    $skipped{$hostid}++;
-    next;
-  }
-
-  my $ret = &open_connection($hostid);
+for my $host ( scalar @ARGV ? sort @ARGV : sort keys %machines ) {
+  next if $skip{$host};
+  my $ret = &open_connection($host,'root',$machines{$host});
   next unless $ret;
 
-  $changes{$hostid}{changes} = {};
+  $changes{$host}{changes} = {};
 
   my $arch = run('uname -m');
   debug("ARCH: $arch\n");
@@ -127,45 +133,34 @@ for my $hostid ( scalar @override ? sort @override : sort { lc($all{$a}) cmp lc(
   my $uptime = run('uptime');
   debug("UP: $uptime\n");
 
-  my $ret = $hosts->update($hostid,{
+  my $possible = $hosts->by_name($host);
+  debug(" Possible host ids: " . join(',',@$possible) . "\n");
+
+  my $id;
+
+  if ( scalar(@$possible) < 1 ) {
+    $id = $hosts->add({
       arch => $arch,
-      #name => $host,
+      name => $host,
       os => $os,
       osrelease => $os_release,
       osversion => $os_version,
       uptime => $uptime,
       tz => $tz
-  });
-  debug(" Update returned $ret\n");
-
-  # Type
-
-  unless ( $ref->{type} ) {
-    my $type;
-    $type = 'DB'   if $ref->{name} =~ /db/i;
-    $type = 'SMFE' if $ref->{name} =~ /smfe/i;
-    $type = 'Page' if $ref->{name} =~ /page/i;
-    $type = 'Sync' if $ref->{name} =~ /sync/i;
-    $type = 'FMS'  if $ref->{name} =~ /fms/i;
-    if ( $type ) {
-      $ret = $hosts->update($hostid,{ type => $type });
-      debug(" Update returned $ret (type)\n");
-    }
-  }
-
-  # Category
-
-  unless ( $ref->{category} ) {
-    my $category;
-    $category = 'Demo'       if $ref->{name} =~ /demo/i;
-    $category = 'Production' if $ref->{name} =~ /prod/i;
-    $category = 'QA'         if $ref->{name} =~ /qa/i;
-    $category = 'Test'       if $ref->{name} =~ /test/i;
-    $category = 'Validation' if $ref->{name} =~ /v-(fms|page|sync|smfe|db)/i and not $category;
-    if ( $category ) {
-      $ret = $hosts->update($hostid,{ category => $category });
-      debug(" Update returned $ret (category)\n");
-    }
+    });
+    debug(" Added host: $id\n");
+  } elsif ( scalar(@$possible) == 1 ) {
+    $id = $possible->[0];
+    my $ret = $hosts->update($id,{
+      arch => $arch,
+      name => $host,
+      os => $os,
+      osrelease => $os_release,
+      osversion => $os_version,
+      uptime => $uptime,
+      tz => $tz
+    });
+    debug(" Update returned $ret\n");
   }
 
   # Remember uptimes for the change report
@@ -190,28 +185,27 @@ for my $hostid ( scalar @override ? sort @override : sort { lc($all{$a}) cmp lc(
       $days = $days - ($years * 365);
     }
 
-    $uptime{$hostid}{years} = $years;
-    $uptime{$hostid}{days} = $days;    
-    $uptime{$hostid}{hours} = $hours;    
-    $uptime{$hostid}{mins} = $mins;
-    $uptime{$hostid}{string} = $years ? sprintf('%d years, %d days, %02d:%02d', $years, $days, $hours, $mins)
-                             : $days  ? sprintf('%d days, %02d:%02d', $days, $hours, $mins)
-                             : sprintf('%02d:%02d', $hours, $mins);
+    $uptime{$host}{years} = $years;
+    $uptime{$host}{days} = $days;    
+    $uptime{$host}{hours} = $hours;    
+    $uptime{$host}{mins} = $mins;
+    $uptime{$host}{string} = $years ? sprintf('%d years, %d days, %02d:%02d', $years, $days, $hours, $mins)
+                           : $days  ? sprintf('%d days, %02d:%02d', $days, $hours, $mins)
+                           : sprintf('%02d:%02d', $hours, $mins);
   }
 
   # configs
   
-  my @configs = $conf->config_files();
-
+  my @configs = qw@/etc/fstab /etc/named.conf /etc/sudoers /etc/issue /etc/passwd /etc/snmp/snmpd.conf 
+                   /etc/sysconfig/network /etc/resolv.conf /etc/ssh/sshd_config /etc/selinux/config 
+                   /etc/yum.conf /etc/hosts /fusionone/tomcat/conf/server.xml /etc/motd /etc/issue.net
+                   /fusionone/apache/conf/httpd.conf /etc/bashrc /etc/profile /etc/rc.d/rc.local
+                   /fusionone/bin/f1 /etc/nsswitch.conf /etc/pam.d/system-auth /etc/sysconfig/authconfig
+                   /root/.bash_profile /root/.bash_logout /root/.bashrc /etc/sysconfig/iptables-config
+                   /etc/sysconfig/iptables /etc/sysconfig/vmware-release@;
   for my $type ( qw/ifcfg route/ ) {
     for my $eth ( qw/eth0 eth1/ ) {
       push @configs, "/etc/sysconfig/network-scripts/$type-$eth";
-    }
-  }
-
-  for my $n ( 0 .. 8 ) {
-    for my $eth ( qw/hme qfe/ ) {
-      push @configs, '/etc/hostname.' . $eth . $n;
     }
   }
 
@@ -219,65 +213,16 @@ for my $hostid ( scalar @override ? sort @override : sort { lc($all{$a}) cmp lc(
 
   for my $config ( @configs ) {
     my $data = run("if [ -f $config ]; then cat $config; fi");
-    my $old = $hosts->config_get($hostid,$config);
-    my $diff = diff(\$old,\$data, { STYLE => "Table" });    
+    if ( $data ) {
+      my $old = $hosts->config_get($id,$config);
+      my $diff = diff(\$old,\$data, { STYLE => "Table" });
 
-    if ( $data or $old ) {
-
-      # Config
-      
       if ( $diff ) {
         $diff = "Note: No data previously stored for this file.\n" . $diff unless $old;      
-        $changes{$hostid}{changes}{$config} = $diff;
+        $changes{$host}{changes}{$config} = $diff;
       }
-      my $ret = $noconfigsave ? 'X' : $hosts->config_set($hostid,$config,$data);
+      my $ret = $noconfigsave ? 'X' : $hosts->config_set($id,$config,$data);
       debug(" Update returned $ret ($config)\n");
-
-      # RCS
-
-      my $oldrcs = $hosts->config_get_rcs($hostid,$config);
-      my $newrcs;
-
-      unlink('/tmp/rcs') if -f '/tmp/rcs';
-      unlink('/tmp/rcs,v') if -f '/tmp/rcs,v';
-
-      if ( $oldrcs =~ /^\s*$/ ) {
-        open TMPFILE, '>/tmp/rcs';
-        print TMPFILE $data;
-        close TMPFILE;
-
-        system("echo 'Initial import' | $ci -i -q /tmp/rcs");
-
-        open RCSFILE, '</tmp/rcs,v';
-        $newrcs = join('',<RCSFILE>);
-        close RCSFILE;
-
-      } else {
-
-        open RCSFILE, '>/tmp/rcs,v';
-        print RCSFILE $oldrcs;
-        close RCSFILE;
-
-        system("$co -l -q /tmp/rcs");
-
-        open TMPFILE, '>/tmp/rcs';
-        print TMPFILE $data;
-        close TMPFILE;
-
-        system("$ci -u -q -m'Updated by grab.pl' /tmp/rcs");
-        
-        open RCSFILE, '</tmp/rcs,v';
-        $newrcs = join('',<RCSFILE>);
-        close RCSFILE;
-      }
-
-      if ( $newrcs and $newrcs ne $oldrcs ) {
-        my $ret = $noconfigsave ? 'X' : $hosts->config_set_rcs($hostid,$config,$newrcs);
-        debug(" RCS update returned $ret ($config)\n");
-      }
-
-      unlink('/tmp/rcs');
-      unlink('/tmp/rcs,v');
     }
   }
   
@@ -288,7 +233,7 @@ for my $hostid ( scalar @override ? sort @override : sort { lc($all{$a}) cmp lc(
   my $snmp = &is_running_linux('snmpd');
   my $ntp  = &is_running_linux('ntpd');
 
-  my $ret = $hosts->update($hostid,{
+  my $ret = $hosts->update($id,{
     snmp => $snmp,
     ntp  => $ntp,
   });
@@ -303,7 +248,7 @@ for my $hostid ( scalar @override ? sort @override : sort { lc($all{$a}) cmp lc(
 
     if ( $stdout =~ /^server\s+(\S+)/ ) {
       $ntphost = $1;
-      my $ret = $hosts->update($hostid,{ ntphost => $ntphost });
+      my $ret = $hosts->update($id,{ ntphost => $ntphost });
       debug(" Update returned $ret (ntphost)\n");
     }
   }
@@ -317,7 +262,7 @@ for my $hostid ( scalar @override ? sort @override : sort { lc($all{$a}) cmp lc(
 
     if ( $stdout =~ /\s+(\S+)\s*$/ ) {
       $snmp_community = $1;
-      my $ret = $hosts->update($hostid,{ snmp_community => $snmp_community });
+      my $ret = $hosts->update($id,{ snmp_community => $snmp_community });
       debug(" Update returned $ret (snmp_community)\n");
     }
   }
@@ -325,10 +270,10 @@ for my $hostid ( scalar @override ? sort @override : sort { lc($all{$a}) cmp lc(
   # Last run times
   
   for my $run( qw/last_backup last_ostune last_yum/ ) {
-    my $file = '/var/f1/' . $run;
+    my $file = '/var/run/f1/' . $run;
     my $data = run("if [ -f $file ]; then cat $file; fi");
     next unless $data;
-    my $ret = $hosts->data_set($hostid,$run,$data);
+    my $ret = $hosts->data_set($id,$run,$data);
     debug(" Update returned $ret ($run)\n");
   }
 
@@ -369,12 +314,12 @@ for my $hostid ( scalar @override ? sort @override : sort { lc($all{$a}) cmp lc(
   }
 
   if ( $machine_brand ) {
-    my $ret = $hosts->update($hostid,{ machine_brand => $machine_brand });
+    my $ret = $hosts->update($id,{ machine_brand => $machine_brand });
     debug(" Update returned $ret (machine_brand)\n");
   }
 
   if ( $machine_model ) {
-    my $ret = $hosts->update($hostid,{ machine_model => $machine_model });
+    my $ret = $hosts->update($id,{ machine_model => $machine_model });
     debug(" Update returned $ret (machine_model)\n");
   }
 
@@ -384,10 +329,10 @@ for my $hostid ( scalar @override ? sort @override : sort { lc($all{$a}) cmp lc(
   for my $dev ( keys %dev ) {
     next if $dev{$dev} =~ /00.00.00.00.00.00/;
     if ( $network->exists($dev{$dev}) ) {
-      my $ret = $network->update($dev{$dev},{ host_id => $hostid, host_interface => $dev });
+      my $ret = $network->update($dev{$dev},{ host_id => $id, host_interface => $dev });
       debug(" Update returned $ret ($dev)\n");
     } else {
-      my $ret = $network->add({ address => $dev{$dev}, host_id => $hostid, host_interface => $dev });
+      my $ret = $network->add({ address => $dev{$dev}, host_id => $id, host_interface => $dev });
       debug(" Insert returned $ret ($dev)\n");
     }
   }
@@ -399,16 +344,11 @@ for my $hostid ( scalar @override ? sort @override : sort { lc($all{$a}) cmp lc(
 
 # Open a connection
 sub open_connection {
-  my $hostid = shift @_;
-  my $ref = $fh->get($hostid);
+  my $host = shift @_;
+  my $user = shift @_;
+  my $pass = shift @_;
 
-  my $host = $ref->{name};
-  my $user = $ref->{username};
-  my $pass = $ref->{password};
-
-  $user = 'root' unless length $user;
-
-  debug("\nTrying $host " .( $user && $pass ? 'with' : 'without' ). " a password\n");
+  debug("\nTrying $host " .( $pass ? 'with' : 'without' ). " a password\n");
 
   if ( $use_expect ) {
 
@@ -419,7 +359,7 @@ sub open_connection {
       timeout => 2
     };
 
-    $conf->{password} = $pass if $pass;
+    $conf->{password} = $machines{$host} if $machines{$host};
 
     our $ssh = Net::SSH::Expect->new(%$conf);
 
@@ -523,42 +463,35 @@ sub change_report {
  
   my $best_uptime = '<ul>';
   for my $up (@best_uptime) {
-    $best_uptime .= "<li> $uptime{$up}{string} - <b>".&href($all{$up})."</b>\n";
+    $best_uptime .= "<li> $uptime{$up}{string} - <b>".&href($up)."</b>\n";
   }
   $best_uptime .= '</ul>';
 
   my $worst_uptime = '<ul>';
   for my $up (@worst_uptime) {
-    $worst_uptime .= "<li> $uptime{$up}{string} - <b>".&href($all{$up})."</b>\n";
+    $worst_uptime .= "<li> $uptime{$up}{string} - <b>".&href($up)."</b>\n";
   }
   $worst_uptime .= '</ul>';
    
   # Sort out what hosts changed, didn't change, and were skipped
  
   my @nochange; my @change;
-  for my $hostid ( sort keys %changes ) {
-    my $count = scalar(keys %{$changes{$hostid}{changes}});
-    my $host = $all{$hostid};
+  for my $host ( sort keys %changes ) {
+    my $count = scalar(keys %{$changes{$host}{changes}});
     if ( $count ) {
       push @change, $host; #"<a href='#$host'>$host</a>";
       $detail .= "\n<p><b><font size='+1'><a name='#$host'></a>$host</font></b></p>\n";
       $detail .= "\n<p>$count config changes noted.</p>\n";
-      for my $file ( sort keys %{$changes{$hostid}{changes}} ) {
-        my $table = &reformat_table($changes{$hostid}{changes}{$file});
+      for my $file ( sort keys %{$changes{$host}{changes}} ) {
+        my $table = &reformat_table($changes{$host}{changes}{$file});
         $detail .= "\nFile: <tt>$file</tt><br />\n$table\n";
       }
     } else {
-      push @nochange, $host unless $skipped{$hostid};
+      push @nochange, $host unless $skip{$host};
     }
   }
 
-  my @skip = sort map { $all{$_} } keys %skipped;
-
-  # alpha sort them
-  
-  @change   = sort { lc($a) cmp lc($b) } @change;
-  @skip     = sort { lc($a) cmp lc($b) } @skip;
-  @nochange = sort { lc($a) cmp lc($b) } @nochange;
+  my @skip = sort keys %skip;
 
   # Print the report
 
