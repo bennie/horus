@@ -7,7 +7,7 @@
 # --config=foo Deal only with the textconfig foo.
 # --noreport will skip emailing the change report.
 
-# $Id: grab.pl,v 1.46 2008/08/09 20:52:50 ppollard Exp $
+# $Id: grab.pl,v 1.47 2008/08/12 00:12:25 ppollard Exp $
 
 use Horus::Network;
 use Horus::Hosts;
@@ -45,7 +45,7 @@ debug("\n");
 
 ### Global Vars
 
-my $ver = (split ' ', '$Revision: 1.46 $')[1];
+my $ver = (split ' ', '$Revision: 1.47 $')[1];
 
 my %machines; # Machines to process
 my %skip;     # Machines to skip
@@ -54,7 +54,8 @@ my %uptime; # Track uptimes for the report
 
 ### Sort out the hosts and skips
 
-map {$skip{$_}++} qw/fmso fmsq fmsr fmss sync-embarq syncn sync15 alqa-fms01/;
+map {$skip{$_}++} qw/fmso fmsq fmsr fmss sync-embarq syncn sync15 alqa-fms01
+alqa-page01 alqa-sync01/;
 
 my $fh = new Horus::Hosts;
 my %all = $fh->all();
@@ -204,7 +205,9 @@ for my $host ( scalar @ARGV ? sort @ARGV : sort keys %machines ) {
                    /root/.bash_profile /root/.bash_logout /root/.bashrc /etc/sysconfig/iptables-config
                    /etc/sysconfig/iptables /etc/sysconfig/vmware-release
                    /fusionone/smfe/server/default/data/pingfederate-admin-user.xml
-                   /fusionone/webapp/mb/WEB-INF/classes/pfagent.propertries@;
+                   /fusionone/webapp/mb/WEB-INF/classes/pfagent.propertries
+                   /root/.ssh/authorized_keys /root/.ssh/authorized_keys2@;
+
   for my $type ( qw/ifcfg route/ ) {
     for my $eth ( qw/eth0 eth1/ ) {
       push @configs, "/etc/sysconfig/network-scripts/$type-$eth";
