@@ -25,9 +25,26 @@ CREATE TABLE `host_configs` (
   `hash` varchar(32) default NULL,
   `created` timestamp NOT NULL default '0000-00-00 00:00:00',
   `last_modified` timestamp NOT NULL default '0000-00-00 00:00:00',
+  `config_rcs` text,
   PRIMARY KEY  (`host_id`,`config_name`),
   KEY `host_id` (`host_id`),
   CONSTRAINT `host_configs_ibfk_1` FOREIGN KEY (`host_id`) REFERENCES `hosts` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+
+--
+-- Table structure for table `host_data_text`
+--
+
+DROP TABLE IF EXISTS `host_data_text`;
+CREATE TABLE `host_data_text` (
+  `host_id` int(11) NOT NULL default '0',
+  `data_name` varchar(255) NOT NULL default '',
+  `data_value` varchar(255) default NULL,
+  `created` timestamp NOT NULL default '0000-00-00 00:00:00',
+  `last_modified` timestamp NOT NULL default '0000-00-00 00:00:00',
+  PRIMARY KEY  (`host_id`,`data_name`),
+  KEY `host_id` (`host_id`),
+  CONSTRAINT `host_data_text_ibfk_1` FOREIGN KEY (`host_id`) REFERENCES `hosts` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 --
@@ -38,7 +55,11 @@ DROP TABLE IF EXISTS `hosts`;
 CREATE TABLE `hosts` (
   `id` int(11) NOT NULL auto_increment,
   `customer` varchar(100) default NULL,
+  `category` varchar(100) default NULL,
+  `type` varchar(100) default NULL,
   `name` varchar(255) default 'unknown',
+  `username` varchar(100) default NULL,
+  `password` varchar(100) default NULL,
   `os` varchar(64) default NULL,
   `osversion` varchar(255) default NULL,
   `osrelease` varchar(255) default NULL,
@@ -48,6 +69,7 @@ CREATE TABLE `hosts` (
   `machine_model` varchar(255) default NULL,
   `uptime` text,
   `notes` text,
+  `skip` int(11) default '0',
   `snmp` int(11) default '-1',
   `snmp_community` varchar(24) default NULL,
   `ntp` int(11) default '-1',
