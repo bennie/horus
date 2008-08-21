@@ -1,6 +1,6 @@
 #!/usr/bin/perl -I../lib
 
-# $Id: index.cgi,v 1.16 2008/08/07 22:20:44 ppollard Exp $
+# $Id: index.cgi,v 1.17 2008/08/21 19:46:28 ppollard Exp $
 
 use Horus::Network;
 use Horus::Hosts;
@@ -69,6 +69,8 @@ sub dashboard {
     $cgi->Tr(
       $cgi->td({-bgcolor=>$color_header},'Host'),
       $cgi->td({-bgcolor=>$color_header},'Customer'),
+      $cgi->td({-bgcolor=>$color_header},'Category'),
+      $cgi->td({-bgcolor=>$color_header},'Type'),
       $cgi->td({-bgcolor=>$color_header},'OS'),
       $cgi->td({-bgcolor=>$color_header},'Release'),
       $cgi->td({-bgcolor=>$color_header},'Version'),
@@ -76,7 +78,7 @@ sub dashboard {
       $cgi->td({-bgcolor=>$color_header},'Brand'),
       $cgi->td({-bgcolor=>$color_header},'Model'),
       $cgi->td({-bgcolor=>$color_header},'Clock'),
-      $cgi->td({-bgcolor=>$color_header},'Last Update'),
+      $cgi->td({-bgcolor=>$color_header},'Last&nbsp;Update'),
       $cgi->td({-bgcolor=>$color_header}, $cgi->start_form({-action=>'/edit.cgi'}), $cgi->submit({-name=>'New'}), $cgi->end_form )
     )
   );
@@ -92,6 +94,8 @@ sub dashboard {
     push @rows, $cgi->Tr(
       $cgi->td({-bgcolor=>$color_back}, $cgi->a({-href=>"/index.cgi/host/$hosts{$id}"},$hosts{$id}) ),
       $cgi->td({-bgcolor=>$color_back}, "$rec{customer}" ),
+      $cgi->td({-bgcolor=>$color_back}, "$rec{category}" ),
+      $cgi->td({-bgcolor=>$color_back}, "$rec{type}" ),
       $cgi->td({-bgcolor=>$color_back}, "$rec{os}" ),
       $cgi->td({-bgcolor=>$color_back}, "$rec{osrelease}" ),
       $cgi->td({-bgcolor=>$color_back}, "$rec{osversion}" ),
