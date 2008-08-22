@@ -7,7 +7,7 @@
 # --config=foo Deal only with the textconfig foo.
 # --noreport will skip emailing the change report.
 
-# $Id: grab.pl,v 1.49 2008/08/21 19:46:28 ppollard Exp $
+# $Id: grab.pl,v 1.50 2008/08/22 06:19:37 ppollard Exp $
 
 use Horus::Network;
 use Horus::Hosts;
@@ -45,17 +45,11 @@ debug("\n");
 
 ### Global Vars
 
-my $ver = (split ' ', '$Revision: 1.49 $')[1];
-
-my %machines; # Machines to process
-my %skip;     # Machines to skip
+my $ver = (split ' ', '$Revision: 1.50 $')[1];
 
 my %uptime; # Track uptimes for the report
 
-### Sort out the hosts and skips
-
-map {$skip{$_}++} qw/fmso fmsq fmsr fmss sync-embarq syncn sync15
-alqa-page01 fmst/;
+### Sort out the hosts
 
 my $fh = new Horus::Hosts;
 my %all = $fh->all();
@@ -77,9 +71,15 @@ my $hosts = new Horus::Hosts;
 our $ssh;
 
 my %changes;
+my %skipped;
 
-for my $hostid ( scalar @override ? sort @override : sort keys %all ) {
-  next if $skip{$hostid};
+for my $hostid ( scalar @override ? sort @override : sort { lc($all{$a}) cmp lc($all{$b}) } keys %all ) {
+  my $ref = $fh->get($hostid);
+  if ( $ref->{skip} > 0 ) {
+    $skipped{$hostid}++;
+    next;
+  }
+
   my $ret = &open_connection($hostid);
   next unless $ret;
 
@@ -132,6 +132,36 @@ for my $hostid ( scalar @override ? sort @override : sort keys %all ) {
       tz => $tz
   });
   debug(" Update returned $ret\n");
+
+  # Type
+
+  unless ( $ref->{type} ) {
+    my $type;
+    $type = 'DB'   if $ref->{name} =~ /db/i;
+    $type = 'SMFE' if $ref->{name} =~ /smfe/i;
+    $type = 'Page' if $ref->{name} =~ /page/i;
+    $type = 'Sync' if $ref->{name} =~ /sync/i;
+    $type = 'FMS'  if $ref->{name} =~ /fms/i;
+    if ( $type ) {
+      $ret = $hosts->update($hostid,{ type => $type });
+      debug(" Update returned $ret (type)\n");
+    }
+  }
+
+  # Category
+
+  unless ( $ref->{category} ) {
+    my $category;
+    $category = 'Demo'       if $ref->{name} =~ /demo/i;
+    $category = 'Production' if $ref->{name} =~ /prod/i;
+    $category = 'QA'         if $ref->{name} =~ /qa/i;
+    $category = 'Test'       if $ref->{name} =~ /test/i;
+    $category = 'Validation' if $ref->{name} =~ /v-(fms|page|sync|smfe|db)/i and not $category;
+    if ( $category ) {
+      $ret = $hosts->update($hostid,{ category => $category });
+      debug(" Update returned $ret (category)\n");
+    }
+  }
 
   # Remember uptimes for the change report
 
@@ -468,11 +498,11 @@ sub change_report {
         $detail .= "\nFile: <tt>$file</tt><br />\n$table\n";
       }
     } else {
-      push @nochange, $host unless $skip{$host};
+      push @nochange, $host unless $skipped{$hostid};
     }
   }
 
-  my @skip = sort keys %skip;
+  my @skip = sort map { $all{$_} } keys %skipped;
 
   # Print the report
 
