@@ -6,7 +6,7 @@ package Horus::Conf;
 
 use strict;
 
-$Horus::Conf::VERSION = '$Revision: 1.5 $';
+$Horus::Conf::VERSION = '$Revision: 1.6 $';
 
 sub new {
   my     $self = {};
@@ -83,7 +83,7 @@ sub config_files {
     }
   }
 
-  return @configs;
+  return sort @configs;
 }
 
 =head1 Authorship:
@@ -91,7 +91,7 @@ sub config_files {
   (c) 2008, Horus, Inc. 
 
   Work by Phil Pollard
-  $Revision: 1.5 $ $Date: 2008/08/23 21:17:02 $
+  $Revision: 1.6 $ $Date: 2008/08/23 21:19:43 $
 
 =cut
 
