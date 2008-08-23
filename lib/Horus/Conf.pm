@@ -6,7 +6,7 @@ package Horus::Conf;
 
 use strict;
 
-$Horus::Conf::VERSION = '$Revision: 1.2 $';
+$Horus::Conf::VERSION = '$Revision: 1.3 $';
 
 sub new {
   my     $self = {};
@@ -50,7 +50,7 @@ Returns an array of files to be tracked.
 =cut
 
 sub config_files {
-  return qw@/etc/fstab /etc/vfstab /etc/named.conf /etc/sudoers /etc/issue
+  my @configs = qw@/etc/fstab /etc/vfstab /etc/named.conf /etc/sudoers /etc/issue
   /etc/passwd /etc/snmp/snmpd.conf /etc/sysconfig/network /etc/resolv.conf
   /etc/ssh/sshd_config /etc/selinux/config /etc/yum.conf /etc/hosts
   /fusionone/tomcat/conf/server.xml /etc/motd /etc/issue.net
@@ -66,6 +66,20 @@ sub config_files {
   /fusionone/webapp/mb/WEB-INF/classes/pfagent.propertries
   /fusionone/webapps/admin/WEB-INF/classes/papi.properties
   /fusionone/webapps/fms/WEB-INF/classes/f1papi.conf@;
+
+  for my $type ( qw/ifcfg route/ ) {
+    for my $eth ( qw/eth0 eth1 eth2 eht3 eth4 eth5 bond0 bond1 bond2 bond3 bond4 bond5/ ) {
+      push @configs, "/etc/sysconfig/network-scripts/$type-$eth";
+    }
+  }
+
+  for my $n ( 0 .. 8 ) {
+    for my $eth ( qw/hme qfe/ ) {
+      push @configs, '/etc/hostname.' . $eth . $n;
+    }
+  }
+
+  return @configs;
 }
 
 =head1 Authorship:
@@ -73,7 +87,7 @@ sub config_files {
   (c) 2008, Horus, Inc. 
 
   Work by Phil Pollard
-  $Revision: 1.2 $ $Date: 2008/08/01 20:17:30 $
+  $Revision: 1.3 $ $Date: 2008/08/23 17:11:06 $
 
 =cut
 
