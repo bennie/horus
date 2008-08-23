@@ -6,7 +6,7 @@ package Horus::Conf;
 
 use strict;
 
-$Horus::Conf::VERSION = '$Revision: 1.3 $';
+$Horus::Conf::VERSION = '$Revision: 1.4 $';
 
 sub new {
   my     $self = {};
@@ -67,6 +67,8 @@ sub config_files {
   /fusionone/webapps/admin/WEB-INF/classes/papi.properties
   /fusionone/webapps/fms/WEB-INF/classes/f1papi.conf@;
 
+  push @configs, '/tmp/packages.txt';
+
   for my $type ( qw/ifcfg route/ ) {
     for my $eth ( qw/eth0 eth1 eth2 eht3 eth4 eth5 bond0 bond1 bond2 bond3 bond4 bond5/ ) {
       push @configs, "/etc/sysconfig/network-scripts/$type-$eth";
@@ -87,7 +89,7 @@ sub config_files {
   (c) 2008, Horus, Inc. 
 
   Work by Phil Pollard
-  $Revision: 1.3 $ $Date: 2008/08/23 17:11:06 $
+  $Revision: 1.4 $ $Date: 2008/08/23 21:14:08 $
 
 =cut
 
