@@ -7,7 +7,7 @@
 # --config=foo Deal only with the textconfig foo.
 # --noreport will skip emailing the change report.
 
-# $Id: grab.pl,v 1.66 2008/08/23 21:14:08 ppollard Exp $
+# $Id: grab.pl,v 1.67 2008/09/05 04:30:40 ppollard Exp $
 
 use Horus::Conf;
 use Horus::Network;
@@ -46,7 +46,7 @@ debug("\n");
 
 ### Global Vars
 
-my $ver = (split ' ', '$Revision: 1.66 $')[1];
+my $ver = (split ' ', '$Revision: 1.67 $')[1];
 
 my %uptime; # Track uptimes for the report
 
@@ -202,7 +202,7 @@ for my $hostid ( scalar @override ? sort @override : sort { lc($all{$a}) cmp lc(
 
   # RPM list - Builds it as /tmp/packages.txt - Maybe a better way?
   
-  run('if [ -f /usr/bin/yum ]; then yum list installed | tail +2 | sed -e "s/ *installed//" > /tmp/packages.txt; fi');
+  run('if [ -f /usr/bin/yum ]; then yum list installed | tail --lines=+2 | sed -e "s/ *installed//" > /tmp/packages.txt; fi');
   
   # configs
   
@@ -269,8 +269,8 @@ for my $hostid ( scalar @override ? sort @override : sort { lc($all{$a}) cmp lc(
         debug(" RCS update returned $ret ($config)\n");
       }
 
-      unlink('/tmp/rcs');
-      unlink('/tmp/rcs,v');
+      #unlink('/tmp/rcs');
+      #unlink('/tmp/rcs,v');
     }
   }
   

@@ -6,7 +6,7 @@ package Horus::Conf;
 
 use strict;
 
-$Horus::Conf::VERSION = '$Revision: 1.6 $';
+$Horus::Conf::VERSION = '$Revision: 1.7 $';
 
 sub new {
   my     $self = {};
@@ -50,24 +50,71 @@ Returns an array of files to be tracked.
 =cut
 
 sub config_files {
-  my @configs = qw@/etc/fstab /etc/vfstab /etc/named.conf /etc/sudoers /etc/issue
-  /etc/passwd /etc/snmp/snmpd.conf /etc/sysconfig/network /etc/resolv.conf
-  /etc/ssh/sshd_config /etc/selinux/config /etc/yum.conf /etc/hosts
-  /fusionone/tomcat/conf/server.xml /etc/motd /etc/issue.net
-  /fusionone/apache/conf/httpd.conf /etc/bashrc /etc/profile /etc/rc.d/rc.local
-  /fusionone/bin/f1 /etc/nsswitch.conf /etc/pam.d/system-auth
-  /etc/sysconfig/authconfig /root/.bash_profile /root/.bash_logout /root/.bashrc
-  /etc/sysconfig/iptables-config /etc/sysconfig/iptables
-  /root/.ssh/authorized_keys2 /etc/VRTSvcs/conf/config/main.cf
-  /fusionone/sync/classes_ce.inf /etc/sysconfig/vmware-release
-  /etc/httpd/conf/httpd.conf /etc/vmware/license.cfg /etc/vmware/esx.conf
-  /root/.ssh/authorized_keys
-  /fusionone/smfe/server/default/data/pingfederate-admin-user.xml
-  /fusionone/webapp/mb/WEB-INF/classes/pfagent.propertries
-  /fusionone/webapps/admin/WEB-INF/classes/papi.properties
-  /fusionone/webapps/fms/WEB-INF/classes/f1papi.conf@;
+  my @configs = qw@
+  /etc/bashrc
+  /etc/exports
+  /etc/fstab
+  /etc/hosts
+  /etc/inittab
+  /etc/issue
+  /etc/issue.net
+  /etc/lftp.conf
+  /etc/modprobe.conf
+  /etc/motd
+  /etc/named.conf
+  /etc/nsswitch.conf
+  /etc/ntp.conf
+  /etc/passwd
+  /etc/profile
+  /etc/resolv.conf
+  /etc/sudoers
+  /etc/vsftpd.ftpusers
+  /etc/vsftpd.user_list
+  /etc/vsftpd/vsftpd.conf
+  /etc/vfstab
+  /etc/xinetd.conf
+  /etc/yum.conf
 
-  push @configs, '/tmp/packages.txt';
+  /etc/pam.d/system-auth
+  /etc/rc.d/rc.local
+  /etc/selinux/config
+  /etc/snmp/snmpd.conf
+  /etc/ssh/sshd_config
+  /etc/sysconfig/authconfig
+  /etc/sysconfig/iptables
+  /etc/sysconfig/iptables-config
+  /etc/sysconfig/network
+  
+  /root/.bash_logout
+  /root/.bash_profile
+  /root/.bashrc
+  /root/.ssh/authorized_keys2
+  /root/.ssh/authorized_keys
+  
+  /etc/VRTSvcs/conf/config/main.cf
+
+  /etc/httpd/conf/httpd.conf 
+
+  /etc/sysconfig/vmware-release /etc/vmware/license.cfg /etc/vmware/esx.conf
+
+  /etc/vmware/config /etc/vmware/locations
+
+  /fusionone/apache/conf/httpd.conf
+  /fusionone/bin/f1
+  /fusionone/smfe/server/default/data/pingfederate-admin-user.xml
+  /fusionone/sync/classes_ce.inf
+  /fusionone/tomcat/conf/server.xml
+
+  /fusionone/webapp/mb/WEB-INF/classes/pfagent.propertries
+  /fusionone/webapp/admin/WEB-INF/classes/papi.properties
+  /fusionone/webapp/fms/WEB-INF/classes/f1papi.conf
+
+  /fusionone/webapps/mb/WEB-INF/classes/pfagent.propertries
+  /fusionone/webapps/admin/WEB-INF/classes/papi.properties
+  /fusionone/webapps/fms/WEB-INF/classes/f1papi.conf
+@;
+
+  #push @configs, '/tmp/packages.txt'; # Temp comment out
 
   for my $type ( qw/ifcfg route/ ) {
     for my $eth ( qw/eth bond/ ) {
@@ -91,7 +138,7 @@ sub config_files {
   (c) 2008, Horus, Inc. 
 
   Work by Phil Pollard
-  $Revision: 1.6 $ $Date: 2008/08/23 21:19:43 $
+  $Revision: 1.7 $ $Date: 2008/09/05 04:30:40 $
 
 =cut
 
