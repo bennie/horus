@@ -6,7 +6,7 @@ package Horus::Conf;
 
 use strict;
 
-$Horus::Conf::VERSION = '$Revision: 1.8 $';
+$Horus::Conf::VERSION = '$Revision: 1.9 $';
 
 sub new {
   my     $self = {};
@@ -105,20 +105,61 @@ sub config_files {
   /fusionone/sync/classes_ce.inf
   /fusionone/tomcat/conf/server.xml
 
-  /fusionone/webapp/mb/WEB-INF/classes/pfagent.propertries
-  /fusionone/webapp/admin/WEB-INF/classes/papi.properties
-  /fusionone/webapp/fms/WEB-INF/classes/f1papi.conf
-  /fusionone/webapp/fms/WEB-INF/classes/fms.conf
-  /fusionone/webapp/fms/WEB-INF/classes/hibernate.properties
-  /fusionone/webapp/fms/WEB-INF/classes/jdbc.properties
-
   /fusionone/webapps/mb/WEB-INF/classes/pfagent.propertries
+
+  /fusionone/webapps/admin/WEB-INF/classes/admin.properties
   /fusionone/webapps/admin/WEB-INF/classes/papi.properties
+  /fusionone/webapps/admin/WEB-INF/classes/f1papi.properties
+
+  /fusionone/webapps/alcsrw/WEB-INF/classes/alcsrw.properties
+  /fusionone/webapps/alcsrw/WEB-INF/classes/f1papi.properties
+  /fusionone/webapps/alcsrw/WEB-INF/classes/papi.properties
+  /fusionone/webapps/alcsrw/WEB-INF/classes/qc-lib.properties
+  /fusionone/webapps/alcsrw/WEB-INF/classes/hibernate.properties
+
+  /fusionone/webapps/f1nag/WEB-INF/classes/hibernate.properties
+  /fusionone/webapps/f1nag/WEB-INF/classes/jdbc.properties
+  /fusionone/webapps/f1nag/WEB-INF/classes/nag.properties
+
   /fusionone/webapps/fms/WEB-INF/classes/f1papi.conf
   /fusionone/webapps/fms/WEB-INF/classes/fms.conf
   /fusionone/webapps/fms/WEB-INF/classes/hibernate.properties
-  /fusionone/webapps/fms/WEB-INF/classes/jdbc.properties
+  /fusionone/webapps/fms/WEB-INF/classes/jdbc.properties  
+ 
+  /fusionone/webapps/lc-broker/WEB-INF/classes/hibernate.properties
+  /fusionone/webapps/lc-broker/WEB-INF/classes/lcbroker.properties
+  /fusionone/webapps/lc-broker/WEB-INF/classes/f1papi.conf
+  /fusionone/webapps/lc-broker/WEB-INF/classes/jdbc.properties
+  /fusionone/webapps/lc-broker/WEB-INF/classes/papi.properties
+ 
+  /fusionone/webapps/mb/WEB-INF/classes/f1papi.conf
+  /fusionone/webapps/mb/WEB-INF/classes/hibernate.properties
+  /fusionone/webapps/mb/WEB-INF/classes/jdbc.properties
+  /fusionone/webapps/mb/WEB-INF/classes/papi.properties
+  /fusionone/webapps/mb/WEB-INF/classes/mbackup.properties
+  /fusionone/webapps/mb/WEB-INF/classes/sso.properties
+ 
+  /fusionone/webapps/mg/WEB-INF/classes/f1mg.properties
+  /fusionone/webapps/mg/WEB-INF/classes/f1papi.conf
+  /fusionone/webapps/mg/WEB-INF/classes/papi.properties
+ 
+  /fusionone/webapps/qc-gw/WEB-INF/classes/f1papi.conf
+  /fusionone/webapps/qc-gw/WEB-INF/classes/hibernate.properties
+  /fusionone/webapps/qc-gw/WEB-INF/classes/jdbc.properties
+  /fusionone/webapps/qc-gw/WEB-INF/classes/qcgw.properties
+  /fusionone/webapps/qc-gw/WEB-INF/classes/qc-lib.properties
+  /fusionone/webapps/qc-gw/WEB-INF/classes/papi.properties
+ 
+  /fusionone/sync/classes_variables_ce.inf
+  /fusionone/sync/classes_ce.inf
 @;
+
+  # Name trouble
+  
+  for my $config (@configs) {
+    push @configs, '/fusionone/webapp/' . $1 if $config =~ /\/fusionone\/webapps\/(.+)$/;
+    push @configs, '/fusionone/ss/' . $1, '/fusionone/apps/ss/' . $1 if $config =~ /\/fusionone\/sync\/(.+)$/;
+  }
 
   #  /tmp/packages.txt  # Temp comment out for size
   #  /etc/vmware/locations
@@ -145,7 +186,7 @@ sub config_files {
   (c) 2008, Horus, Inc. 
 
   Work by Phil Pollard
-  $Revision: 1.8 $ $Date: 2008/09/10 16:53:52 $
+  $Revision: 1.9 $ $Date: 2008/09/10 21:31:29 $
 
 =cut
 
