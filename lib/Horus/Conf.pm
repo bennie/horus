@@ -6,7 +6,7 @@ package Horus::Conf;
 
 use strict;
 
-$Horus::Conf::VERSION = '$Revision: 1.7 $';
+$Horus::Conf::VERSION = '$Revision: 1.8 $';
 
 sub new {
   my     $self = {};
@@ -97,7 +97,7 @@ sub config_files {
 
   /etc/sysconfig/vmware-release /etc/vmware/license.cfg /etc/vmware/esx.conf
 
-  /etc/vmware/config /etc/vmware/locations
+  /etc/vmware/config
 
   /fusionone/apache/conf/httpd.conf
   /fusionone/bin/f1
@@ -108,13 +108,20 @@ sub config_files {
   /fusionone/webapp/mb/WEB-INF/classes/pfagent.propertries
   /fusionone/webapp/admin/WEB-INF/classes/papi.properties
   /fusionone/webapp/fms/WEB-INF/classes/f1papi.conf
+  /fusionone/webapp/fms/WEB-INF/classes/fms.conf
+  /fusionone/webapp/fms/WEB-INF/classes/hibernate.properties
+  /fusionone/webapp/fms/WEB-INF/classes/jdbc.properties
 
   /fusionone/webapps/mb/WEB-INF/classes/pfagent.propertries
   /fusionone/webapps/admin/WEB-INF/classes/papi.properties
   /fusionone/webapps/fms/WEB-INF/classes/f1papi.conf
+  /fusionone/webapps/fms/WEB-INF/classes/fms.conf
+  /fusionone/webapps/fms/WEB-INF/classes/hibernate.properties
+  /fusionone/webapps/fms/WEB-INF/classes/jdbc.properties
 @;
 
-  #push @configs, '/tmp/packages.txt'; # Temp comment out
+  #  /tmp/packages.txt  # Temp comment out for size
+  #  /etc/vmware/locations
 
   for my $type ( qw/ifcfg route/ ) {
     for my $eth ( qw/eth bond/ ) {
@@ -138,7 +145,7 @@ sub config_files {
   (c) 2008, Horus, Inc. 
 
   Work by Phil Pollard
-  $Revision: 1.7 $ $Date: 2008/09/05 04:30:40 $
+  $Revision: 1.8 $ $Date: 2008/09/10 16:53:52 $
 
 =cut
 
