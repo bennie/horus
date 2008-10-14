@@ -7,7 +7,7 @@
 # --config=foo Deal only with the textconfig foo.
 # --noreport will skip emailing the change report.
 
-# $Id: grab.pl,v 1.53 2008/10/10 23:00:10 ppollard Exp $
+# $Id: grab.pl,v 1.54 2008/10/14 18:28:44 ppollard Exp $
 
 use Horus::Network;
 use Horus::Hosts;
@@ -45,7 +45,7 @@ debug("\n");
 
 ### Global Vars
 
-my $ver = (split ' ', '$Revision: 1.53 $')[1];
+my $ver = (split ' ', '$Revision: 1.54 $')[1];
 
 my %uptime; # Track uptimes for the report
 
@@ -207,7 +207,8 @@ for my $hostid ( scalar @override ? sort @override : sort { lc($all{$a}) cmp lc(
                    /fusionone/webapp/mb/WEB-INF/classes/pfagent.propertries
                    /root/.ssh/authorized_keys /root/.ssh/authorized_keys2
                    /fusionone/webapps/admin/WEB-INF/classes/papi.properties
-                   /etc/vmware/license.cfg  /etc/vmware/esx.conf@;
+                   /etc/vmware/license.cfg  /etc/vmware/esx.conf
+                   /etc/VRTSvcs/conf/config/main.cf@;
 
   for my $type ( qw/ifcfg route/ ) {
     for my $eth ( qw/eth0 eth1/ ) {
