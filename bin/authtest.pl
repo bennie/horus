@@ -4,8 +4,10 @@ use strict;
 
 use Crypt::PasswdMD5;
 use Crypt::SaltedHash;
-
 use Net::LDAP;
+use Term::ReadPassword;
+
+my $password = read_password('password: ');
 
 my($ldap) = Net::LDAP->new('ldap.myhost.com') or die "Can't bind to ldap: $!\n";
 $ldap->bind("cn=manager,dc=mycompany,dc=com", password=>'mypassword');
@@ -17,10 +19,9 @@ print $mesg->code, ' ',  $mesg->error, "\n";
 for my $entry ($mesg->entries) {
   my $uid = ($entry->get('uid'))[0];
   my $pass = ($entry->get('userPassword'))[0];
-  my $valid = &check_pass($pass, 'fusion123');
+  my $valid = &check_pass($pass, $password);
   print "$valid -> $uid $pass\n";
 }
-
 
 sub check_pass {
   my $pass = shift @_;
