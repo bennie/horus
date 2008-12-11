@@ -7,8 +7,9 @@
 # --config=foo Deal only with the textconfig foo.
 # --noreport will skip emailing the change report.
 
-# $Id: grab.pl,v 1.54 2008/10/14 18:28:44 ppollard Exp $
+# $Id: grab.pl,v 1.68 2008/12/11 01:31:52 ppollard Exp $
 
+use Horus::Conf;
 use Horus::Network;
 use Horus::Hosts;
 
@@ -45,9 +46,12 @@ debug("\n");
 
 ### Global Vars
 
-my $ver = (split ' ', '$Revision: 1.54 $')[1];
+my $ver = (split ' ', '$Revision: 1.68 $')[1];
 
 my %uptime; # Track uptimes for the report
+
+my $co = '/usr/bin/co'; # RCS utils
+my $ci = '/usr/bin/ci';
 
 ### Sort out the hosts
 
@@ -65,8 +69,9 @@ if ( scalar @ARGV ) {
 
 ### Main
 
+my $conf    = new Horus::Conf;
+my $hosts   = new Horus::Hosts;
 my $network = new Horus::Network;
-my $hosts = new Horus::Hosts;
 
 our $ssh;
 
@@ -108,7 +113,8 @@ for my $hostid ( scalar @override ? sort @override : sort { lc($all{$a}) cmp lc(
 
   $os_release = 'RH 9' if $os_release =~ /Red Hat Linux release 9 \(Shrike\)/;
   $os_release = 'RH'.$1.'L 4' if $os_release =~ /Red Hat Enterprise Linux (\w)S release 4 \(Nahant\)/;
-  $os_release = 'RH'.$1.'L 4.'.$2 if $os_release =~ /Red Hat Enterprise Linux (\w)S release 4 \(Nahant Update (\d)\)/;
+
+  $os_release = 'RH'.$1.'L '.$2.'.'.$3 if $os_release =~ /Red Hat Enterprise Linux (\w)S release (\d) \(\w+ Update (\d)\)/;
 
   $os_release = 'VM ESX '.$1 if $os_release =~ /VMware ESX Server (\d) \(Dali\)/;
 
@@ -137,7 +143,7 @@ for my $hostid ( scalar @override ? sort @override : sort { lc($all{$a}) cmp lc(
 
   unless ( $ref->{type} ) {
     my $type;
-    $type = 'DB'   if $ref->{name} =~ /db/i;
+    $type = 'DB'   if $ref->{name} =~ /db/i or $ref->{name} =~ /mysql/i;
     $type = 'SMFE' if $ref->{name} =~ /smfe/i;
     $type = 'Page' if $ref->{name} =~ /page/i;
     $type = 'Sync' if $ref->{name} =~ /sync/i;
@@ -194,48 +200,77 @@ for my $hostid ( scalar @override ? sort @override : sort { lc($all{$a}) cmp lc(
                              : sprintf('%02d:%02d', $hours, $mins);
   }
 
+  # RPM list - Builds it as /tmp/packages.txt - Maybe a better way?
+  
+  run('if [ -f /usr/bin/yum ]; then yum list installed | tail --lines=+2 | sed -e "s/ *installed//" > /tmp/packages.txt; fi');
+  
   # configs
   
-  my @configs = qw@/etc/fstab /etc/vfstab /etc/named.conf /etc/sudoers /etc/issue /etc/passwd /etc/snmp/snmpd.conf 
-                   /etc/sysconfig/network /etc/resolv.conf /etc/ssh/sshd_config /etc/selinux/config 
-                   /etc/yum.conf /etc/hosts /fusionone/tomcat/conf/server.xml /etc/motd /etc/issue.net
-                   /fusionone/apache/conf/httpd.conf /etc/bashrc /etc/profile /etc/rc.d/rc.local
-                   /fusionone/bin/f1 /etc/nsswitch.conf /etc/pam.d/system-auth /etc/sysconfig/authconfig
-                   /root/.bash_profile /root/.bash_logout /root/.bashrc /etc/sysconfig/iptables-config
-                   /etc/sysconfig/iptables /etc/sysconfig/vmware-release /etc/httpd/conf/httpd.conf
-                   /fusionone/smfe/server/default/data/pingfederate-admin-user.xml
-                   /fusionone/webapp/mb/WEB-INF/classes/pfagent.propertries
-                   /root/.ssh/authorized_keys /root/.ssh/authorized_keys2
-                   /fusionone/webapps/admin/WEB-INF/classes/papi.properties
-                   /etc/vmware/license.cfg  /etc/vmware/esx.conf
-                   /etc/VRTSvcs/conf/config/main.cf@;
-
-  for my $type ( qw/ifcfg route/ ) {
-    for my $eth ( qw/eth0 eth1/ ) {
-      push @configs, "/etc/sysconfig/network-scripts/$type-$eth";
-    }
-  }
-
-  for my $n ( 0 .. 8 ) {
-    for my $eth ( qw/hme qfe/ ) {
-      push @configs, '/etc/hostname.' . $eth . $n;
-    }
-  }
+  my @configs = $conf->config_files();
 
   @configs = ( $config_to_save ) if $config_to_save;
 
   for my $config ( @configs ) {
     my $data = run("if [ -f $config ]; then cat $config; fi");
-    if ( $data ) {
-      my $old = $hosts->config_get($hostid,$config);
-      my $diff = diff(\$old,\$data, { STYLE => "Table" });
+    my $old = $hosts->config_get($hostid,$config);
+    my $diff = diff(\$old,\$data, { STYLE => "Table" });    
 
+    if ( $data or $old ) {
+
+      # Config
+      
       if ( $diff ) {
         $diff = "Note: No data previously stored for this file.\n" . $diff unless $old;      
         $changes{$hostid}{changes}{$config} = $diff;
       }
       my $ret = $noconfigsave ? 'X' : $hosts->config_set($hostid,$config,$data);
       debug(" Update returned $ret ($config)\n");
+
+      # RCS
+
+      my $oldrcs = $hosts->config_get_rcs($hostid,$config);
+      my $newrcs;
+
+      unlink('/tmp/rcs') if -f '/tmp/rcs';
+      unlink('/tmp/rcs,v') if -f '/tmp/rcs,v';
+
+      if ( $oldrcs =~ /^\s*$/ ) {
+        open TMPFILE, '>/tmp/rcs';
+        print TMPFILE $data;
+        close TMPFILE;
+
+        system("echo 'Initial import' | $ci -i -q /tmp/rcs");
+
+        open RCSFILE, '</tmp/rcs,v';
+        $newrcs = join('',<RCSFILE>);
+        close RCSFILE;
+
+      } else {
+
+        open RCSFILE, '>/tmp/rcs,v';
+        print RCSFILE $oldrcs;
+        close RCSFILE;
+
+        system("$co -l -q /tmp/rcs");
+
+        open TMPFILE, '>/tmp/rcs';
+        print TMPFILE $data;
+        close TMPFILE;
+
+        system("$ci -u -q -m'Updated by grab.pl' /tmp/rcs");
+        
+        open RCSFILE, '</tmp/rcs,v';
+        $newrcs = join('',<RCSFILE>);
+        close RCSFILE;
+      }
+
+      if ( $newrcs and $newrcs ne $oldrcs ) {
+        my $ret = $noconfigsave ? 'X' : $hosts->config_set_rcs($hostid,$config,$newrcs);
+        debug(" RCS update returned $ret ($config)\n");
+      }
+
+      #unlink('/tmp/rcs');
+      #unlink('/tmp/rcs,v');
     }
   }
   
@@ -283,7 +318,7 @@ for my $hostid ( scalar @override ? sort @override : sort { lc($all{$a}) cmp lc(
   # Last run times
   
   for my $run( qw/last_backup last_ostune last_yum/ ) {
-    my $file = '/var/run/f1/' . $run;
+    my $file = '/var/f1/' . $run;
     my $data = run("if [ -f $file ]; then cat $file; fi");
     next unless $data;
     my $ret = $hosts->data_set($hostid,$run,$data);
@@ -493,24 +528,39 @@ sub change_report {
    
   # Sort out what hosts changed, didn't change, and were skipped
  
+  my $changeheader;
   my @nochange; my @change;
-  for my $hostid ( sort keys %changes ) {
+  
+  for my $hostid ( sort { lc($all{$a}) cmp lc($all{$b}) } keys %changes ) {
     my $count = scalar(keys %{$changes{$hostid}{changes}});
     my $host = $all{$hostid};
     if ( $count ) {
+      $changeheader .= "<li><b>" . &href($host) . "</b><ul>\n";
+
       push @change, $host; #"<a href='#$host'>$host</a>";
+
       $detail .= "\n<p><b><font size='+1'><a name='#$host'></a>$host</font></b></p>\n";
       $detail .= "\n<p>$count config changes noted.</p>\n";
-      for my $file ( sort keys %{$changes{$hostid}{changes}} ) {
+
+      for my $file ( sort { lc($a) cmp lc($b) } keys %{$changes{$hostid}{changes}} ) {
         my $table = &reformat_table($changes{$hostid}{changes}{$file});
+        $changeheader .= "<li>$file</li>\n";
         $detail .= "\nFile: <tt>$file</tt><br />\n$table\n";
       }
+
+      $changeheader .= "</ul></li>\n";
     } else {
       push @nochange, $host unless $skipped{$hostid};
     }
   }
 
   my @skip = sort map { $all{$_} } keys %skipped;
+
+  # alpha sort them
+  
+  @change   = sort { lc($a) cmp lc($b) } @change;
+  @skip     = sort { lc($a) cmp lc($b) } @skip;
+  @nochange = sort { lc($a) cmp lc($b) } @nochange;
 
   # Print the report
 
@@ -520,7 +570,7 @@ sub change_report {
 
   print REPORT "<hr noshade /><font size='+2'><b>Change Report</b></font><hr noshade />\n"
              . scalar(localtime)."<br /><small>Report version $ver</small>\n"
-             . "<p>Changes were found on these hosts:</p><blockquote>" . join(', ', map {&href($_)} @change ) . "</blockquote>\n"
+             . "<p>Changes were found on these hosts:</p><blockquote><ul>\n" . $changeheader . "\n</ul></blockquote>\n"
              . "<p>We skipped checking the following hosts:</p><blockquote>" . join(', ', map {&href($_)} @skip ) . "</blockquote>\n"
              . "<p>The following hosts appear unchaged:</p><blockquote>".  join(', ', map {&href($_)} @nochange ) . "</blockquote>\n";
 

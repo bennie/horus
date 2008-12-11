@@ -6,7 +6,7 @@ package Horus::Conf;
 
 use strict;
 
-$Horus::Conf::VERSION = '$Revision: 1.10 $';
+$Horus::Conf::VERSION = '$Revision: 1.11 $';
 
 sub new {
   my     $self = {};
@@ -51,6 +51,7 @@ Returns an array of files to be tracked.
 
 sub config_files {
   my @configs = qw@
+  /etc/aliases
   /etc/bashrc
   /etc/exports
   /etc/fstab
@@ -102,7 +103,6 @@ sub config_files {
   /fusionone/apache/conf/httpd.conf
   /fusionone/bin/f1
   /fusionone/smfe/server/default/data/pingfederate-admin-user.xml
-  /fusionone/sync/classes_ce.inf
   /fusionone/tomcat/conf/server.xml
 
   /fusionone/webapps/mb/WEB-INF/classes/pfagent.propertries
@@ -191,7 +191,7 @@ sub config_files {
   (c) 2008, Horus, Inc. 
 
   Work by Phil Pollard
-  $Revision: 1.10 $ $Date: 2008/09/11 22:16:07 $
+  $Revision: 1.11 $ $Date: 2008/12/11 01:31:52 $
 
 =cut
 
