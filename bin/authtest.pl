@@ -1,18 +1,23 @@
 #!/usr/bin/perl
 
-use strict;
-
 use Crypt::PasswdMD5;
 use Crypt::SaltedHash;
 use Net::LDAP;
+use Term::ReadLine;
 use Term::ReadPassword;
 
+use strict;
+
+$Term::ReadPassword::USE_STARS = 1;
+my $term = new Term::ReadLine;
+
+my $user = $term->readline('user: ');
 my $password = read_password('password: ');
 
 my($ldap) = Net::LDAP->new('ldap.myhost.com') or die "Can't bind to ldap: $!\n";
 $ldap->bind("cn=manager,dc=mycompany,dc=com", password=>'mypassword');
 
-my $mesg = $ldap->search(filter => '(objectClass=*)', base => "ou=People,dc=mycompany,dc=com");
+my $mesg = $ldap->search(filter => "(uid=$user)", base => "ou=People,dc=mycompany,dc=com");
 
 print $mesg->code, ' ',  $mesg->error, "\n";
 
