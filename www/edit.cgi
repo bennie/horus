@@ -3,6 +3,8 @@
 use Horus::Hosts;
 
 use CGI;
+use HTML::Template;
+
 use strict;
 
 my $cgi = new CGI;
