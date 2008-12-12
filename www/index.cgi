@@ -1,6 +1,6 @@
 #!/usr/bin/perl -I../lib
 
-# $Id: index.cgi,v 1.22 2008/12/12 00:35:20 ppollard Exp $
+# $Id: index.cgi,v 1.23 2008/12/12 00:58:55 ppollard Exp $
 
 use Horus::Network;
 use Horus::Hosts;
@@ -288,9 +288,11 @@ sub host {
 }
 
 sub network_report {
-  print $cgi->header, $cgi->start_html( -title=> 'Horus - Network Report'),
-        $cgi->font({-size=>'+2'},"Horus: Network Report"), $cgi->hr({-noshade=>undef}),
-        $cgi->font({-size=>1},$cgi->a({-href=>'/index.cgi/dashboard'},'Back to Dashboard'));
+  $tmpl->param( titlebar => 'Horus - Network Report' );
+  $tmpl->param( title => 'Horus: Network Report' );
+  $tmpl->param( guest => "Welcome $user" );
+
+  my $body = $cgi->font({-size=>1},$cgi->a({-href=>'/index.cgi/dashboard'},'Back to Dashboard'));
 
   my $all = $fn->all();
 
@@ -326,14 +328,17 @@ sub network_report {
     );
   }
 
-  print $cgi->center( &box(@rows) );
-  print $cgi->end_html;
+  $body .= $cgi->center( &box(@rows) );
+  $tmpl->param( body => $body );
+  print $cgi->header, $tmpl->output;
 }
 
 sub os_report {
-  print $cgi->header, $cgi->start_html( -title=> 'Horus - OS Report'),
-        $cgi->font({-size=>'+2'},"Horus: OS Report"), $cgi->hr({-noshade=>undef}),
-        $cgi->font({-size=>1},$cgi->a({-href=>'/index.cgi/dashboard'},'Back to Dashboard'));
+  $tmpl->param( titlebar => 'Horus - OS Report' );
+  $tmpl->param( title => 'Horus: OS Report' );
+  $tmpl->param( guest => "Welcome $user" );
+
+  my $body = $cgi->font({-size=>1},$cgi->a({-href=>'/index.cgi/dashboard'},'Back to Dashboard'));
 
   my %os;
   my %counts;
@@ -346,25 +351,28 @@ sub os_report {
   }
 
   for my $os ( sort keys %os ) {
-    print $cgi->p($cgi->b($os),"($counts{$os} servers)"), $cgi->start_ul;
+    $body .= $cgi->p($cgi->b($os),"($counts{$os} servers)"), $cgi->start_ul;
     for my $release ( sort keys %{$os{$os}} ) {
-      print $cgi->li(($release eq '' ? 'Unknown' : $release),'(' .$counts{$os.$release}. ' servers)');
+      $body .= $cgi->li(($release eq '' ? 'Unknown' : $release),'(' .$counts{$os.$release}. ' servers)');
       my @chunks;
       for my $version ( sort keys %{$os{$os}{$release}} ) {
         push @chunks, "$version ($os{$os}{$release}{$version})";
       }
-      print $cgi->blockquote(join ', ', @chunks);
+      $body .= $cgi->blockquote(join ', ', @chunks);
     }
-    print $cgi->end_ul;
+    $body .= $cgi->end_ul;
   }
-
-  print $cgi->end_html;
+  $body .= $cgi->end_html;
+  $tmpl->param( body => $body );
+  print $cgi->header, $tmpl->output;
 }
 
 sub password_report {
-  print $cgi->header, $cgi->start_html( -title=> 'Horus - Password Report'),
-        $cgi->font({-size=>'+2'},"Horus: Password Report"), $cgi->hr({-noshade=>undef}),
-        $cgi->font({-size=>1},$cgi->a({-href=>'/index.cgi/dashboard'},'Back to Dashboard'));
+  $tmpl->param( titlebar => 'Horus - Password Report' );
+  $tmpl->param( title => 'Horus: Password Report' );
+  $tmpl->param( guest => "Welcome $user" );
+
+  my $body = $cgi->font({-size=>1},$cgi->a({-href=>'/index.cgi/dashboard'},'Back to Dashboard'));
 
   my @pass = $cgi->Tr( map {$cgi->td({-bgcolor=>$color_header},$_)} qw/Host User Pass/);
   
@@ -377,9 +385,9 @@ sub password_report {
     );
   }
 
-  print $cgi->p({-align=>'center'},box(@pass));
-  
-  print $cgi->end_html;
+  $body .= $cgi->p({-align=>'center'},box(@pass));
+  $tmpl->param( body => $body );
+  print $cgi->header, $tmpl->output;
 }
 
 
