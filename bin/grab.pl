@@ -7,7 +7,7 @@
 # --config=foo Deal only with the textconfig foo.
 # --noreport will skip emailing the change report.
 
-# $Id: grab.pl,v 1.68 2008/12/11 01:31:52 ppollard Exp $
+# $Id: grab.pl,v 1.69 2008/12/29 21:32:01 ppollard Exp $
 
 use Horus::Conf;
 use Horus::Network;
@@ -27,7 +27,7 @@ use strict;
 
 my $use_expect = 0;
 
-my $config_to_save = undef;           # --config=foo, Override what config to process
+my @configs_to_save = undef;          # --config=foo, Override what config to process
 my $email = 'dcops@fusionone.com';    # --email=foo, Email that change report is sent to
 my $noconfigsave = 0;                 # --noconfigsave, do not update configs in the DB
 my $noreport = 0;                     # --noreport, supress emailing the change report
@@ -35,18 +35,20 @@ my $subject = 'Server Change Report'; # --subject, change the report email subje
 my $quiet = 0;                        # --quiet, supress STDOUT run-time info
 
 my $ret = GetOptions(
-            'config=s' => \$config_to_save, 'email=s' => \$email,  noconfigsave => \$noconfigsave,
+            'config=s' => \@configs_to_save, 'email=s' => \$email,  noconfigsave => \$noconfigsave,
             noreport => \$noreport, 'subject=s' => \$subject, quiet => \$quiet
 );
 
+@configs_to_save = grep !/^\s*$/, split(/,/,join(',',@configs_to_save)); # in case the configs are comma sep
+
 debug( $noreport ? "Report will NOT be sent.\n" : "Report will go to $email\n" );
 debug("Configs will NOT be saved.\n") if $noconfigsave;
-debug("Only checking for the following config: $config_to_save\n") if $config_to_save;
+debug("Only checking for the following config(s): ".join(', ',@configs_to_save)."\n") if scalar @configs_to_save > 0;
 debug("\n");
 
 ### Global Vars
 
-my $ver = (split ' ', '$Revision: 1.68 $')[1];
+my $ver = (split ' ', '$Revision: 1.69 $')[1];
 
 my %uptime; # Track uptimes for the report
 
@@ -208,7 +210,7 @@ for my $hostid ( scalar @override ? sort @override : sort { lc($all{$a}) cmp lc(
   
   my @configs = $conf->config_files();
 
-  @configs = ( $config_to_save ) if $config_to_save;
+  @configs = ( @configs_to_save ) if scalar @configs_to_save > 0;
 
   for my $config ( @configs ) {
     my $data = run("if [ -f $config ]; then cat $config; fi");

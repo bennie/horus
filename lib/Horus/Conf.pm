@@ -6,7 +6,7 @@ package Horus::Conf;
 
 use strict;
 
-$Horus::Conf::VERSION = '$Revision: 1.11 $';
+$Horus::Conf::VERSION = '$Revision: 1.12 $';
 
 sub new {
   my     $self = {};
@@ -71,12 +71,27 @@ sub config_files {
   /etc/sudoers
   /etc/vsftpd.ftpusers
   /etc/vsftpd.user_list
-  /etc/vsftpd/vsftpd.conf
   /etc/vfstab
   /etc/xinetd.conf
   /etc/yum.conf
 
+  /etc/mail/access
+  /etc/mail/domaintable
+  /etc/mail/local-host-names
+  /etc/mail/mailertable
+  /etc/mail/sendmail.cf
+  /etc/mail/sendmail.mc
+  /etc/mail/submit.cf
+  /etc/mail/submit.mc
+  /etc/mail/trusted-users
+  /etc/mail/virtusertable
   /etc/pam.d/system-auth
+  /etc/postfix/access
+  /etc/postfix/main.cf
+  /etc/postfix/master.cf
+  /etc/postfix/relay_recipients
+  /etc/postfix/transport
+  /etc/postfix/virtual
   /etc/rc.d/rc.local
   /etc/selinux/config
   /etc/snmp/snmpd.conf
@@ -85,6 +100,7 @@ sub config_files {
   /etc/sysconfig/iptables
   /etc/sysconfig/iptables-config
   /etc/sysconfig/network
+  /etc/vsftpd/vsftpd.conf
   
   /root/.bash_logout
   /root/.bash_profile
@@ -191,7 +207,7 @@ sub config_files {
   (c) 2008, Horus, Inc. 
 
   Work by Phil Pollard
-  $Revision: 1.11 $ $Date: 2008/12/11 01:31:52 $
+  $Revision: 1.12 $ $Date: 2008/12/29 21:32:01 $
 
 =cut
 
