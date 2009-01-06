@@ -6,7 +6,7 @@ package Horus::Conf;
 
 use strict;
 
-$Horus::Conf::VERSION = '$Revision: 1.12 $';
+$Horus::Conf::VERSION = '$Revision: 1.13 $';
 
 sub new {
   my     $self = {};
@@ -101,7 +101,8 @@ sub config_files {
   /etc/sysconfig/iptables-config
   /etc/sysconfig/network
   /etc/vsftpd/vsftpd.conf
-  
+  /etc/yum.repos.d/CentOS-Base.repo
+
   /root/.bash_logout
   /root/.bash_profile
   /root/.bashrc
@@ -207,7 +208,7 @@ sub config_files {
   (c) 2008, Horus, Inc. 
 
   Work by Phil Pollard
-  $Revision: 1.12 $ $Date: 2008/12/29 21:32:01 $
+  $Revision: 1.13 $ $Date: 2009/01/06 01:52:52 $
 
 =cut
 
