@@ -7,7 +7,7 @@
 # --config=foo Deal only with the textconfig foo.
 # --noreport will skip emailing the change report.
 
-# $Id: grab.pl,v 1.69 2008/12/29 21:32:01 ppollard Exp $
+# $Id: grab.pl,v 1.70 2009/01/08 23:38:08 ppollard Exp $
 
 use Horus::Conf;
 use Horus::Network;
@@ -48,7 +48,7 @@ debug("\n");
 
 ### Global Vars
 
-my $ver = (split ' ', '$Revision: 1.69 $')[1];
+my $ver = (split ' ', '$Revision: 1.70 $')[1];
 
 my %uptime; # Track uptimes for the report
 
@@ -99,14 +99,20 @@ for my $hostid ( scalar @override ? sort @override : sort { lc($all{$a}) cmp lc(
 
   $os = run('uname -s');
   if ( $os =~ /CYGWIN/ ) {
-    $os_release = $os;    
+    $os_release = "($os)";
   
     $os = 'Windows';
-    $os_release = 'Cyg NT 5.0' if $os_release eq 'CYGWIN_NT-5.0';
+    $os_release = '(Cyg NT 5.0)' if $os_release eq '(CYGWIN_NT-5.0)';
+
+    # Check if Boot.ini has more detail
+    my $bootini = run('cat /cygdrive/c/boot.ini');
+    $os_release = $2 if $bootini =~ /WINNT=\"(Microsoft Windows )(.+?)\" /;
   }
   debug("OS: $os\n");
 
   $os_version = run('uname -r');
+  $os_version = 'Cygwin ' . $os_version if $os eq 'Windows';
+  
   debug("OS VERSION: $os_version\n");
 
   $os_release = run('if [ -f /etc/vmware-release ]; then cat /etc/vmware-release; else if [ -f /etc/redhat-release ]; then cat /etc/redhat-release; fi; fi') unless $os_release;
@@ -275,8 +281,60 @@ for my $hostid ( scalar @override ? sort @override : sort { lc($all{$a}) cmp lc(
       #unlink('/tmp/rcs,v');
     }
   }
+
+  # Brand of HW
+
+  my $machine_brand; my $machine_model;
+
+  # Try dmidecode for HW info
   
-  # Linux
+  if ( $os eq 'Linux' ) {
+    my $dmidecode = run('dmidecode');
+  
+    if ( $dmidecode =~ /System Information(.+?)Handle/s ) {
+      my $systeminfo = $1;
+
+      $machine_brand = $1 if $systeminfo =~ /Manufacturer: (.+?)$/m;
+      $machine_model = $1 if $systeminfo =~ /Product Name: (.+?)$/m;
+
+      $machine_brand = 'Penguin' if $machine_brand eq 'InventecESC' or $machine_brand eq 'To Be Filled By O.E.M.';
+
+      $machine_model = 'Altus 2200' if $machine_brand eq 'Penguin' and $machine_model eq 'IR2350';
+      $machine_model = 'Altus 1300' if $machine_brand eq 'Penguin' and $machine_model eq 'IR2300';
+    
+      $machine_brand = 'VMware' if $machine_brand eq 'VMware, Inc.';
+    }
+
+    # Fallback to dmesg
+
+    if ( not $machine_brand and not $machine_model ) {
+      my $stdout = run('cat /var/log/dmesg');
+      ($machine_brand,$machine_model) = &parse_dmesg($stdout);
+    }
+  }
+  
+  # Solaris - PRTconf
+  
+  if ( $os eq 'SunOS' ) {
+    my $prtconf = run('prtconf');
+    if ( $prtconf =~ /System Peripherals \(Software Nodes\):\n\n(.+?)\n/s ) {
+       ($machine_brand,$machine_model) = split ',', $1, 2;
+    }
+  }
+
+  # Save if we found anything
+
+  if ( $machine_brand ) {
+    my $ret = $hosts->update($hostid,{ machine_brand => $machine_brand });
+    debug(" Update returned $ret (machine_brand)\n");
+  }
+
+  if ( $machine_model ) {
+    my $ret = $hosts->update($hostid,{ machine_model => $machine_model });
+    debug(" Update returned $ret (machine_model)\n");
+  }
+  
+  ### Linux only from here on
 
   next unless $os eq 'Linux';
   
@@ -325,52 +383,6 @@ for my $hostid ( scalar @override ? sort @override : sort { lc($all{$a}) cmp lc(
     next unless $data;
     my $ret = $hosts->data_set($hostid,$run,$data);
     debug(" Update returned $ret ($run)\n");
-  }
-
-  # Brand of HW
-
-  my $machine_brand; my $machine_model;
-
-  my $stdout = run('cat /var/log/dmesg');
- 
-  # DL 360
-  if ( $stdout =~ /ACPI:\s+MCFG\s+\(v001\s+HP\s+ProLiant/ ) {
-    $machine_brand = 'HP';
-    $machine_model = 'DL 360';
-  }
-
-  # VZ DBs
-  if ( $stdout =~ /ACPI: MCFG \(v001 IBM/ ) {
-    $machine_brand = 'IBM';
-  }
-
-  # VZ Blade
-  
-  if ( $stdout =~ /ACPI: RSDP \(v000 IBM                                   \) \@ 0x00000000000fdfe0/ && $stdout =~ /ACPI: RSDT \(v001 IBM    SERLEWIS 0x00001000 IBM  0x45444f43\) \@ 0x00000000cffa7380/ && $stdout =~ /ACPI: FADT \(v002 IBM    SERLEWIS 0x00001000 IBM  0x45444f43\) \@ 0x00000000cffa72c0/ && $stdout =~ /ACPI: MADT \(v001 IBM    SERLEWIS 0x00001000 IBM  0x45444f43\) \@ 0x00000000cffa7200/ && $stdout =~ /ACPI: SRAT \(v001 AMD    HAMMER   0x00000001 AMD  0x00000001\) \@ 0x00000000cffa70c0/ && $stdout =~ /ACPI: DSDT \(v001 IBM    SERLEWIS 0x00001000 INTL 0x02002025\) \@ 0x0000000000000000/ ) {
-    $machine_brand = 'IBM';
-    $machine_model = 'Blade';
-  }
-  
-  # Penguin
-  if ( $stdout =~ /ACPI: RSDP \(v000 ACPIAM                                \) \@ 0x00000000000f8140/ && $stdout =~ /ACPI: RSDT \(v001 A M I  OEMRSDT  0x05000631 MSFT 0x00000097\) \@ 0x00000000cfff0000/ && $stdout =~ /ACPI: FADT \(v002 A M I  OEMFACP  0x05000631 MSFT 0x00000097\) \@ 0x00000000cfff0200/ && $stdout =~ /ACPI: MADT \(v001 A M I  OEMAPIC  0x05000631 MSFT 0x00000097\) \@ 0x00000000cfff0390/ && $stdout =~ /ACPI: SPCR \(v001 A M I  OEMSPCR  0x05000631 MSFT 0x00000097\) \@ 0x00000000cfff0420/ && $stdout =~ /ACPI: OEMB \(v001 A M I  AMI_OEM  0x05000631 MSFT 0x00000097\) \@ 0x00000000cfffe040/ && $stdout =~ /ACPI: DSDT \(v001  TUNA_ TUNA_160 0x00000160 INTL 0x02002026\) \@ 0x0000000000000000/ ) {
-    $machine_brand = 'Penguin';
-    $machine_model = 'Altus 1300';
-  }
-  
-  # VM?
-  if ( $stdout =~ /ACPI: FADT \(v001 INTEL  440BX/ && $stdout =~ /ACPI: BOOT \(v001 PTLTD  \$SBFTBL\$/ && $stdout =~ /ACPI: DSDT \(v001 PTLTD  Custom/ ) {
-    $machine_brand = 'VM';
-    $machine_model = 'ESX';
-  }
-
-  if ( $machine_brand ) {
-    my $ret = $hosts->update($hostid,{ machine_brand => $machine_brand });
-    debug(" Update returned $ret (machine_brand)\n");
-  }
-
-  if ( $machine_model ) {
-    my $ret = $hosts->update($hostid,{ machine_model => $machine_model });
-    debug(" Update returned $ret (machine_model)\n");
   }
 
   # Net devices
@@ -605,6 +617,44 @@ sub debug {
 
 sub href {
   return '<a href=\'http://horus.fusionone.com/index.cgi/host/'.$_[0].'\'>'.$_[0]."</a>\n";
+}
+
+# dmesg is the fallback to try and figure out hardware info
+sub parse_dmesg {
+  my $stdout = shift @_;
+  my $machine_brand; my $machine_model;
+  
+  # DL 360
+  if ( $stdout =~ /ACPI:\s+MCFG\s+\(v001\s+HP\s+ProLiant/ ) {
+    $machine_brand = 'HP';
+    $machine_model = 'DL 360';
+  }
+
+  # VZ DBs
+  if ( $stdout =~ /ACPI: MCFG \(v001 IBM/ ) {
+    $machine_brand = 'IBM';
+  }
+
+  # VZ Blade
+  
+  if ( $stdout =~ /ACPI: RSDP \(v000 IBM                                   \) \@ 0x00000000000fdfe0/ && $stdout =~ /ACPI: RSDT \(v001 IBM    SERLEWIS 0x00001000 IBM  0x45444f43\) \@ 0x00000000cffa7380/ && $stdout =~ /ACPI: FADT \(v002 IBM    SERLEWIS 0x00001000 IBM  0x45444f43\) \@ 0x00000000cffa72c0/ && $stdout =~ /ACPI: MADT \(v001 IBM    SERLEWIS 0x00001000 IBM  0x45444f43\) \@ 0x00000000cffa7200/ && $stdout =~ /ACPI: SRAT \(v001 AMD    HAMMER   0x00000001 AMD  0x00000001\) \@ 0x00000000cffa70c0/ && $stdout =~ /ACPI: DSDT \(v001 IBM    SERLEWIS 0x00001000 INTL 0x02002025\) \@ 0x0000000000000000/ ) {
+    $machine_brand = 'IBM';
+    $machine_model = 'Blade';
+  }
+  
+  # Penguin
+  if ( $stdout =~ /ACPI: RSDP \(v000 ACPIAM                                \) \@ 0x00000000000f8140/ && $stdout =~ /ACPI: RSDT \(v001 A M I  OEMRSDT  0x05000631 MSFT 0x00000097\) \@ 0x00000000cfff0000/ && $stdout =~ /ACPI: FADT \(v002 A M I  OEMFACP  0x05000631 MSFT 0x00000097\) \@ 0x00000000cfff0200/ && $stdout =~ /ACPI: MADT \(v001 A M I  OEMAPIC  0x05000631 MSFT 0x00000097\) \@ 0x00000000cfff0390/ && $stdout =~ /ACPI: SPCR \(v001 A M I  OEMSPCR  0x05000631 MSFT 0x00000097\) \@ 0x00000000cfff0420/ && $stdout =~ /ACPI: OEMB \(v001 A M I  AMI_OEM  0x05000631 MSFT 0x00000097\) \@ 0x00000000cfffe040/ && $stdout =~ /ACPI: DSDT \(v001  TUNA_ TUNA_160 0x00000160 INTL 0x02002026\) \@ 0x0000000000000000/ ) {
+    $machine_brand = 'Penguin';
+    $machine_model = 'Altus 1300';
+  }
+  
+  # VM?
+  if ( $stdout =~ /ACPI: FADT \(v001 INTEL  440BX/ && $stdout =~ /ACPI: BOOT \(v001 PTLTD  \$SBFTBL\$/ && $stdout =~ /ACPI: DSDT \(v001 PTLTD  Custom/ ) {
+    $machine_brand = 'VM';
+    $machine_model = 'ESX';
+  }
+
+  return ( $machine_brand, $machine_model );
 }
 
 # Reformat the diff table to HTML

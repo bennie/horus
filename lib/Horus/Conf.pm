@@ -6,7 +6,7 @@ package Horus::Conf;
 
 use strict;
 
-$Horus::Conf::VERSION = '$Revision: 1.13 $';
+$Horus::Conf::VERSION = '$Revision: 1.14 $';
 
 sub new {
   my     $self = {};
@@ -51,6 +51,8 @@ Returns an array of files to be tracked.
 
 sub config_files {
   my @configs = qw@
+  /cygdrive/c/boot.ini
+  
   /etc/aliases
   /etc/bashrc
   /etc/exports
@@ -208,7 +210,7 @@ sub config_files {
   (c) 2008, Horus, Inc. 
 
   Work by Phil Pollard
-  $Revision: 1.13 $ $Date: 2009/01/06 01:52:52 $
+  $Revision: 1.14 $ $Date: 2009/01/08 23:38:08 $
 
 =cut
 
