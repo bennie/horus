@@ -12,7 +12,7 @@ use Digest::MD5 qw/md5_hex/;
 use Horus::DB;
 use strict;
 
-$Horus::Hosts::VERSION = '$Revision: 1.11 $';
+$Horus::Hosts::VERSION = '$Revision: 1.12 $';
 
 sub new {
   my $self = {};
@@ -43,16 +43,24 @@ sub add {
   return $id;
 }
 
-=head3 all()
+=head3 all( decomission => [1|0] )
 
-Returns a hash or hasref of all ids and their name from the hosts table.
+Returns a hash or hasref of all non-decomissioned ids and their name from the hosts table.
+
+Optional parameter "decomissioned" will return decomissioned hosts.
 
 =cut
 
 sub all {
   my $self = shift @_;
-  my $name = shift @_;
-  my $sth = $self->{db}->handle('select id, name from hosts');
+  my $conf = defined $_[0] ? { @_ } : {};
+  my $sth;
+  if ( $conf->{decomissioned} ) {
+    $sth = $self->{db}->handle('select id, name from hosts where decomissioned > 0');
+  } else {
+    $sth = $self->{db}->handle('select id, name from hosts where decomissioned < 1');
+  }
+
   my %out;
   while ( my $ref = $sth->fetchrow_arrayref ) {
     $out{$ref->[0]} = $ref->[1];
@@ -246,7 +254,7 @@ sub data_list {
   (c) 2007-2008, Horus, Inc.
 
   Work by Phil Pollard
-  $Revision: 1.11 $ $Date: 2008/07/30 21:00:58 $
+  $Revision: 1.12 $ $Date: 2009/01/08 01:54:16 $
     
 =cut
 

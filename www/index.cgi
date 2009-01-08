@@ -1,6 +1,6 @@
 #!/usr/bin/perl -I../lib
 
-# $Id: index.cgi,v 1.23 2008/12/12 00:58:55 ppollard Exp $
+# $Id: index.cgi,v 1.24 2009/01/08 01:54:16 ppollard Exp $
 
 use Horus::Network;
 use Horus::Hosts;
@@ -35,6 +35,9 @@ $tmpl->param( guest => "Welcome $user" );
 
 my %hosts = $fh->all();
 my $total = scalar keys %hosts;
+
+my %decomm = $fh->all( decomissioned => 1 );
+my $decomm_total = scalar keys %decomm;
 
 my @pathinfo = split '/', $cgi->path_info;
 shift @pathinfo;
@@ -126,6 +129,7 @@ sub dashboard {
            . ' ]';
 
   $body .= $cgi->p("$total hosts in the system.");
+  $body .= $cgi->p("$decomm_total decomissioned hosts in the system.");
 
   my @rows = (
     $cgi->Tr(
