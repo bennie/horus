@@ -78,6 +78,7 @@ CREATE TABLE `hosts` (
   `vmhost` varchar(255) default NULL,
   `created` timestamp NOT NULL default '0000-00-00 00:00:00',
   `last_modified` timestamp NOT NULL default CURRENT_TIMESTAMP on update CURRENT_TIMESTAMP,
+  `decomissioned` int(11) default '0',
   PRIMARY KEY  (`id`),
   KEY `customer` (`customer`),
   CONSTRAINT `hosts_ibfk_1` FOREIGN KEY (`customer`) REFERENCES `list_customer` (`customer`)
