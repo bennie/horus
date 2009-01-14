@@ -6,7 +6,7 @@ package Horus::Conf;
 
 use strict;
 
-$Horus::Conf::VERSION = '$Revision: 1.14 $';
+$Horus::Conf::VERSION = '$Revision: 1.15 $';
 
 sub new {
   my     $self = {};
@@ -55,6 +55,7 @@ sub config_files {
   
   /etc/aliases
   /etc/bashrc
+  /etc/environment
   /etc/exports
   /etc/fstab
   /etc/hosts
@@ -70,6 +71,7 @@ sub config_files {
   /etc/passwd
   /etc/profile
   /etc/resolv.conf
+  /etc/shadow
   /etc/sudoers
   /etc/vsftpd.ftpusers
   /etc/vsftpd.user_list
@@ -210,7 +212,7 @@ sub config_files {
   (c) 2008, Horus, Inc. 
 
   Work by Phil Pollard
-  $Revision: 1.14 $ $Date: 2009/01/08 23:38:08 $
+  $Revision: 1.15 $ $Date: 2009/01/14 00:59:49 $
 
 =cut
 
