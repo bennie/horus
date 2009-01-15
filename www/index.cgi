@@ -1,6 +1,6 @@
 #!/usr/bin/perl -I../lib
 
-# $Id: index.cgi,v 1.28 2009/01/15 05:34:46 ppollard Exp $
+# $Id: index.cgi,v 1.29 2009/01/15 18:57:08 ppollard Exp $
 
 use Horus::Auth;
 use Horus::Hosts;
@@ -18,6 +18,8 @@ my $fn = new Horus::Network;
 
 my $cgi  = $ha->{cgi};
 my $user = $ha->{username};
+
+my %configs_requiring_auth = map {$_,1} qw|/etc/passwd /etc/shadow /etc/sudoers /root/.ssh/authorized_keys|;
 
 my $color_back    = '#FFFFFF';
 my $color_border  = '#000000';
@@ -77,6 +79,11 @@ sub config {
         ),
         $cgi->hr({-noshade=>undef}),
         $cgi->font({-size=>1},$cgi->a({-href=>'/index.cgi/host/'.$host},'Back to host view'));
+
+  if ( $configs_requiring_auth{$config} and not &authorized($user) ) {
+    print $cgi->p('You are not authroized to view this config file.');
+    return undef;
+  }
 
   my $rcs = new Rcs::Parser;
   my $rcstext = $fh->config_get_rcs($possible->[0],$config);
@@ -148,7 +155,7 @@ sub dashboard {
       $cgi->td({-bgcolor=>$color_header},'Model'),
       $cgi->td({-bgcolor=>$color_header},'Clock'),
       $cgi->td({-bgcolor=>$color_header},'Last&nbsp;Update'),
-      $cgi->td({-bgcolor=>$color_header}, $cgi->start_form({-action=>'/edit.cgi'}), $cgi->submit({-name=>'New'}), $cgi->end_form )
+      ( &authorized($user) ? $cgi->td({-bgcolor=>$color_header}, $cgi->start_form({-action=>'/edit.cgi'}), $cgi->submit({-name=>'New'}), $cgi->end_form ) : '' ),
     )
   );
 
@@ -175,7 +182,7 @@ sub dashboard {
       $cgi->td({-bgcolor=>$bg}, "$rec{machine_model}" ),
       $cgi->td({-bgcolor=>$bg,-align=>'center'}, "$rec{tz}" ),
       $cgi->td({-bgcolor=>$bg,-align=>'center'}, $time ),
-      $cgi->td({-bgcolor=>$bg,-align=>'center'}, $cgi->start_form({-action=>'/edit.cgi'}), $cgi->hidden({-name=>'id',-value=>$id}), $cgi->submit({-name=>'Edit'}), $cgi->end_form ),
+      ( &authorized($user) ? $cgi->td({-bgcolor=>$bg,-align=>'center'}, $cgi->start_form({-action=>'/edit.cgi'}), $cgi->hidden({-name=>'id',-value=>$id}), $cgi->submit({-name=>'Edit'}), $cgi->end_form ) : '' ),
     );
   }
 
@@ -194,6 +201,11 @@ sub host {
 
   my $possible = $fh->by_name($host);
   my %rec = $fh->get($possible->[0]);
+
+  unless ( &authorized($user) ) {
+    $rec{username} = '********';
+    $rec{password} = '********';
+  }
 
   my %used = map {$_,1} qw/last_modified id created customer machine_brand machine_model arch os 
     osrelease osversion name uptime ntp ntphost snmp snmp_community/;
@@ -265,7 +277,7 @@ sub host {
   $body .= $cgi->hr({-noshade=>undef}) .  $cgi->b('Config Files:') . $cgi->start_ul();
   
   for my $config ( sort { lc($a) cmp lc($b) } $fh->config_list($rec{id}) ) {
-    $body .= $cgi->li($cgi->a({-href=>'?config='.$config},$config));
+    $body .= $cgi->li($cgi->a({-href=>'?config='.$config},$config),( ($configs_requiring_auth{$config} and not &authorized($user)) ? $cgi->small('(authorization required)') : '' ));
   }
   
   $body .= $cgi->end_ul();
@@ -385,6 +397,12 @@ sub password_report {
   
   for my $id ( sort { lc($hosts{$a}) cmp lc($hosts{$b}) } keys %hosts ) {
     my %rec = $fh->get($id);
+    
+    unless ( &authorized($user) ) {
+      $rec{username} = '********';
+      $rec{password} = '********';
+    }
+
     push @pass, $cgi->Tr(
       $cgi->td({-bgcolor=>$color_subhead},$rec{name}),
       $cgi->td({-bgcolor=>$color_back},$rec{username}),
