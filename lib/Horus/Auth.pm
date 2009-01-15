@@ -4,18 +4,24 @@
 
 package Horus::Auth;
 
-$Horus::Auth::VERSION='$Revision: 1.1 $';
+$Horus::Auth::VERSION='$Revision: 1.2 $';
 
 use CGI;
+use Crypt::PasswdMD5;
+use Crypt::SaltedHash;
 use Data::UUID;
 use Digest::MD5 qw/md5_hex/;
 use Horus::DB;
+use Net::LDAP;
 
 use strict;
 
 sub new {
   my     $self = {};
   bless  $self;
+
+  my $table_prefix = 'foo';
+  my $cookie_prefix = 'horus';
 
   # Do it
   
@@ -85,7 +91,35 @@ and session_user_id=?';
 }
 
 sub check_pass {
+  my $self = shift @_;
+  my $user = shift @_;
+  my $pass = shift @_;
 
+  my $ldap = Net::LDAP->new('ldap.myhost.com') or return "Can't bind to ldap: $!";
+  $ldap->bind("cn=manager,dc=mycompany,dc=com", password=>'mypassword');
+
+  my $mesg = $ldap->search(filter => "(uid=$user)", base => "ou=People,dc=mycompany,dc=com");
+
+  return 'LDAP Query response: ' . $mesg->code . ' ' .  $mesg->error unless $mesg->code == 0;
+
+  for my $entry ($mesg->entries) {
+    my $uid = ($entry->get('uid'))[0];
+    my $password = ($entry->get('userPassword'))[0];
+    my $valid = $self->_verify_password($password, $pass);
+    return "$valid -> $uid $password\n";
+  }
 }
+
+sub _verify_password {
+  my $pass = shift @_;
+  my $text = shift @_;
+  if ( $pass =~ /^\{crypt\}(.+)$/i ) {
+    my $crypt = $1;
+    my $enc = unix_md5_crypt($text,$crypt);
+    return $enc eq $crypt ? 1:0;
+  }
+  return Crypt::SaltedHash->validate($pass, $text) ? 1:0;
+}
+
 
 1;
