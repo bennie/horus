@@ -1,6 +1,6 @@
 #!/usr/bin/perl -I../lib
 
-# $Id: index.cgi,v 1.25 2009/01/15 01:47:45 ppollard Exp $
+# $Id: index.cgi,v 1.26 2009/01/15 03:26:43 ppollard Exp $
 
 use Horus::Auth;
 use Horus::Hosts;
@@ -30,9 +30,11 @@ my $bad  = '<img width="32" height="32" alt="[ - ]" src="http://horus.fusionone.
 my $tmpl_file = '/home/horus/support/main.tmpl';
 my $tmpl = HTML::Template->new( filename => $tmpl_file );
 
+my $guest = $user eq 'Guest' ? $cgi->a({-href=>'/login.cgi'},'Login') : "Welcome $user";
+
 $tmpl->param( titlebar => 'Horus' );
 $tmpl->param( title => 'Horus' );
-$tmpl->param( guest => "Welcome $user" );
+$tmpl->param( guest => $guest );
 
 my %hosts = $fh->all();
 my $total = scalar keys %hosts;
@@ -70,7 +72,7 @@ sub config {
         $cgi->table({-width=>'100%',-cellpadding=>0,-cellspacing=>0},
           $cgi->Tr({-valign=>'bottom'},
             $cgi->td($cgi->font({-size=>'+2'},"Horus - $host config $config")),
-            $cgi->td({-align=>'right'},$cgi->font({-size=>'1'},"Welcome $user")),
+            $cgi->td({-align=>'right'},$cgi->font({-size=>'1'},$guest)),
           )
         ),
         $cgi->hr({-noshade=>undef}),
@@ -121,7 +123,7 @@ sub config {
 
 sub dashboard {
   $tmpl->param( titlebar => 'Horus: Dashboard view' );
-  $tmpl->param( guest => "Welcome $user" );
+  $tmpl->param( guest => $guest );
 
   my $body =  '[ '  
            . $cgi->a({-href=>'/index.cgi/report/network'},"Network Report")
@@ -186,7 +188,7 @@ sub host {
   my $host = shift @_;
   $tmpl->param( titlebar => 'Horus: Host view' );
   $tmpl->param( title => "Host: $host" );
-  $tmpl->param( guest => "Welcome $user" );
+  $tmpl->param( guest => $guest );
 
   my $body = $cgi->font({-size=>1},$cgi->a({-href=>'/index.cgi/dashboard'},'Back to Dashboard'));
 
@@ -295,7 +297,7 @@ sub host {
 sub network_report {
   $tmpl->param( titlebar => 'Horus - Network Report' );
   $tmpl->param( title => 'Horus: Network Report' );
-  $tmpl->param( guest => "Welcome $user" );
+  $tmpl->param( guest => $guest );
 
   my $body = $cgi->font({-size=>1},$cgi->a({-href=>'/index.cgi/dashboard'},'Back to Dashboard'));
 
@@ -341,7 +343,7 @@ sub network_report {
 sub os_report {
   $tmpl->param( titlebar => 'Horus - OS Report' );
   $tmpl->param( title => 'Horus: OS Report' );
-  $tmpl->param( guest => "Welcome $user" );
+  $tmpl->param( guest => $guest );
 
   my $body = $cgi->font({-size=>1},$cgi->a({-href=>'/index.cgi/dashboard'},'Back to Dashboard'));
 
@@ -375,7 +377,7 @@ sub os_report {
 sub password_report {
   $tmpl->param( titlebar => 'Horus - Password Report' );
   $tmpl->param( title => 'Horus: Password Report' );
-  $tmpl->param( guest => "Welcome $user" );
+  $tmpl->param( guest => $guest );
 
   my $body = $cgi->font({-size=>1},$cgi->a({-href=>'/index.cgi/dashboard'},'Back to Dashboard'));
 

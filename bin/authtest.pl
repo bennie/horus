@@ -32,6 +32,7 @@ sub check_pass {
   my $pass = shift @_;
   my $text = shift @_;
   if ( $pass =~ /^\{crypt\}(.+)$/i ) {
+    print "Local crypt check.\n";
     my $crypt = $1;
     my $enc = unix_md5_crypt($text,$crypt);
     return $enc eq $crypt ? 1:0;
