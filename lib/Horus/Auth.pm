@@ -4,7 +4,7 @@
 
 package Horus::Auth;
 
-$Horus::Auth::VERSION='$Revision: 1.4 $';
+$Horus::Auth::VERSION='$Revision: 1.5 $';
 
 use CGI;
 use CGI::Session;
@@ -93,6 +93,17 @@ sub _verify_password {
     return (( $enc eq $crypt ? 1:0 ), "Local Crypt Check: $crypt $enc");
   }
   return ( Crypt::SaltedHash->validate($pass, $text) ? 1:0 ), "(SaltedHash: $pass)";
+}
+
+sub clear_session {
+  my $self = shift @_;
+  $self->{username} = 'Guest';
+  $self->{status} = 'unauthenticated';
+
+  $self->{session}->param('username','Guest');
+  $self->{session}->param('status','unauthenticated');
+
+  $self->{session}->flush();
 }
 
 1;

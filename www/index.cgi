@@ -1,6 +1,6 @@
 #!/usr/bin/perl -I../lib
 
-# $Id: index.cgi,v 1.27 2009/01/15 03:40:19 ppollard Exp $
+# $Id: index.cgi,v 1.28 2009/01/15 05:34:46 ppollard Exp $
 
 use Horus::Auth;
 use Horus::Hosts;
@@ -30,7 +30,7 @@ my $bad  = '<img width="32" height="32" alt="[ - ]" src="http://horus.fusionone.
 my $tmpl_file = '/home/horus/support/main.tmpl';
 my $tmpl = HTML::Template->new( filename => $tmpl_file );
 
-my $guest = $user eq 'Guest' ? $cgi->a({-href=>'/login.cgi'},'Login') : "Welcome $user";
+my $guest = $user eq 'Guest' ? $cgi->a({-href=>'/login.cgi'},'Login') : "Welcome $user [ ".$cgi->a({-href=>'/login.cgi?logout=true'},'logout').' ]';
 
 $tmpl->param( titlebar => 'Horus' );
 $tmpl->param( title => 'Horus' );
@@ -404,6 +404,7 @@ sub authorized {
   my $user = shift @_;
   return 1 if $user eq 'bmurphy';
   return 1 if $user eq 'btanaka';
+  return 1 if $user eq 'mlysenko';
   return 1 if $user eq 'ppollard';
   return 1 if $user eq 'tamundson';
   return 0;

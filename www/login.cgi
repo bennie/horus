@@ -1,6 +1,6 @@
 #!/usr/bin/perl -I../lib
 
-# $Id: login.cgi,v 1.3 2009/01/15 03:26:43 ppollard Exp $
+# $Id: login.cgi,v 1.4 2009/01/15 05:34:46 ppollard Exp $
 
 use Horus::Auth;
 use HTML::Template;
@@ -24,6 +24,10 @@ my $body;
 
 if ( $cgi->param('user') && $cgi->param('pass') )  {
   $body .= &auth($cgi->param('user'),$cgi->param('pass'));
+} elsif ( $cgi->param('logout') eq 'true' ) {
+  $ha->clear_session();
+  $body .= $cgi->p($cgi->i("You have been logged out"));
+  $body .= &login;
 } else {
   $body .= &login;
 }
