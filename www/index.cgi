@@ -1,6 +1,6 @@
 #!/usr/bin/perl -I../lib
 
-# $Id: index.cgi,v 1.29 2009/01/15 18:57:08 ppollard Exp $
+# $Id: index.cgi,v 1.30 2009/01/15 19:48:04 ppollard Exp $
 
 use Horus::Auth;
 use Horus::Hosts;
@@ -393,7 +393,8 @@ sub password_report {
 
   my $body = $cgi->font({-size=>1},$cgi->a({-href=>'/index.cgi/dashboard'},'Back to Dashboard'));
 
-  my @pass = $cgi->Tr( map {$cgi->td({-bgcolor=>$color_header},$_)} qw/Host User Pass/);
+  my @pass = $cgi->Tr( map {$cgi->td({-bgcolor=>$color_header},$_)} qw/Host User Pass Host User Pass Host User Pass/);
+  my @chunks;
   
   for my $id ( sort { lc($hosts{$a}) cmp lc($hosts{$b}) } keys %hosts ) {
     my %rec = $fh->get($id);
@@ -403,11 +404,24 @@ sub password_report {
       $rec{password} = '********';
     }
 
-    push @pass, $cgi->Tr(
-      $cgi->td({-bgcolor=>$color_subhead},$rec{name}),
-      $cgi->td({-bgcolor=>$color_back},$rec{username}),
-      $cgi->td({-bgcolor=>$color_back},$rec{password})
-    );
+    push @chunks,
+      $cgi->td({-bgcolor=>$color_subhead},$rec{name}) .
+      $cgi->td({-bgcolor=>$color_back},$rec{username}) .
+      $cgi->td({-bgcolor=>$color_back},$rec{password});
+  }
+
+  while ( scalar(@chunks) % 3 ) {
+    push @chunks,
+      $cgi->td({-bgcolor=>$color_subhead},'&nbsp;') .
+      $cgi->td({-bgcolor=>$color_back},'&nbsp;') .
+      $cgi->td({-bgcolor=>$color_back},'&nbsp;');
+  }
+
+  my $rows = scalar(@chunks) / 3; # Number of double rows
+  
+  for my $i ( 1 .. $rows ) {
+    $i--; # 0 based arrays
+    push @pass, $cgi->Tr( $chunks[$i], $chunks[$i+$rows], $chunks[$i+$rows+$rows] );
   }
 
   $body .= $cgi->p({-align=>'center'},box(@pass));
