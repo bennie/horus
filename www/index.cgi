@@ -1,20 +1,23 @@
 #!/usr/bin/perl -I../lib
 
-# $Id: index.cgi,v 1.24 2009/01/08 01:54:16 ppollard Exp $
+# $Id: index.cgi,v 1.25 2009/01/15 01:47:45 ppollard Exp $
 
-use Horus::Network;
+use Horus::Auth;
 use Horus::Hosts;
+use Horus::Network;
 
-use CGI;
 use Data::Dumper;
 use HTML::Template;
 use Rcs::Parser;
 
 use strict;
 
-my $cgi = new CGI;
+my $ha = new Horus::Auth;
 my $fh = new Horus::Hosts;
 my $fn = new Horus::Network;
+
+my $cgi  = $ha->{cgi};
+my $user = $ha->{username};
 
 my $color_back    = '#FFFFFF';
 my $color_border  = '#000000';
@@ -26,8 +29,6 @@ my $bad  = '<img width="32" height="32" alt="[ - ]" src="http://horus.fusionone.
 
 my $tmpl_file = '/home/horus/support/main.tmpl';
 my $tmpl = HTML::Template->new( filename => $tmpl_file );
-
-my $user = 'Guest';
 
 $tmpl->param( titlebar => 'Horus' );
 $tmpl->param( title => 'Horus' );
