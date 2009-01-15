@@ -1,6 +1,6 @@
 #!/usr/bin/perl -I../lib
 
-# $Id: index.cgi,v 1.26 2009/01/15 03:26:43 ppollard Exp $
+# $Id: index.cgi,v 1.27 2009/01/15 03:40:19 ppollard Exp $
 
 use Horus::Auth;
 use Horus::Hosts;
@@ -126,8 +126,8 @@ sub dashboard {
   $tmpl->param( guest => $guest );
 
   my $body =  '[ '  
-           . $cgi->a({-href=>'/index.cgi/report/network'},"Network Report")
-           . ' | '
+           . ( &authorized($user) ? $cgi->a({-href=>'/index.cgi/report/password'},"Passwords") . ' | ' : '' )
+           . $cgi->a({-href=>'/index.cgi/report/network'},"Network Report") . ' | '
            . $cgi->a({-href=>'/index.cgi/report/os'},"OS Report")
            . ' ]';
 
@@ -399,6 +399,15 @@ sub password_report {
 
 
 ### Subroutines
+
+sub authorized {
+  my $user = shift @_;
+  return 1 if $user eq 'bmurphy';
+  return 1 if $user eq 'btanaka';
+  return 1 if $user eq 'ppollard';
+  return 1 if $user eq 'tamundson';
+  return 0;
+}
 
 sub box {
   my @rows = @_;
