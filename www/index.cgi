@@ -1,6 +1,6 @@
 #!/usr/bin/perl -I../lib
 
-# $Id: index.cgi,v 1.30 2009/01/15 19:48:04 ppollard Exp $
+# $Id: index.cgi,v 1.31 2009/01/15 21:38:59 ppollard Exp $
 
 use Horus::Auth;
 use Horus::Hosts;
@@ -155,7 +155,7 @@ sub dashboard {
       $cgi->td({-bgcolor=>$color_header},'Model'),
       $cgi->td({-bgcolor=>$color_header},'Clock'),
       $cgi->td({-bgcolor=>$color_header},'Last&nbsp;Update'),
-      ( &authorized($user) ? $cgi->td({-bgcolor=>$color_header}, $cgi->start_form({-action=>'/edit.cgi'}), $cgi->submit({-name=>'New'}), $cgi->end_form ) : '' ),
+      ( &authorized_to_edit($user) ? $cgi->td({-bgcolor=>$color_header}, $cgi->start_form({-action=>'/edit.cgi'}), $cgi->submit({-name=>'New'}), $cgi->end_form ) : '' ),
     )
   );
 
@@ -182,7 +182,7 @@ sub dashboard {
       $cgi->td({-bgcolor=>$bg}, "$rec{machine_model}" ),
       $cgi->td({-bgcolor=>$bg,-align=>'center'}, "$rec{tz}" ),
       $cgi->td({-bgcolor=>$bg,-align=>'center'}, $time ),
-      ( &authorized($user) ? $cgi->td({-bgcolor=>$bg,-align=>'center'}, $cgi->start_form({-action=>'/edit.cgi'}), $cgi->hidden({-name=>'id',-value=>$id}), $cgi->submit({-name=>'Edit'}), $cgi->end_form ) : '' ),
+      ( &authorized_to_edit($user) ? $cgi->td({-bgcolor=>$bg,-align=>'center'}, $cgi->start_form({-action=>'/edit.cgi'}), $cgi->hidden({-name=>'id',-value=>$id}), $cgi->submit({-name=>'Edit'}), $cgi->end_form ) : '' ),
     );
   }
 
@@ -439,6 +439,12 @@ sub authorized {
   return 1 if $user eq 'mlysenko';
   return 1 if $user eq 'ppollard';
   return 1 if $user eq 'tamundson';
+  return 0;
+}
+
+sub authorized_to_edit {
+  my $user = shift @_;
+  return 1 if $user eq 'ppollard';
   return 0;
 }
 
