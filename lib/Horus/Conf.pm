@@ -6,7 +6,7 @@ package Horus::Conf;
 
 use strict;
 
-$Horus::Conf::VERSION = '$Revision: 1.16 $';
+$Horus::Conf::VERSION = '$Revision: 1.17 $';
 
 sub new {
   my     $self = {};
@@ -62,6 +62,7 @@ sub config_files {
   /etc/inittab
   /etc/issue
   /etc/issue.net
+  /etc/ldap.conf
   /etc/lftp.conf
   /etc/modprobe.conf
   /etc/motd
@@ -201,6 +202,8 @@ sub config_files {
     }
   }
 
+  push @configs, "/etc/sysconfig/network-scripts/ifcfg-eth0:0"; # Need a better search
+
   for my $n ( 0 .. 9 ) {
     for my $eth ( qw/hme qfe/ ) {
       push @configs, '/etc/hostname.' . $eth . $n;
@@ -212,10 +215,10 @@ sub config_files {
 
 =head1 Authorship:
 
-  (c) 2008, Horus, Inc. 
+  (c) 2008-2209, Horus, Inc. 
 
   Work by Phil Pollard
-  $Revision: 1.16 $ $Date: 2009/01/14 06:06:33 $
+  $Revision: 1.17 $ $Date: 2009/01/19 00:28:09 $
 
 =cut
 
