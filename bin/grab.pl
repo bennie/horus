@@ -7,7 +7,7 @@
 # --config=foo Deal only with the textconfig foo.
 # --noreport will skip emailing the change report.
 
-# $Id: grab.pl,v 1.70 2009/01/08 23:38:08 ppollard Exp $
+# $Id: grab.pl,v 1.71 2009/01/20 20:47:34 ppollard Exp $
 
 use Horus::Conf;
 use Horus::Network;
@@ -48,7 +48,7 @@ debug("\n");
 
 ### Global Vars
 
-my $ver = (split ' ', '$Revision: 1.70 $')[1];
+my $ver = (split ' ', '$Revision: 1.71 $')[1];
 
 my %uptime; # Track uptimes for the report
 
@@ -106,7 +106,7 @@ for my $hostid ( scalar @override ? sort @override : sort { lc($all{$a}) cmp lc(
 
     # Check if Boot.ini has more detail
     my $bootini = run('cat /cygdrive/c/boot.ini');
-    $os_release = $2 if $bootini =~ /WINNT=\"(Microsoft Windows )(.+?)\" /;
+    $os_release = $4 if $bootini =~ /(WINNT|WINDOWS)=\"((Microsoft )?Windows )(.+?)(, Standard)?\" /;
   }
   debug("OS: $os\n");
 

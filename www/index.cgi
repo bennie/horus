@@ -1,6 +1,6 @@
 #!/usr/bin/perl -I../lib
 
-# $Id: index.cgi,v 1.32 2009/01/19 00:28:09 ppollard Exp $
+# $Id: index.cgi,v 1.33 2009/01/20 20:47:34 ppollard Exp $
 
 use Horus::Auth;
 use Horus::Hosts;
@@ -365,17 +365,18 @@ sub os_report {
   for my $id ( keys %hosts ) {
     my %rec = $fh->get($id);
     $os{$rec{'os'}}{$rec{'osrelease'}}{$rec{'osversion'}}++;
-    $counts{$rec{'os'}}++;
-    $counts{$rec{'os'}.$rec{'osrelease'}}++;
+    $counts{os}{$rec{'os'}}++;
+    $counts{release}{$rec{'os'}.$rec{'osrelease'}}++;
   }
 
   for my $os ( sort keys %os ) {
-    $body .= $cgi->p($cgi->b($os),"($counts{$os} servers)"), $cgi->start_ul;
+    $body .= $cgi->p($cgi->b($os eq ''?'Unknown':$os),"($counts{os}{$os} servers)"), $cgi->start_ul;
     for my $release ( sort keys %{$os{$os}} ) {
-      $body .= $cgi->li(($release eq '' ? 'Unknown' : $release),'(' .$counts{$os.$release}. ' servers)');
+      $body .= $cgi->li(($release eq '' ? 'Unknown' : $release),'(' .$counts{release}{$os.$release}. ' servers)');
       my @chunks;
       for my $version ( sort keys %{$os{$os}{$release}} ) {
-        push @chunks, "$version ($os{$os}{$release}{$version})";
+        next if $release eq '';
+        push @chunks, ($version eq '' ? 'Unknown' : $version) . " ($os{$os}{$release}{$version})";
       }
       $body .= $cgi->blockquote(join ', ', @chunks);
     }
