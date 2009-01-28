@@ -6,7 +6,7 @@ package Horus::Conf;
 
 use strict;
 
-$Horus::Conf::VERSION = '$Revision: 1.17 $';
+$Horus::Conf::VERSION = '$Revision: 1.18 $';
 
 sub new {
   my     $self = {};
@@ -63,6 +63,7 @@ sub config_files {
   /etc/issue
   /etc/issue.net
   /etc/ldap.conf
+  /etc/ldap.secret
   /etc/lftp.conf
   /etc/modprobe.conf
   /etc/motd
@@ -74,6 +75,7 @@ sub config_files {
   /etc/resolv.conf
   /etc/shadow
   /etc/sudoers
+  /etc/syslog.conf
   /etc/vsftpd.ftpusers
   /etc/vsftpd.user_list
   /etc/vfstab
@@ -90,6 +92,8 @@ sub config_files {
   /etc/mail/submit.mc
   /etc/mail/trusted-users
   /etc/mail/virtusertable
+  /etc/openldap/ldap.conf
+  /etc/openldap/slapd.conf
   /etc/pam.d/system-auth
   /etc/postfix/access
   /etc/postfix/main.cf
@@ -158,6 +162,7 @@ sub config_files {
   /fusionone/webapps/mb/WEB-INF/classes/hibernate.properties
   /fusionone/webapps/mb/WEB-INF/classes/jdbc.properties
   /fusionone/webapps/mb/WEB-INF/classes/papi.properties
+  /fusionone/webapps/mb/WEB-INF/classes/pfagent.properties
   /fusionone/webapps/mb/WEB-INF/classes/mbackup.properties
   /fusionone/webapps/mb/WEB-INF/classes/sso.properties
  
@@ -218,7 +223,7 @@ sub config_files {
   (c) 2008-2209, Horus, Inc. 
 
   Work by Phil Pollard
-  $Revision: 1.17 $ $Date: 2009/01/19 00:28:09 $
+  $Revision: 1.18 $ $Date: 2009/01/28 00:02:28 $
 
 =cut
 

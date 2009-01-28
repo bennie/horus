@@ -7,7 +7,7 @@
 # --config=foo Deal only with the textconfig foo.
 # --noreport will skip emailing the change report.
 
-# $Id: grab.pl,v 1.71 2009/01/20 20:47:34 ppollard Exp $
+# $Id: grab.pl,v 1.72 2009/01/28 00:02:28 ppollard Exp $
 
 use Horus::Conf;
 use Horus::Network;
@@ -48,7 +48,7 @@ debug("\n");
 
 ### Global Vars
 
-my $ver = (split ' ', '$Revision: 1.71 $')[1];
+my $ver = (split ' ', '$Revision: 1.72 $')[1];
 
 my %uptime; # Track uptimes for the report
 
@@ -299,8 +299,9 @@ for my $hostid ( scalar @override ? sort @override : sort { lc($all{$a}) cmp lc(
 
       $machine_brand = 'Penguin' if $machine_brand eq 'InventecESC' or $machine_brand eq 'To Be Filled By O.E.M.';
 
-      $machine_model = 'Altus 2200' if $machine_brand eq 'Penguin' and $machine_model eq 'IR2350';
-      $machine_model = 'Altus 1300' if $machine_brand eq 'Penguin' and $machine_model eq 'IR2300';
+      $machine_model = 'Altus 1300'   if $machine_brand eq 'Penguin' and $machine_model eq 'IR2300';
+      $machine_model = 'Altus 1600SS' if $machine_brand eq 'Penguin' and $machine_model eq 'IR2400';
+      $machine_model = 'Altus 2200'   if $machine_brand eq 'Penguin' and $machine_model eq 'IR2350';
     
       $machine_brand = 'VMware' if $machine_brand eq 'VMware, Inc.';
     }
