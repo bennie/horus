@@ -6,7 +6,7 @@ package Horus::Conf;
 
 use strict;
 
-$Horus::Conf::VERSION = '$Revision: 1.18 $';
+$Horus::Conf::VERSION = '$Revision: 1.19 $';
 
 sub new {
   my     $self = {};
@@ -74,6 +74,7 @@ sub config_files {
   /etc/profile
   /etc/resolv.conf
   /etc/shadow
+  /etc/shells
   /etc/sudoers
   /etc/syslog.conf
   /etc/vsftpd.ftpusers
@@ -223,7 +224,7 @@ sub config_files {
   (c) 2008-2209, Horus, Inc. 
 
   Work by Phil Pollard
-  $Revision: 1.18 $ $Date: 2009/01/28 00:02:28 $
+  $Revision: 1.19 $ $Date: 2009/01/30 01:54:41 $
 
 =cut
 
