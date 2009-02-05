@@ -6,7 +6,7 @@ package Horus::Conf;
 
 use strict;
 
-$Horus::Conf::VERSION = '$Revision: 1.19 $';
+$Horus::Conf::VERSION = '$Revision: 1.20 $';
 
 sub new {
   my     $self = {};
@@ -83,6 +83,7 @@ sub config_files {
   /etc/xinetd.conf
   /etc/yum.conf
 
+  /etc/cron.d/sysstat
   /etc/mail/access
   /etc/mail/domaintable
   /etc/mail/local-host-names
@@ -110,6 +111,7 @@ sub config_files {
   /etc/sysconfig/iptables
   /etc/sysconfig/iptables-config
   /etc/sysconfig/network
+  /etc/sysconfig/sysstat
   /etc/vsftpd/vsftpd.conf
   /etc/yum.repos.d/CentOS-Base.repo
 
@@ -224,7 +226,7 @@ sub config_files {
   (c) 2008-2209, Horus, Inc. 
 
   Work by Phil Pollard
-  $Revision: 1.19 $ $Date: 2009/01/30 01:54:41 $
+  $Revision: 1.20 $ $Date: 2009/02/05 01:10:15 $
 
 =cut
 
