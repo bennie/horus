@@ -6,7 +6,7 @@ package Horus::Conf;
 
 use strict;
 
-$Horus::Conf::VERSION = '$Revision: 1.20 $';
+$Horus::Conf::VERSION = '$Revision: 1.21 $';
 
 sub new {
   my     $self = {};
@@ -169,9 +169,28 @@ sub config_files {
   /fusionone/webapps/mb/WEB-INF/classes/mbackup.properties
   /fusionone/webapps/mb/WEB-INF/classes/sso.properties
  
+  /fusionone/webapps/mbnag/WEB-INF/classes/f1papi.conf
+  /fusionone/webapps/mbnag/WEB-INF/classes/logger.properties
+  /fusionone/webapps/mbnag/WEB-INF/classes/mpwdb.properties
+  /fusionone/webapps/mbnag/WEB-INF/classes/nag.properties
+
   /fusionone/webapps/mg/WEB-INF/classes/f1mg.properties
   /fusionone/webapps/mg/WEB-INF/classes/f1papi.conf
   /fusionone/webapps/mg/WEB-INF/classes/papi.properties
+
+  /fusionone/webapps/mp/WEB-INF/classes/dcl.f1papi.conf
+  /fusionone/webapps/mp/WEB-INF/classes/f1papi.conf
+  /fusionone/webapps/mp/WEB-INF/classes/logger.properties
+  /fusionone/webapps/mp/WEB-INF/classes/mpw.db.properties
+  /fusionone/webapps/mp/WEB-INF/classes/mpw.properties
+  /fusionone/webapps/mp/WEB-INF/classes/ora.config
+  /fusionone/webapps/mp/WEB-INF/classes/papi.properties
+
+  /fusionone/webapps/mpnag/WEB-INF/classes/configfiles.properties
+  /fusionone/webapps/mpnag/WEB-INF/classes/f1papi.conf
+  /fusionone/webapps/mpnag/WEB-INF/classes/logger.properties
+  /fusionone/webapps/mpnag/WEB-INF/classes/mpwdb.properties
+  /fusionone/webapps/mpnag/WEB-INF/classes/nag.properties 
  
   /fusionone/webapps/qc-gw/WEB-INF/classes/f1papi.conf
   /fusionone/webapps/qc-gw/WEB-INF/classes/hibernate.properties
@@ -226,7 +245,7 @@ sub config_files {
   (c) 2008-2209, Horus, Inc. 
 
   Work by Phil Pollard
-  $Revision: 1.20 $ $Date: 2009/02/05 01:10:15 $
+  $Revision: 1.21 $ $Date: 2009/02/13 23:47:51 $
 
 =cut
 
