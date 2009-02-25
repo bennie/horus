@@ -7,7 +7,7 @@
 # --config=foo Deal only with the textconfig foo.
 # --noreport will skip emailing the change report.
 
-# $Id: grab.pl,v 1.72 2009/01/28 00:02:28 ppollard Exp $
+# $Id: grab.pl,v 1.73 2009/02/25 01:02:04 ppollard Exp $
 
 use Horus::Conf;
 use Horus::Network;
@@ -48,7 +48,7 @@ debug("\n");
 
 ### Global Vars
 
-my $ver = (split ' ', '$Revision: 1.72 $')[1];
+my $ver = (split ' ', '$Revision: 1.73 $')[1];
 
 my %uptime; # Track uptimes for the report
 
@@ -460,8 +460,11 @@ sub open_connection {
     }
 
   } else {
+
+   my @conf = (protocol=>'2,1', debug=>0);
+   push @conf, 'identity_files' => [] if length $user and length $pass;
   
-    our $ssh = Net::SSH::Perl->new($host, (protocol=>'2,1', debug=>0) );
+    our $ssh = Net::SSH::Perl->new($host, @conf );
     eval { $ssh->login($user,$pass); };
     if ( $@ ) { warn $@; return 0; }
 
