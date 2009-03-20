@@ -1,6 +1,6 @@
 #!/usr/bin/perl -I../lib
 
-# $Id: login.cgi,v 1.4 2009/01/15 05:34:46 ppollard Exp $
+# $Id: login.cgi,v 1.5 2009/03/20 21:36:12 ppollard Exp $
 
 use Horus::Auth;
 use HTML::Template;
@@ -21,6 +21,7 @@ $tmpl->param( title => 'Horus - Login' );
 $tmpl->param( guest => '&nbsp;' );
 
 my $body;
+my $path = ( $cgi->param('path') ? $cgi->param('path') : '/index.cgi' );
 
 if ( $cgi->param('user') && $cgi->param('pass') )  {
   $body .= &auth($cgi->param('user'),$cgi->param('pass'));
@@ -45,7 +46,7 @@ sub auth {
   my ($ret,$details) = $ha->check_pass($user,$pass);
   
   if ( $ret > 0 ) { # Success!
-    print $cgi->redirect('/index.cgi');
+    print $cgi->redirect($path);
     #return "Success!"
     #     . ( $debug ? $cgi->i($details) : '' );
   }
@@ -58,6 +59,7 @@ sub login {
   return $cgi->start_form
        . $cgi->p('User:',$cgi->textfield({name=>'user'}))
        . $cgi->p('Pass:',$cgi->password_field({name=>'pass'}))
+       . $cgi->hidden({name=>'path',value=>$path})
        . $cgi->submit
        . $cgi->end_form;
 
