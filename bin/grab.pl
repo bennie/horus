@@ -7,7 +7,7 @@
 # --config=foo Deal only with the textconfig foo.
 # --noreport will skip emailing the change report.
 
-# $Id: grab.pl,v 1.73 2009/02/25 01:02:04 ppollard Exp $
+# $Id: grab.pl,v 1.74 2009/03/20 00:46:04 ppollard Exp $
 
 use Horus::Conf;
 use Horus::Network;
@@ -48,7 +48,7 @@ debug("\n");
 
 ### Global Vars
 
-my $ver = (split ' ', '$Revision: 1.73 $')[1];
+my $ver = (split ' ', '$Revision: 1.74 $')[1];
 
 my %uptime; # Track uptimes for the report
 
@@ -277,8 +277,8 @@ for my $hostid ( scalar @override ? sort @override : sort { lc($all{$a}) cmp lc(
         debug(" RCS update returned $ret ($config)\n");
       }
 
-      #unlink('/tmp/rcs');
-      #unlink('/tmp/rcs,v');
+      unlink('/tmp/rcs');
+      unlink('/tmp/rcs,v');
     }
   }
 

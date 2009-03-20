@@ -6,7 +6,7 @@ package Horus::Conf;
 
 use strict;
 
-$Horus::Conf::VERSION = '$Revision: 1.21 $';
+$Horus::Conf::VERSION = '$Revision: 1.22 $';
 
 sub new {
   my     $self = {};
@@ -218,7 +218,8 @@ sub config_files {
     push @configs, '/fusionone/ss/' . $1, '/fusionone/apps/ss/' . $1 if $config =~ /\/fusionone\/sync\/(.+)$/;
   }
 
-  #  /tmp/packages.txt  # Temp comment out for size
+  push @configs, '/tmp/packages.txt';
+  
   #  /etc/vmware/locations
 
   for my $type ( qw/ifcfg route/ ) {
@@ -245,7 +246,7 @@ sub config_files {
   (c) 2008-2209, Horus, Inc. 
 
   Work by Phil Pollard
-  $Revision: 1.21 $ $Date: 2009/02/13 23:47:51 $
+  $Revision: 1.22 $ $Date: 2009/03/20 00:46:04 $
 
 =cut
 

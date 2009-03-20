@@ -12,7 +12,7 @@ use Digest::MD5 qw/md5_hex/;
 use Horus::DB;
 use strict;
 
-$Horus::Hosts::VERSION = '$Revision: 1.12 $';
+$Horus::Hosts::VERSION = '$Revision: 1.13 $';
 
 sub new {
   my $self = {};
@@ -161,7 +161,6 @@ sub config_set_rcs {
     $self->{db}->execute('insert into host_configs (host_id,config_name) values (?,?)',$host,$conf);
     $self->{cache}->{configs}->{$host}->{$conf} = 1;
   }
-    
   return $self->{db}->execute('update host_configs set config_rcs=? where host_id=? and config_name=?',$rcs,$host,$conf);
 }
 
@@ -254,7 +253,7 @@ sub data_list {
   (c) 2007-2008, Horus, Inc.
 
   Work by Phil Pollard
-  $Revision: 1.12 $ $Date: 2009/01/08 01:54:16 $
+  $Revision: 1.13 $ $Date: 2009/03/20 00:46:04 $
     
 =cut
 
