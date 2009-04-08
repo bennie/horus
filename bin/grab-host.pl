@@ -7,7 +7,7 @@
 # --config=foo Deal only with the textconfig foo.
 # --noreport will skip emailing the change report.
 
-# $Id: grab-machine.pl,v 1.2 2009/04/08 00:17:15 ppollard Exp $
+# $Id: grab-host.pl,v 1.1 2009/04/08 00:17:45 ppollard Exp $
 
 use Horus::Conf;
 use Horus::Network;
@@ -26,7 +26,7 @@ use strict;
 
 ### Global Vars
 
-my $ver = (split ' ', '$Revision: 1.2 $')[1];
+my $ver = (split ' ', '$Revision: 1.1 $')[1];
 
 my $use_expect = 0;
 
