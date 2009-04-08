@@ -1,13 +1,6 @@
 #!/usr/bin/perl -I../lib
 
-# --quiet option shuts up everything but the change report.
-# Other argv's will become the machines to process
-
-# --noconfigsave will stop the config save
-# --config=foo Deal only with the textconfig foo.
-# --noreport will skip emailing the change report.
-
-# $Id: grab-host.pl,v 1.1 2009/04/08 00:17:45 ppollard Exp $
+# $Id: grab-host.pl,v 1.2 2009/04/08 23:43:50 ppollard Exp $
 
 use Horus::Conf;
 use Horus::Network;
@@ -26,7 +19,7 @@ use strict;
 
 ### Global Vars
 
-my $ver = (split ' ', '$Revision: 1.1 $')[1];
+my $ver = (split ' ', '$Revision: 1.2 $')[1];
 
 my $use_expect = 0;
 
@@ -57,7 +50,8 @@ my $ref = $hosts->get($hostid);
 
 if ( $ref->{skip} > 0 ) {
   $skippedref->{$hostid}++;
-  next;
+  &close_configs();
+  exit;
 }
 
 my $ret = &open_connection($hostid);
@@ -309,68 +303,71 @@ if ( $machine_model ) {
   
 ### Linux only from here on
 
-next unless $os eq 'Linux';
+unless ( $os eq 'Linux' ) {
   
-my $snmp = &is_running_linux('snmpd');
-my $ntp  = &is_running_linux('ntpd');
+  my $snmp = &is_running_linux('snmpd');
+  my $ntp  = &is_running_linux('ntpd');
 
-my $ret = $hosts->update($hostid,{
-  snmp => $snmp,
-  ntp  => $ntp,
-});
-debug(" Update returned $ret (ntp,snmp)\n");
+  my $ret = $hosts->update($hostid,{
+    snmp => $snmp,
+    ntp  => $ntp,
+  });
+  debug(" Update returned $ret (ntp,snmp)\n");
 
-# NTP host
+  # NTP host
 
-my $ntphost;
+  my $ntphost;
 
-if ( $ntp == 1 ) {
-  my $stdout = run('egrep \'^server\' /etc/ntp.conf | grep -v 127.127.1.0 | head -1');
+  if ( $ntp == 1 ) {
+    my $stdout = run('egrep \'^server\' /etc/ntp.conf | grep -v 127.127.1.0 | head -1');
 
-  if ( $stdout =~ /^server\s+(\S+)/ ) {
-    $ntphost = $1;
-    my $ret = $hosts->update($hostid,{ ntphost => $ntphost });
-    debug(" Update returned $ret (ntphost)\n");
+    if ( $stdout =~ /^server\s+(\S+)/ ) {
+      $ntphost = $1;
+      my $ret = $hosts->update($hostid,{ ntphost => $ntphost });
+      debug(" Update returned $ret (ntphost)\n");
+    }
   }
-}
 
-# SNMP host
+  # SNMP host
 
-my $snmp_community;
+  my $snmp_community;
 
-if ( $snmp == 1 ) {
-  my $stdout = run('egrep \'^com2sec.*notConfigUser.*default\' /etc/snmp/snmpd.conf');
+  if ( $snmp == 1 ) {
+    my $stdout = run('egrep \'^com2sec.*notConfigUser.*default\' /etc/snmp/snmpd.conf');
 
-  if ( $stdout =~ /\s+(\S+)\s*$/ ) {
-    $snmp_community = $1;
-    my $ret = $hosts->update($hostid,{ snmp_community => $snmp_community });
-    debug(" Update returned $ret (snmp_community)\n");
+    if ( $stdout =~ /\s+(\S+)\s*$/ ) {
+      $snmp_community = $1;
+      my $ret = $hosts->update($hostid,{ snmp_community => $snmp_community });
+      debug(" Update returned $ret (snmp_community)\n");
+    }
   }
-}
 
-# Last run times
+  # Last run times
   
-for my $run( qw/last_backup last_ostune last_yum/ ) {
-  my $file = '/var/f1/' . $run;
-  my $data = run("if [ -f $file ]; then cat $file; fi");
-  next unless $data;
-  my $ret = $hosts->data_set($hostid,$run,$data);
-  debug(" Update returned $ret ($run)\n");
-}
+  for my $run( qw/last_backup last_ostune last_yum/ ) {
+    my $file = '/var/f1/' . $run;
+    my $data = run("if [ -f $file ]; then cat $file; fi");
+    next unless $data;
+    my $ret = $hosts->data_set($hostid,$run,$data);
+    debug(" Update returned $ret ($run)\n");
+  }
 
-# Net devices
+  # Net devices
 
-my %dev = &net_devices_linux($ssh);  
-for my $dev ( keys %dev ) {
-  next if $dev{$dev} =~ /00.00.00.00.00.00/;
-  if ( $network->exists($dev{$dev}) ) {
-    my $ret = $network->update($dev{$dev},{ host_id => $hostid, host_interface => $dev });
-    debug(" Update returned $ret ($dev)\n");
-  } else {
-    my $ret = $network->add({ address => $dev{$dev}, host_id => $hostid, host_interface => $dev });
-    debug(" Insert returned $ret ($dev)\n");
+  my %dev = &net_devices_linux($ssh);  
+  for my $dev ( keys %dev ) {
+    next if $dev{$dev} =~ /00.00.00.00.00.00/;
+    if ( $network->exists($dev{$dev}) ) {
+      my $ret = $network->update($dev{$dev},{ host_id => $hostid, host_interface => $dev });
+      debug(" Update returned $ret ($dev)\n");
+     } else {
+      my $ret = $network->add({ address => $dev{$dev}, host_id => $hostid, host_interface => $dev });
+      debug(" Insert returned $ret ($dev)\n");
+    }
   }
 }
+
+&close_configs;
 
 ### SSH Subroutines
 
@@ -459,6 +456,13 @@ sub run {
 }
 
 ### Subroutines
+
+sub close_configs {
+  store $changesref, 'changes.store';
+  store $optionsref, 'options.store';
+  store $skippedref, 'skipped.store';
+  store $uptimeref, 'uptime.store';
+}
 
 # is a service running
 sub is_running_linux {
