@@ -1,6 +1,6 @@
 #!/usr/bin/perl -I../lib
 
-# $Id: grab-host.pl,v 1.2 2009/04/08 23:43:50 ppollard Exp $
+# $Id: grab-host.pl,v 1.3 2009/04/23 23:09:34 ppollard Exp $
 
 use Horus::Conf;
 use Horus::Network;
@@ -19,7 +19,7 @@ use strict;
 
 ### Global Vars
 
-my $ver = (split ' ', '$Revision: 1.2 $')[1];
+my $ver = (split ' ', '$Revision: 1.3 $')[1];
 
 my $use_expect = 0;
 
@@ -55,7 +55,7 @@ if ( $ref->{skip} > 0 ) {
 }
 
 my $ret = &open_connection($hostid);
-next unless $ret;
+exit unless $ret;
 
 $changesref->{$hostid}->{changes} = {};
 

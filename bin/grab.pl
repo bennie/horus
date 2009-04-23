@@ -7,7 +7,7 @@
 # --config=foo Deal only with the textconfig foo.
 # --noreport will skip emailing the change report.
 
-# $Id: grab.pl,v 1.75 2009/04/08 23:43:50 ppollard Exp $
+# $Id: grab.pl,v 1.76 2009/04/23 23:09:34 ppollard Exp $
 
 use Horus::Hosts;
 
@@ -41,7 +41,7 @@ debug("\n");
 
 ### Global Vars
 
-my $ver = (split ' ', '$Revision: 1.75 $')[1];
+my $ver = (split ' ', '$Revision: 1.76 $')[1];
 
 ### Build up the storable files
 
@@ -99,7 +99,7 @@ for my $file ( qw/changes.store skipped.store uptime.store options.store/ ) {
 ### Subroutines
 
 sub change_report {
-  my $detail;
+  my $detail; my $packages;
   
   # Uptimes
  
@@ -122,7 +122,7 @@ sub change_report {
   # Sort out what hosts changed, didn't change, and were skipped
  
   my $changeheader;
-  my @nochange; my @change;
+  my @nochange; my @change; my @packages;
   
   for my $hostid ( sort { lc($all{$a}) cmp lc($all{$b}) } keys %changes ) {
     my $count = scalar(keys %{$changes{$hostid}{changes}});
@@ -137,8 +137,14 @@ sub change_report {
 
       for my $file ( sort { lc($a) cmp lc($b) } keys %{$changes{$hostid}{changes}} ) {
         my $table = &reformat_table($changes{$hostid}{changes}{$file});
-        $changeheader .= "<li>$file</li>\n";
-        $detail .= "\nFile: <tt>$file</tt><br />\n$table\n";
+
+        if ( $file eq '/tmp/packages.txt' ) {
+          $packages .= "\n<b>" . &href($host) . "</b><br \>\n$table\n";   
+          push @packages, $host;
+        } else {
+          $changeheader .= "<li>$file</li>\n";
+          $detail .= "\nFile: <tt>$file</tt><br />\n$table\n";   
+        }
       }
 
       $changeheader .= "</ul></li>\n";
@@ -171,6 +177,10 @@ sub change_report {
 
   print REPORT "<hr noshade /><font size='+2'><b>General Stats</b></font><hr noshade />\n"
              . "<p>Highest uptimes:</p>$best_uptime<p>Lowest uptimes:</p>$worst_uptime";
+
+  print REPORT "<hr noshade /><font size='+2'><b>Packages Changed</b></font><hr noshade />\n" if $packages;
+
+  print REPORT $packages if $packages;
 
   print REPORT "<hr noshade /><font size='+2'><b>Change Detail</b></font><hr noshade />\n" if $detail;
 
