@@ -21,11 +21,11 @@ DROP TABLE IF EXISTS `host_configs`;
 CREATE TABLE `host_configs` (
   `host_id` int(11) NOT NULL default '0',
   `config_name` varchar(255) NOT NULL default '',
-  `config_text` text,
+  `config_text` mediumtext,
   `hash` varchar(32) default NULL,
   `created` timestamp NOT NULL default '0000-00-00 00:00:00',
   `last_modified` timestamp NOT NULL default '0000-00-00 00:00:00',
-  `config_rcs` text,
+  `config_rcs` mediumtext,
   PRIMARY KEY  (`host_id`,`config_name`),
   KEY `host_id` (`host_id`),
   CONSTRAINT `host_configs_ibfk_1` FOREIGN KEY (`host_id`) REFERENCES `hosts` (`id`)
