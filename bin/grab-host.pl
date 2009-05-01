@@ -1,6 +1,6 @@
 #!/usr/bin/perl -I../lib
 
-# $Id: grab-host.pl,v 1.4 2009/05/01 00:17:01 ppollard Exp $
+# $Id: grab-host.pl,v 1.5 2009/05/01 21:04:46 ppollard Exp $
 
 use Horus::Conf;
 use Horus::Network;
@@ -19,7 +19,7 @@ use strict;
 
 ### Global Vars
 
-my $ver = (split ' ', '$Revision: 1.4 $')[1];
+my $ver = (split ' ', '$Revision: 1.5 $')[1];
 
 my $use_expect = 0;
 
@@ -147,7 +147,7 @@ unless ( $ref->{category} ) {
 # Remember uptimes for the change report
 
 if ( $uptime ) {
-  warn "Can't parse the uptime string for time info." unless $uptime =~ /up(\s.+\s)\d+ user/;
+  warn "Can't parse the uptime string for time info." unless $uptime =~ /up(\s.+\s)(\d+ users,\s+)?load average/;
   my $up = $1;
 
   my $years = 0;
