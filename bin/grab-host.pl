@@ -1,6 +1,6 @@
 #!/usr/bin/perl -I../lib
 
-# $Id: grab-host.pl,v 1.5 2009/05/01 21:04:46 ppollard Exp $
+# $Id: grab-host.pl,v 1.6 2009/05/01 22:03:58 ppollard Exp $
 
 use Horus::Conf;
 use Horus::Network;
@@ -19,7 +19,7 @@ use strict;
 
 ### Global Vars
 
-my $ver = (split ' ', '$Revision: 1.5 $')[1];
+my $ver = (split ' ', '$Revision: 1.6 $')[1];
 
 my $use_expect = 0;
 
@@ -305,11 +305,15 @@ if ( $machine_model ) {
 
 my $ram;
 
-if ( $os eq 'Linux' ) {
-  $ram = run('if [ -f /proc/meminfo ]; then grep MemTotal /proc/meminfo | sed -e \'s/MemTotal:\s*//\'; fi');
+if ( $os eq 'Linux' or $os eq 'VMkernel' ) {
+  $ram = run('if [ -e /sbin/esxcfg-info -o /usr/sbin/esxcfg-info ]; then esxcfg-info -w | grep "Physical Mem\." | sed -e \'s/[^0123456789]*\([012346789]\)/\1/\'; else if [ -f /proc/meminfo ]; then grep MemTotal /proc/meminfo | sed -e \'s/MemTotal:\s*//\'; fi; fi');
 }
 
 if ( $ram ) {
+
+  if ( $ram =~ /^(\d+)( bytes)?$/ ) { # ESX puts info in bytes. Upgrade it to kB
+    $ram = sprintf('%d kB', $ram / 1024);
+  }
 
   if ( $ram =~ /^(\d\d\d\d+) kB$/ ) {
     my $mb = $1 / 1000;  
@@ -319,7 +323,7 @@ if ( $ram ) {
       $ram = sprintf('%0.2f MB', $mb);
     }
   }
-
+  
   my $ret = $hosts->update($hostid,{ ram => $ram });
   debug(" Update returned $ret (ram)\n");
 }
