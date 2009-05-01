@@ -1,6 +1,6 @@
 #!/usr/bin/perl -I../lib
 
-# $Id: grab-host.pl,v 1.3 2009/04/23 23:09:34 ppollard Exp $
+# $Id: grab-host.pl,v 1.4 2009/05/01 00:17:01 ppollard Exp $
 
 use Horus::Conf;
 use Horus::Network;
@@ -19,7 +19,7 @@ use strict;
 
 ### Global Vars
 
-my $ver = (split ' ', '$Revision: 1.3 $')[1];
+my $ver = (split ' ', '$Revision: 1.4 $')[1];
 
 my $use_expect = 0;
 
@@ -300,7 +300,30 @@ if ( $machine_model ) {
   my $ret = $hosts->update($hostid,{ machine_model => $machine_model });
   debug(" Update returned $ret (machine_model)\n");
 }
-  
+
+### RAM
+
+my $ram;
+
+if ( $os eq 'Linux' ) {
+  $ram = run('if [ -f /proc/meminfo ]; then grep MemTotal /proc/meminfo | sed -e \'s/MemTotal:\s*//\'; fi');
+}
+
+if ( $ram ) {
+
+  if ( $ram =~ /^(\d\d\d\d+) kB$/ ) {
+    my $mb = $1 / 1000;  
+    if ( $mb > 1000 ) {
+      $ram = sprintf('%0.2f GB', $mb / 1000 );
+    } else {
+      $ram = sprintf('%0.2f MB', $mb);
+    }
+  }
+
+  my $ret = $hosts->update($hostid,{ ram => $ram });
+  debug(" Update returned $ret (ram)\n");
+}
+
 ### Linux only from here on
 
 unless ( $os eq 'Linux' ) {

@@ -1,6 +1,6 @@
 #!/usr/bin/perl -I../lib
 
-# $Id: index.cgi,v 1.34 2009/03/20 21:36:12 ppollard Exp $
+# $Id: index.cgi,v 1.35 2009/05/01 00:17:01 ppollard Exp $
 
 use Horus::Auth;
 use Horus::Hosts;
@@ -147,6 +147,7 @@ sub dashboard {
       $cgi->td({-bgcolor=>$color_header},'Customer'),
       $cgi->td({-bgcolor=>$color_header},'Category'),
       $cgi->td({-bgcolor=>$color_header},'Type'),
+      $cgi->td({-bgcolor=>$color_header},'RAM'),
       $cgi->td({-bgcolor=>$color_header},'OS'),
       $cgi->td({-bgcolor=>$color_header},'Release'),
       $cgi->td({-bgcolor=>$color_header},'Version'),
@@ -165,7 +166,7 @@ sub dashboard {
     $rec{last_modified} =~ /(\d{4}-\d\d-\d\d)/;
     my $time = $1;
 
-    map { $rec{$_}=~s/\s/\&nbsp;/g } qw/osrelease osversion machine_model customer/;
+    map { $rec{$_}=~s/\s/\&nbsp;/g } qw/osrelease osversion machine_model customer ram/;
 
     my $bg = $rec{skip} == 1 ? $color_subhead : $color_back;  
   
@@ -174,6 +175,7 @@ sub dashboard {
       $cgi->td({-bgcolor=>$bg}, "$rec{customer}" ),
       $cgi->td({-bgcolor=>$bg}, "$rec{category}" ),
       $cgi->td({-bgcolor=>$bg}, "$rec{type}" ),
+      $cgi->td({-bgcolor=>$bg}, "$rec{ram}" ),
       $cgi->td({-bgcolor=>$bg}, "$rec{os}" ),
       $cgi->td({-bgcolor=>$bg}, "$rec{osrelease}" ),
       $cgi->td({-bgcolor=>$bg}, "$rec{osversion}" ),
@@ -233,6 +235,10 @@ sub host {
       $cgi->Tr(
         $cgi->td({-bgcolor=>$color_header},'Machine Arch'), $cgi->td({-bgcolor=>$color_back},$rec{arch}),
         $cgi->td({-bgcolor=>$color_header},'OS Version'), $cgi->td({-bgcolor=>$color_back},$rec{osversion})
+      ),
+      $cgi->Tr(
+        $cgi->td({-bgcolor=>$color_header},'Machine RAM'), $cgi->td({-bgcolor=>$color_back},$rec{ram}),
+        $cgi->td({-bgcolor=>$color_header},'&nbsp;'), $cgi->td({-bgcolor=>$color_back},'&nbsp;')
       )
     )
   );
@@ -435,17 +441,21 @@ sub password_report {
 
 sub authorized {
   my $user = shift @_;
+  return 1 if $user eq 'alee';
   return 1 if $user eq 'bmurphy';
   return 1 if $user eq 'btanaka';
   return 1 if $user eq 'mlysenko';
   return 1 if $user eq 'ppollard';
   return 1 if $user eq 'rob';
   return 1 if $user eq 'tamundson';
+  return 1 if $user eq 'sbhalla';
   return 0;
 }
 
 sub authorized_to_edit {
   my $user = shift @_;
+  return 1 if $user eq 'bmurphy';
+  return 1 if $user eq 'btanaka';
   return 1 if $user eq 'ppollard';
   return 0;
 }
