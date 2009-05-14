@@ -1,6 +1,6 @@
 #!/usr/bin/perl -I../lib
 
-# $Id: grab-host.pl,v 1.6 2009/05/01 22:03:58 ppollard Exp $
+# $Id: grab-host.pl,v 1.7 2009/05/14 00:33:57 ppollard Exp $
 
 use Horus::Conf;
 use Horus::Network;
@@ -19,7 +19,7 @@ use strict;
 
 ### Global Vars
 
-my $ver = (split ' ', '$Revision: 1.6 $')[1];
+my $ver = (split ' ', '$Revision: 1.7 $')[1];
 
 my $use_expect = 0;
 
@@ -306,7 +306,7 @@ if ( $machine_model ) {
 my $ram;
 
 if ( $os eq 'Linux' or $os eq 'VMkernel' ) {
-  $ram = run('if [ -e /sbin/esxcfg-info -o /usr/sbin/esxcfg-info ]; then esxcfg-info -w | grep "Physical Mem\." | sed -e \'s/[^0123456789]*\([012346789]\)/\1/\'; else if [ -f /proc/meminfo ]; then grep MemTotal /proc/meminfo | sed -e \'s/MemTotal:\s*//\'; fi; fi');
+  $ram = run('if [ -e /sbin/esxcfg-info -o -e /usr/sbin/esxcfg-info ]; then esxcfg-info -w | grep "Physical Mem\." | sed -e \'s/[^0123456789]*\([012346789]\)/\1/\'; else if [ -f /proc/meminfo ]; then grep MemTotal /proc/meminfo | sed -e \'s/MemTotal:\s*//\'; fi; fi');
 }
 
 if ( $ram ) {
