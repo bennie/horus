@@ -1,6 +1,6 @@
 #!/usr/bin/perl -I../lib
 
-# $Id: index.cgi,v 1.35 2009/05/01 00:17:01 ppollard Exp $
+# $Id: index.cgi,v 1.36 2009/05/27 00:47:19 ppollard Exp $
 
 use Horus::Auth;
 use Horus::Hosts;
@@ -210,8 +210,16 @@ sub host {
   }
 
   my %used = map {$_,1} qw/last_modified id created customer machine_brand machine_model arch os 
-    osrelease osversion name uptime ntp ntphost snmp snmp_community/;
+    osrelease osversion name uptime ntp ntphost remote snmp snmp_community/;
 
+  for my $key ( keys %used ) {
+    $rec{$key} = '&nbsp;' unless $rec{$key};
+  }
+
+  if ( $rec{remote} =~ /^https?:\/\//i ) {
+    $rec{remote} = $cgi->a({-href=>$rec{remote}},$rec{remote});
+  }
+  
   # General details
 
   $body .= $cgi->start_center();
@@ -238,7 +246,7 @@ sub host {
       ),
       $cgi->Tr(
         $cgi->td({-bgcolor=>$color_header},'Machine RAM'), $cgi->td({-bgcolor=>$color_back},$rec{ram}),
-        $cgi->td({-bgcolor=>$color_header},'&nbsp;'), $cgi->td({-bgcolor=>$color_back},'&nbsp;')
+        $cgi->td({-bgcolor=>$color_header},'Remote'), $cgi->td({-bgcolor=>$color_back},$rec{remote})
       )
     )
   );
