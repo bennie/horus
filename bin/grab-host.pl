@@ -1,6 +1,6 @@
 #!/usr/bin/perl -I../lib
 
-# $Id: grab-host.pl,v 1.7 2009/05/14 00:33:57 ppollard Exp $
+# $Id: grab-host.pl,v 1.8 2009/05/28 22:07:39 ppollard Exp $
 
 use Horus::Conf;
 use Horus::Network;
@@ -19,7 +19,7 @@ use strict;
 
 ### Global Vars
 
-my $ver = (split ' ', '$Revision: 1.7 $')[1];
+my $ver = (split ' ', '$Revision: 1.8 $')[1];
 
 my $use_expect = 0;
 
@@ -90,6 +90,8 @@ $os_release = 'RH 9' if $os_release =~ /Red Hat Linux release 9 \(Shrike\)/;
 $os_release = 'RH'.$1.'L 4' if $os_release =~ /Red Hat Enterprise Linux (\w)S release 4 \(Nahant\)/;
 
 $os_release = 'RH'.$1.'L '.$2.'.'.$3 if $os_release =~ /Red Hat Enterprise Linux (\w)S release (\d) \(\w+ Update (\d)\)/;
+
+$os_release = 'RHEL '.$1.'.'.$2 if $os_release =~ /Red Hat Enterprise Linux Server release (\d)\.(\d) \(/;
 
 $os_release = 'VM ESX '.$1 if $os_release =~ /VMware ESX Server (\d) \(Dali\)/;
 
