@@ -6,7 +6,7 @@ package Horus::Conf;
 
 use strict;
 
-$Horus::Conf::VERSION = '$Revision: 1.22 $';
+$Horus::Conf::VERSION = '$Revision: 1.23 $';
 
 sub new {
   my     $self = {};
@@ -83,7 +83,13 @@ sub config_files {
   /etc/xinetd.conf
   /etc/yum.conf
 
+  /etc/cron.d/clockfix
+  /etc/cron.d/f1tmp
   /etc/cron.d/sysstat
+  /etc/cron.daily/logrotate
+  /etc/cron.daily/makewhatis.cron
+  /etc/cron.daily/tmpwatch  
+  /etc/cron.weekly/makewhatis.cron
   /etc/mail/access
   /etc/mail/domaintable
   /etc/mail/local-host-names
@@ -246,7 +252,7 @@ sub config_files {
   (c) 2008-2209, Horus, Inc. 
 
   Work by Phil Pollard
-  $Revision: 1.22 $ $Date: 2009/03/20 00:46:04 $
+  $Revision: 1.23 $ $Date: 2009/05/28 01:13:19 $
 
 =cut
 
