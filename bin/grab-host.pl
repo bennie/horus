@@ -1,6 +1,6 @@
 #!/usr/bin/perl -I../lib
 
-# $Id: grab-host.pl,v 1.8 2009/05/28 22:07:39 ppollard Exp $
+# $Id: grab-host.pl,v 1.9 2009/06/05 21:11:24 ppollard Exp $
 
 use Horus::Conf;
 use Horus::Network;
@@ -19,7 +19,7 @@ use strict;
 
 ### Global Vars
 
-my $ver = (split ' ', '$Revision: 1.8 $')[1];
+my $ver = (split ' ', '$Revision: 1.9 $')[1];
 
 my $use_expect = 0;
 
@@ -75,14 +75,15 @@ if ( $os =~ /CYGWIN/ ) {
   my $bootini = run('cat /cygdrive/c/boot.ini');
   $os_release = $4 if $bootini =~ /(WINNT|WINDOWS)=\"((Microsoft )?Windows )(.+?)(, Standard)?\" /;
 }
-debug("OS: $os\n");
+
+# Version
 
 $os_version = run('uname -r');
 $os_version = 'Cygwin ' . $os_version if $os eq 'Windows';
-  
-debug("OS VERSION: $os_version\n");
 
-$os_release = run('if [ -f /etc/vmware-release ]; then cat /etc/vmware-release; else if [ -f /etc/redhat-release ]; then cat /etc/redhat-release; fi; fi') unless $os_release;
+# Release
+  
+$os_release = run('if [ -f /bin/vmware -o -f /usr/bin/vmware ]; then vmware -v; else if [ -f /etc/redhat-release ]; then cat /etc/redhat-release; fi; fi') unless $os_release;
 
 $os_release = 'CentOS '.$1 if $os_release =~ /CentOS release (\d(\.\d)?) \(Final\)/;
 
@@ -93,11 +94,23 @@ $os_release = 'RH'.$1.'L '.$2.'.'.$3 if $os_release =~ /Red Hat Enterprise Linux
 
 $os_release = 'RHEL '.$1.'.'.$2 if $os_release =~ /Red Hat Enterprise Linux Server release (\d)\.(\d) \(/;
 
-$os_release = 'VM ESX '.$1 if $os_release =~ /VMware ESX Server (\d) \(Dali\)/;
-
 $os_release = "$os $os_version" if $os eq 'SunOS' and not $os_release;
 
+# ESX override
+
+if ( $os_release  =~ /VMware (ESXi?) Server (.+) (build-\d+)/ ) {
+  $os = 'VM Ware';
+  $os_release = $1 .' '. $2;
+  $os_version = $2 .' '. $3;
+}
+
+# Report it
+
+debug("OS: $os\n");
 debug("OS RELEASE: $os_release\n");
+debug("OS VERSION: $os_version\n");
+
+# Other system stuff
 
 my $tz = run('date +%Z');
 debug("TZ: $tz\n");
