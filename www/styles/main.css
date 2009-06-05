@@ -1,0 +1,76 @@
+@import url("/styles/reset-fonts-grids.css");
+
+/* Set 1 em == 10 px */
+
+html {
+   font-size: 62.5%;
+}
+
+body {
+  background: #FFFFFF;
+}
+
+/* Blocks */
+
+p {
+  color: #111;
+  font-size: 1.4em;
+}
+
+h1,h2,h3,h4,h5,h6 {
+  font-family: "Calibri", "Candara", "Corbel", "Geneva", "Helvetica", "Kozuka Gothic Pro", "Lucida Grande", "Myriad Pro", "Optima", "Tahoma", "Trebuchet MS", "Verdana", sans-serif;
+}
+
+h1 { 
+    font-size: 1.8em;
+    border-bottom: 1px solid #333366;
+    color: #333366;
+    margin: 1em 0em 0.6em 0em;
+}
+h2 { 
+    font-variant: small-caps;
+    letter-spacing: 0.1em;
+    font-size: 1.3em;
+    color: #8f8661; 
+    margin-top: 1em;
+    letter-spacing: 0.05em;
+}
+h3 {
+    font-size: 1.2em;
+    margin-top: 0.8em;
+    color: #a4936a;
+}
+h4 {
+    font-style: italic;
+    letter-spacing: 0.05em;
+    margin-top: 0.8em;
+    font-size: 1.2em;
+    color: #8f8661;
+}
+
+/* Spacing */
+
+p + p {
+    margin-top: 0.5em;
+}
+
+td { padding: 2px; }
+
+/* selectors */
+
+#ft {
+  font-size: 0.8em;
+  line-height: 1.5em;
+  margin: 0.8em 0em 0em 0em;
+  text-align: right;
+  border-top: 1px solid #333366;
+  color: #333
+}
+
+#side {
+  font-size: 0.8em;
+  line-height: 1.5em;
+  margin: 0.8em 0em 0em 0em;
+  color: #333
+}
+

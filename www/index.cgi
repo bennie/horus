@@ -1,6 +1,6 @@
 #!/usr/bin/perl -I../lib
 
-# $Id: index.cgi,v 1.37 2009/06/05 21:11:24 ppollard Exp $
+# $Id: index.cgi,v 1.38 2009/06/05 23:22:02 ppollard Exp $
 
 use Horus::Auth;
 use Horus::Hosts;
@@ -32,7 +32,7 @@ my $bad  = '<img width="32" height="32" alt="[ - ]" src="http://horus.fusionone.
 my $tmpl_file = '/home/horus/support/main.tmpl';
 my $tmpl = HTML::Template->new( filename => $tmpl_file );
 
-my $guest = $user eq 'Guest' ? $cgi->a({-href=>'/login.cgi?path=/index.cgi'.$cgi->path_info},'Login') : "Welcome $user [ ".$cgi->a({-href=>'/login.cgi?logout=true'},'logout').' ]';
+my $guest = $user eq 'Guest' ? $cgi->a({-href=>'/login.cgi?path=/index.cgi'.$cgi->path_info},'Login') : "$user [ ".$cgi->a({-href=>'/login.cgi?logout=true'},'logout').' ]';
 
 $tmpl->param( titlebar => 'Horus' );
 $tmpl->param( title => 'Horus' );
@@ -132,14 +132,12 @@ sub dashboard {
   $tmpl->param( titlebar => 'Horus: Dashboard view' );
   $tmpl->param( guest => $guest );
 
-  my $body =  '[ '  
-           . ( &authorized($user) ? $cgi->a({-href=>'/index.cgi/report/password'},"Passwords") . ' | ' : '' )
-           . $cgi->a({-href=>'/index.cgi/report/network'},"Network Report") . ' | '
-           . $cgi->a({-href=>'/index.cgi/report/os'},"OS Report")
-           . ' ]';
+  my $nav = ( &authorized($user) ? $cgi->a({-href=>'/index.cgi/report/password'},"Passwords") . $cgi->br : '' )
+          . $cgi->a({-href=>'/index.cgi/report/network'},"Network Report") . $cgi->br
+          . $cgi->a({-href=>'/index.cgi/report/os'},"OS Report");
 
-  $body .= $cgi->p("$total hosts in the system.");
-  $body .= $cgi->p("$decomm_total decomissioned hosts in the system.");
+  my $info = $cgi->p("$total hosts in the system.");
+  $info .= $cgi->p("$decomm_total decomissioned hosts in the system.");
 
   my @rows = (
     $cgi->Tr(
@@ -188,8 +186,8 @@ sub dashboard {
     );
   }
 
-  $body .= $cgi->center( &box(@rows) );
-  $tmpl->param( body => $body );
+  my $body = $cgi->center( &box(@rows) );
+  $tmpl->param( body => $body, info => $info, nav => $nav );
   print $cgi->header, $tmpl->output;
 }
 
@@ -325,7 +323,7 @@ sub network_report {
   $tmpl->param( title => 'Horus: Network Report' );
   $tmpl->param( guest => $guest );
 
-  my $body = $cgi->font({-size=>1},$cgi->a({-href=>'/index.cgi/dashboard'},'Back to Dashboard'));
+  my $nav = $cgi->a({-href=>'/index.cgi/dashboard'},'Back to Dashboard');
 
   my $all = $fn->all();
 
@@ -361,8 +359,8 @@ sub network_report {
     );
   }
 
-  $body .= $cgi->center( &box(@rows) );
-  $tmpl->param( body => $body );
+  my $body .= $cgi->center( &box(@rows) );
+  $tmpl->param( body => $body, nav => $nav );
   print $cgi->header, $tmpl->output;
 }
 
@@ -371,7 +369,8 @@ sub os_report {
   $tmpl->param( title => 'Horus: OS Report' );
   $tmpl->param( guest => $guest );
 
-  my $body = $cgi->font({-size=>1},$cgi->a({-href=>'/index.cgi/dashboard'},'Back to Dashboard'));
+  my $nav = $cgi->a({-href=>'/index.cgi/dashboard'},'Back to Dashboard');
+  my $body;
 
   my %os;
   my %counts;
@@ -397,7 +396,7 @@ sub os_report {
     $body .= $cgi->end_ul;
   }
   $body .= $cgi->end_html;
-  $tmpl->param( body => $body );
+  $tmpl->param( body => $body, nav => $nav );
   print $cgi->header, $tmpl->output;
 }
 
@@ -405,8 +404,7 @@ sub password_report {
   $tmpl->param( titlebar => 'Horus - Password Report' );
   $tmpl->param( title => 'Horus: Password Report' );
   $tmpl->param( guest => $guest );
-
-  my $body = $cgi->font({-size=>1},$cgi->a({-href=>'/index.cgi/dashboard'},'Back to Dashboard'));
+  $tmpl->param( nav => $cgi->a({-href=>'/index.cgi/dashboard'},'Back to Dashboard') );
 
   my @pass = $cgi->Tr( map {$cgi->td({-bgcolor=>$color_header},$_)} qw/Host User Pass Host User Pass Host User Pass/);
   my @chunks;
@@ -439,7 +437,7 @@ sub password_report {
     push @pass, $cgi->Tr( $chunks[$i], $chunks[$i+$rows], $chunks[$i+$rows+$rows] );
   }
 
-  $body .= $cgi->p({-align=>'center'},box(@pass));
+  my $body = $cgi->p({-align=>'center'},box(@pass));
   $tmpl->param( body => $body );
   print $cgi->header, $tmpl->output;
 }
@@ -471,11 +469,12 @@ sub authorized_to_edit {
 
 sub box {
   my @rows = @_;
-  return '<table border="0" bgcolor="' . $color_border . '" cellpadding="0" '
-       . "cellspacing=\"0\">\n<tr><td>\n<table border=\"0\" "
-       . 'bgcolor="' . $color_border . "\" cellpadding=\"5\" cellspacing=\"1\">\n"
-       . join('',@rows)
-       . "</table>\n</td></tr>\n</table>\n<br />\n";
+  #return '<table border="0" bgcolor="' . $color_border . '" cellpadding="0" '
+  #     . "cellspacing=\"0\">\n<tr><td>\n<table border=\"0\" "
+  #     . 'bgcolor="' . $color_border . "\" cellpadding=\"5\" cellspacing=\"1\">\n"
+  #     . join('',@rows)
+  #     . "</table>\n</td></tr>\n</table>\n<br />\n";
+  return $cgi->table({-border=>1},@rows);
 }
 
 sub htmlclean {
