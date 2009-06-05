@@ -1,6 +1,6 @@
 #!/usr/bin/perl -I../lib
 
-# $Id: index.cgi,v 1.39 2009/06/05 23:31:15 ppollard Exp $
+# $Id: index.cgi,v 1.40 2009/06/05 23:40:26 ppollard Exp $
 
 use Horus::Auth;
 use Horus::Hosts;
@@ -260,7 +260,7 @@ sub host {
   }
 
   if ( scalar(@rows) ) {
-    $body .= $cgi->p(box(
+    $body .= $cgi->br . $cgi->p(box(
             $cgi->Tr($cgi->td({-bgcolor=>$color_header},'Interface'), $cgi->td({-bgcolor=>$color_header},'Hardware Address')),
             @rows
           ));
@@ -304,6 +304,8 @@ sub host {
     $body .= $cgi->b($key.': ') . $rec{$key} . $cgi->br;
   }
   $body .= $cgi->end_blockquote;
+
+  my $info = "<b>user:</b> $rec{username}" . $cgi->br . "<b>pass:</b> $rec{password}";
   
   # Footer
   
@@ -313,8 +315,8 @@ sub host {
             'Created:', $rec{created}, $cgi->br,
              'Last Modified:', $rec{last_modified}, $cgi->br,
         );
-  $body .= $cgi->end_html;
-  $tmpl->param( body => $body, nav => $nav );
+
+  $tmpl->param( body => $body, info => $info, nav => $nav );
   print $cgi->header, $tmpl->output;
 }
 
