@@ -1,6 +1,6 @@
 #!/usr/bin/perl -I../lib
 
-# $Id: grab-host.pl,v 1.9 2009/06/05 21:11:24 ppollard Exp $
+# $Id: grab-host.pl,v 1.10 2009/06/05 21:23:33 ppollard Exp $
 
 use Horus::Conf;
 use Horus::Network;
@@ -19,7 +19,7 @@ use strict;
 
 ### Global Vars
 
-my $ver = (split ' ', '$Revision: 1.9 $')[1];
+my $ver = (split ' ', '$Revision: 1.10 $')[1];
 
 my $use_expect = 0;
 
@@ -98,10 +98,11 @@ $os_release = "$os $os_version" if $os eq 'SunOS' and not $os_release;
 
 # ESX override
 
-if ( $os_release  =~ /VMware (ESXi?) Server (.+) (build-\d+)/ ) {
-  $os = 'VM Ware';
-  $os_release = $1 .' '. $2;
-  $os_version = $2 .' '. $3;
+if ( $os_release  =~ /VMware (ESXi?)( Server)? (.+) (build-\d+)/ ) {
+  $os = 'VMware';
+  $os_release = $1 .' '. $3;
+  $os_version = $3 .' '. $4;
+  $os_release =~ s/ESX 3i/ESXi/;
 }
 
 # Report it
@@ -138,6 +139,8 @@ unless ( $ref->{type} ) {
   $type = 'Page' if $ref->{name} =~ /page/i;
   $type = 'Sync' if $ref->{name} =~ /sync/i;
   $type = 'FMS'  if $ref->{name} =~ /fms/i;
+  
+  $type = 'VM&nbsp;host' if $os eq 'VMware';
   if ( $type ) {
     $ret = $hosts->update($hostid,{ type => $type });
     debug(" Update returned $ret (type)\n");
