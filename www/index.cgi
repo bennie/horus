@@ -1,6 +1,6 @@
 #!/usr/bin/perl -I../lib
 
-# $Id: index.cgi,v 1.38 2009/06/05 23:22:02 ppollard Exp $
+# $Id: index.cgi,v 1.39 2009/06/05 23:31:15 ppollard Exp $
 
 use Horus::Auth;
 use Horus::Hosts;
@@ -149,11 +149,11 @@ sub dashboard {
       $cgi->td({-bgcolor=>$color_header},'OS'),
       $cgi->td({-bgcolor=>$color_header},'Release'),
       $cgi->td({-bgcolor=>$color_header},'Version'),
-      $cgi->td({-bgcolor=>$color_header},'Arch.'),
+      #$cgi->td({-bgcolor=>$color_header},'Arch.'),
       $cgi->td({-bgcolor=>$color_header},'Brand'),
-      $cgi->td({-bgcolor=>$color_header},'Model'),
-      $cgi->td({-bgcolor=>$color_header},'Clock'),
-      $cgi->td({-bgcolor=>$color_header},'Last&nbsp;Update'),
+      #$cgi->td({-bgcolor=>$color_header},'Model'),
+      #$cgi->td({-bgcolor=>$color_header},'Clock'),
+      #$cgi->td({-bgcolor=>$color_header},'Last&nbsp;Update'),
       ( &authorized_to_edit($user) ? $cgi->td({-bgcolor=>$color_header}, $cgi->start_form({-action=>'/edit.cgi'}), $cgi->submit({-name=>'New'}), $cgi->end_form ) : '' ),
     )
   );
@@ -177,11 +177,11 @@ sub dashboard {
       $cgi->td({-bgcolor=>$bg}, "$rec{os}" ),
       $cgi->td({-bgcolor=>$bg}, "$rec{osrelease}" ),
       $cgi->td({-bgcolor=>$bg}, "$rec{osversion}" ),
-      $cgi->td({-bgcolor=>$bg}, "$rec{arch}" ),
+      #$cgi->td({-bgcolor=>$bg}, "$rec{arch}" ),
       $cgi->td({-bgcolor=>$bg}, "$rec{machine_brand}" ),
-      $cgi->td({-bgcolor=>$bg}, "$rec{machine_model}" ),
-      $cgi->td({-bgcolor=>$bg,-align=>'center'}, "$rec{tz}" ),
-      $cgi->td({-bgcolor=>$bg,-align=>'center'}, $time ),
+      #$cgi->td({-bgcolor=>$bg}, "$rec{machine_model}" ),
+      #$cgi->td({-bgcolor=>$bg,-align=>'center'}, "$rec{tz}" ),
+      #$cgi->td({-bgcolor=>$bg,-align=>'center'}, $time ),
       ( &authorized_to_edit($user) ? $cgi->td({-bgcolor=>$bg,-align=>'center'}, $cgi->start_form({-action=>'/edit.cgi'}), $cgi->hidden({-name=>'id',-value=>$id}), $cgi->submit({-name=>'Edit'}), $cgi->end_form ) : '' ),
     );
   }
@@ -197,7 +197,7 @@ sub host {
   $tmpl->param( title => "Host: $host" );
   $tmpl->param( guest => $guest );
 
-  my $body = $cgi->font({-size=>1},$cgi->a({-href=>'/index.cgi/dashboard'},'Back to Dashboard'));
+  my $nav = $cgi->a({-href=>'/index.cgi/dashboard'},'Back to Dashboard');
 
   my $possible = $fh->by_name($host);
   my %rec = $fh->get($possible->[0]);
@@ -220,7 +220,7 @@ sub host {
   
   # General details
 
-  $body .= $cgi->start_center();
+  my $body = $cgi->start_center();
 
   $body .= $cgi->p($cgi->b('Uptime:'), $rec{uptime});
 
@@ -268,7 +268,7 @@ sub host {
 
   # Service details
 
-  $body .= $cgi->p(
+  $body .= $cgi->br . $cgi->p(
     box(
       $cgi->Tr( 
         $cgi->td({-bgcolor=>$color_header},'Service Name'), $cgi->td({-bgcolor=>$color_header},'Status'), $cgi->td({-bgcolor=>$color_header},'Detail'),
@@ -314,13 +314,13 @@ sub host {
              'Last Modified:', $rec{last_modified}, $cgi->br,
         );
   $body .= $cgi->end_html;
-  $tmpl->param( body => $body );
+  $tmpl->param( body => $body, nav => $nav );
   print $cgi->header, $tmpl->output;
 }
 
 sub network_report {
   $tmpl->param( titlebar => 'Horus - Network Report' );
-  $tmpl->param( title => 'Horus: Network Report' );
+  $tmpl->param( title => 'Network Report' );
   $tmpl->param( guest => $guest );
 
   my $nav = $cgi->a({-href=>'/index.cgi/dashboard'},'Back to Dashboard');
@@ -366,7 +366,7 @@ sub network_report {
 
 sub os_report {
   $tmpl->param( titlebar => 'Horus - OS Report' );
-  $tmpl->param( title => 'Horus: OS Report' );
+  $tmpl->param( title => 'OS Report' );
   $tmpl->param( guest => $guest );
 
   my $nav = $cgi->a({-href=>'/index.cgi/dashboard'},'Back to Dashboard');
@@ -402,7 +402,7 @@ sub os_report {
 
 sub password_report {
   $tmpl->param( titlebar => 'Horus - Password Report' );
-  $tmpl->param( title => 'Horus: Password Report' );
+  $tmpl->param( title => 'Password Report' );
   $tmpl->param( guest => $guest );
   $tmpl->param( nav => $cgi->a({-href=>'/index.cgi/dashboard'},'Back to Dashboard') );
 
