@@ -1,6 +1,6 @@
 #!/usr/bin/perl -I../lib
 
-# $Id: index.cgi,v 1.40 2009/06/05 23:40:26 ppollard Exp $
+# $Id: index.cgi,v 1.41 2009/06/10 00:11:22 ppollard Exp $
 
 use Horus::Auth;
 use Horus::Hosts;
@@ -286,13 +286,28 @@ sub host {
 
   # Config files
 
-  $body .= $cgi->hr({-noshade=>undef}) .  $cgi->b('Config Files:') . $cgi->start_ul();
+  $body .= $cgi->hr({-noshade=>undef}) .  $cgi->b('Config Files:');
   
+  my @configs;
   for my $config ( sort { lc($a) cmp lc($b) } $fh->config_list($rec{id}) ) {
-    $body .= $cgi->li($cgi->a({-href=>'?config='.$config},$config),( ($configs_requiring_auth{$config} and not &authorized($user)) ? $cgi->small('(authorization required)') : '' ));
+    push @configs, $cgi->a({-href=>'?config='.$config},$config) . ( ($configs_requiring_auth{$config} and not &authorized($user)) ? $cgi->small('(authorization required)') : '' );
+  }
+
+  push @configs, '&nbsp;' if scalar(@configs) % 3;
+  push @configs, '&nbsp;' if scalar(@configs) % 3;
+
+  my $height = scalar(@configs) / 3;
+
+  my @rows;
+  for my $i ( 1 .. $height ) {
+    push @rows, $cgi->Tr(
+                  $cgi->td({id=>'hpadded'}, $configs[$i] ),
+                  $cgi->td({id=>'hpadded'}, $configs[$i + $height ] ),
+                  $cgi->td({id=>'hpadded'}, $configs[$i + $height + $height ] )
+                );
   }
   
-  $body .= $cgi->end_ul();
+  $body .= $cgi->center($cgi->table(@rows));
   
   # Other detail
 
@@ -305,8 +320,9 @@ sub host {
   }
   $body .= $cgi->end_blockquote;
 
-  my $info = "<b>user:</b> $rec{username}" . $cgi->br . "<b>pass:</b> $rec{password}";
-  
+  my $info = "<b>user:</b> $rec{username}" . $cgi->br . "<b>pass:</b> $rec{password}" . $cgi->br . $cgi->br
+           . ( &authorized_to_edit($user) ? $cgi->center( $cgi->start_form({-action=>'/edit.cgi'}), $cgi->hidden({-name=>'id',-value=>$rec{id}}), $cgi->submit({-name=>'Edit',-label=>'Edit this host'}), $cgi->end_form ) : '' );
+           
   # Footer
   
   $body .= $cgi->hr({-noshade=>undef}) . 

@@ -6,7 +6,7 @@ package Horus::Conf;
 
 use strict;
 
-$Horus::Conf::VERSION = '$Revision: 1.23 $';
+$Horus::Conf::VERSION = '$Revision: 1.24 $';
 
 sub new {
   my     $self = {};
@@ -126,6 +126,9 @@ sub config_files {
   /root/.bashrc
   /root/.ssh/authorized_keys2
   /root/.ssh/authorized_keys
+  /root/.ssh/identity
+  /root/.ssh/id_dsa
+  /root/.ssh/id_rsa
   
   /etc/VRTSvcs/conf/config/main.cf
 
@@ -252,7 +255,7 @@ sub config_files {
   (c) 2008-2209, Horus, Inc. 
 
   Work by Phil Pollard
-  $Revision: 1.23 $ $Date: 2009/05/28 01:13:19 $
+  $Revision: 1.24 $ $Date: 2009/06/10 00:11:21 $
 
 =cut
 

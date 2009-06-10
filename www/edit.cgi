@@ -10,7 +10,7 @@ use strict;
 my $cgi = new CGI;
 my $fh = new Horus::Hosts;
 
-my %skip = map {$_,1;} qw/arch id last_modified ntphost osversion snmp_community tz/;
+my %skip = map {$_,1;} qw/arch created id last_modified ntp ntphost osversion snmp snmp_community tz vm/;
 
 print $cgi->header, $cgi->start_html( -title=> 'Editing a Host');
 
@@ -31,7 +31,7 @@ if ( $cgi->param('Update') && $cgi->param('id') ) {
 
   print $cgi->a({-href=>'index.cgi'},'Back');
 
-} elsif ( ( $cgi->param('Edit') and $cgi->param('id') ) || $cgi->param('New') ) {
+} elsif ( ( $cgi->param('Edit') and $cgi->param('id') ) || $cgi->param('New') ) { # Edit a host!
   my $id = $cgi->param('id');
 
   unless ($id) {
@@ -46,7 +46,12 @@ if ( $cgi->param('Update') && $cgi->param('id') ) {
 
   print $cgi->start_form, $cgi->hidden({name=>'id',value=>$id});;
 
-  for my $key ( keys %rec ) {
+  my @first = qw/name username password/;
+  my %first = map { $_,1; } @first;
+  my @keys = @first;
+  for my $key ( sort { lc($a) cmp lc($b) } keys %rec ) { push @keys, $key unless $first{$key} }
+
+  for my $key ( @keys ) {
     next if $skip{$key};
     print $cgi->p($key,':',$cgi->textfield({-name=>$key,-value=>$rec{$key}}));
   }
