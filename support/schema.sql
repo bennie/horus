@@ -1,8 +1,8 @@
 -- MySQL dump 10.9
 --
--- Host: localhost    Database: horus
+-- Host: mysql01.fusionone.com    Database: horus
 -- ------------------------------------------------------
--- Server version	4.1.22
+-- Server version	5.0.45
 
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
 /*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
@@ -88,7 +88,7 @@ CREATE TABLE `hosts` (
   PRIMARY KEY  (`id`),
   KEY `customer` (`customer`),
   CONSTRAINT `hosts_ibfk_1` FOREIGN KEY (`customer`) REFERENCES `list_customer` (`customer`)
-) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB AUTO_INCREMENT=362 DEFAULT CHARSET=latin1;
 
 --
 -- Table structure for table `list_customer`
