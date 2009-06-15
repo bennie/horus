@@ -81,6 +81,10 @@ CREATE TABLE `hosts` (
   `decomissioned` int(11) default '0',
   `ram` varchar(50) default NULL,
   `remote` varchar(255) default NULL,
+  `rack` varchar(25) default NULL,
+  `rack_position` varchar(25) default NULL,
+  `rack_patching` varchar(255) default NULL,
+  `switch_ports` varchar(255) default NULL,
   PRIMARY KEY  (`id`),
   KEY `customer` (`customer`),
   CONSTRAINT `hosts_ibfk_1` FOREIGN KEY (`customer`) REFERENCES `list_customer` (`customer`)
