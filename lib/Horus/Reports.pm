@@ -11,7 +11,7 @@ package Horus::Reports;
 use Horus::DB;
 use strict;
 
-$Horus::Reports::VERSION = '$Revision: 1.1 $';
+$Horus::Reports::VERSION = '$Revision: 1.2 $';
 
 sub new {
   my $self = {};
@@ -22,12 +22,35 @@ sub new {
 
 =head2 Methods
 
+=head3 get()
+
+Returns an the text of the reqested report.
+
+=cut
+
+sub get {
+  my $self = shift @_;
+  my $name = shift @_;
+  return $self->{db}->single('select report from reports where name=?',$name);
+}
+
+=head3 list()
+
+Returns an array or arrayref of the available reports.
+
+=cut
+
+sub list {
+  my $self = shift @_;
+  return $self->{db}->column('select name from reports order by report');
+}
+
 =head1 Authorship:
  
   (c) 2007-2008, Horus, Inc.
 
   Work by Phil Pollard
-  $Revision: 1.1 $ $Date: 2009/06/16 18:32:46 $
+  $Revision: 1.2 $ $Date: 2009/06/16 21:27:33 $
     
 =cut
 

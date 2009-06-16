@@ -1,6 +1,6 @@
 #!/usr/bin/perl -I../lib
 
-# $Id: report.cgi,v 1.1 2009/06/16 18:32:46 ppollard Exp $
+# $Id: report.cgi,v 1.2 2009/06/16 21:27:33 ppollard Exp $
 
 use Horus::Auth;
 use Horus::Reports;
@@ -10,6 +10,7 @@ use HTML::Template;
 use strict;
 
 my $ha = new Horus::Auth;
+my $hr = new Horus::Reports;
 
 my $cgi  = $ha->{cgi};
 my $user = $ha->{username};
@@ -26,23 +27,43 @@ $tmpl->param( guest => $guest );
 my @pathinfo = split '/', $cgi->path_info;
 shift @pathinfo;
 
-&list();
+if ( $pathinfo[0] ) {
+  &report( $pathinfo[0] );
+} else {
+  &list();
+}
 
 ### Pages
 
 sub list {
-  my $host = shift @_;
   $tmpl->param( titlebar => 'Horus: Report List' );
   $tmpl->param( title => 'Report List' );
   $tmpl->param( guest => $guest );
 
   my $nav = $cgi->a({-href=>'/index.cgi/dashboard'},'Back to Dashboard');
-  my $info = 'info';
+  my $info = '';
+  my $body = $cgi->start_ul();
 
-  my $body = $cgi->start_center() . 'Woot!';
-  $body .= $cgi->end_center();
+  for my $report ( $hr->list() ) {
+    $body .= $cgi->li($cgi->a({-href=>"/report.cgi/$report"},$report));
+  }
+
+  $body .= $cgi->end_ul();
 
   $tmpl->param( body => $body, info => $info, nav => $nav );
   print $cgi->header, $tmpl->output;
 }
 
+sub report {
+  my $report = shift @_;
+  $tmpl->param( titlebar => "Horus: $report Report" );
+  $tmpl->param( title => "$report Report" );
+  $tmpl->param( guest => $guest );
+
+  my $nav = $cgi->a({-href=>'/index.cgi/dashboard'},'Back to Dashboard');
+  my $info = '';
+  my $body = $cgi->pre($hr->get($report));
+
+  $tmpl->param( body => $body, info => $info, nav => $nav );
+  print $cgi->header, $tmpl->output;
+}

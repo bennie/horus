@@ -1,6 +1,6 @@
 #!/usr/bin/perl -I../lib
 
-# $Id: index.cgi,v 1.41 2009/06/10 00:11:22 ppollard Exp $
+# $Id: index.cgi,v 1.42 2009/06/16 21:27:33 ppollard Exp $
 
 use Horus::Auth;
 use Horus::Hosts;
@@ -482,6 +482,7 @@ sub authorized_to_edit {
   return 1 if $user eq 'bmurphy';
   return 1 if $user eq 'btanaka';
   return 1 if $user eq 'ppollard';
+  return 1 if $user eq 'tamundson';
   return 0;
 }
 
