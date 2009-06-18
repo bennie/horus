@@ -7,7 +7,7 @@
 # --config=foo Deal only with the textconfig foo.
 # --noreport will skip emailing the change report.
 
-# $Id: grab.pl,v 1.76 2009/04/23 23:09:34 ppollard Exp $
+# $Id: grab.pl,v 1.77 2009/06/18 22:56:14 ppollard Exp $
 
 use Horus::Hosts;
 
@@ -41,7 +41,8 @@ debug("\n");
 
 ### Global Vars
 
-my $ver = (split ' ', '$Revision: 1.76 $')[1];
+my $ver = (split ' ', '$Revision: 1.77 $')[1];
+my $start = time;
 
 ### Build up the storable files
 
@@ -161,6 +162,20 @@ sub change_report {
   @change   = sort { lc($a) cmp lc($b) } @change;
   @skip     = sort { lc($a) cmp lc($b) } @skip;
   @nochange = sort { lc($a) cmp lc($b) } @nochange;
+  
+  # How long?
+  
+  my $end = time;
+  my $sec = $end - $start;
+  my $min = int( $sec / 60 );
+  $sec -= 60 * $min;
+
+  my $hour = int( $min / 60 );
+  $min -= 60 * $hour;
+
+  my $runtime = $hour 
+              ? sprintf('Processing for this report:  %d:%02d:%02d',$hour,$min,$sec)
+              : sprintf('Processing for this report:  %d:%02d',$min,$sec);
 
   # Print the report
 
@@ -176,6 +191,7 @@ sub change_report {
              . "<p>The following hosts appear unchaged:</p><blockquote>".  join(', ', map {&href($_)} @nochange ) . "</blockquote>\n";
 
   print REPORT "<hr noshade /><font size='+2'><b>General Stats</b></font><hr noshade />\n"
+             . "<p>$runtime</p>"
              . "<p>Highest uptimes:</p>$best_uptime<p>Lowest uptimes:</p>$worst_uptime";
 
   print REPORT "<hr noshade /><font size='+2'><b>Packages Changed</b></font><hr noshade />\n" if $packages;
