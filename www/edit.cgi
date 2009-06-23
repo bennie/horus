@@ -1,35 +1,60 @@
 #!/usr/bin/perl -I../lib
 
+use Horus::Auth;
 use Horus::Hosts;
 
-use CGI;
 use HTML::Template;
-
 use strict;
 
-my $cgi = new CGI;
+## Confs
+
+my %skip = map {$_,1;} qw/arch created id last_modified ntp ntphost osrelease osversion ram snmp snmp_community tz uptime vm/;
+my %checkboxes = map {$_,1;} qw/decomissioned skip/;
+
+my $tmpl_file = '/home/horus/support/main.tmpl';
+my $tmpl = HTML::Template->new( filename => $tmpl_file );
+
+my $ha = new Horus::Auth;
 my $fh = new Horus::Hosts;
 
-my %skip = map {$_,1;} qw/arch created id last_modified ntp ntphost osversion snmp snmp_community tz vm/;
+my $cgi  = $ha->{cgi};
+my $user = $ha->{username};
 
-print $cgi->header, $cgi->start_html( -title=> 'Editing a Host');
+# Default page values
+
+my $guest = $user eq 'Guest' ? $cgi->a({-href=>'/login.cgi?path=/index.cgi'},'Login') : "$user [ ".$cgi->a({-href=>'/login.cgi?logout=true'},'logout').' ]';
+my $nav = $cgi->a({-href=>'/index.cgi/dashboard'},'Back to Dashboard');
+my $title = 'Horus: Editing a host';
+my $titlebar = $title;
+my $body; my $info;
+
+# Start the page
+
+print $cgi->header;
 
 if ( $cgi->param('Update') && $cgi->param('id') ) {
   my $ref = {};
 
-  for my $param ( $cgi->param() ) {
+  my %params = map {$_,1;} $cgi->param(), keys %checkboxes; # Always check the value of the checkboxes
+
+  for my $param ( keys %params ) {
     next if $param eq 'Update';
     next if $param eq 'id';
-    next unless length $cgi->param($param);
-    print $param,' : ',$cgi->param($param), $cgi->br;
-    $ref->{$param} = $cgi->param($param);
+
+    my $value = $cgi->param($param);
+    if ( $checkboxes{$param} ) { $value = $value ? 1:0; }
+
+    next unless length $value;
+    
+    $ref->{$param} = $value;    
+    $body .= $param . ' : ' .$value . $cgi->br;
   }
 
   my $ret = $fh->update($cgi->param('id'),$ref);
 
-  print $cgi->p("Update returned $ret");
+  $body .= $cgi->p("Update returned $ret");
 
-  print $cgi->a({-href=>'index.cgi'},'Back');
+  $body .= $cgi->a({-href=>'index.cgi'},'Back');
 
 } elsif ( ( $cgi->param('Edit') and $cgi->param('id') ) || $cgi->param('New') ) { # Edit a host!
   my $id = $cgi->param('id');
@@ -41,38 +66,53 @@ if ( $cgi->param('Update') && $cgi->param('id') ) {
   my %rec = $fh->get($id);
   #my @custs = $fh->list_customers;
 
-  print $cgi->p($cgi->b("$id) $rec{name}")), 
-        $cgi->hr({-noshade=>undef});
+  $title = "Editing: $rec{name}";
+  $titlebar = "Horus: Editing $rec{name}";
 
-  print $cgi->start_form, $cgi->hidden({name=>'id',value=>$id});;
+  $body .= $cgi->start_form . $cgi->hidden({name=>'id',value=>$id});
 
-  my @first = qw/name username password/;
+  my @first = qw/name username password category customer decomissioned skip os type rack rack_position rack_patching switch_ports/;
   my %first = map { $_,1; } @first;
   my @keys = @first;
   for my $key ( sort { lc($a) cmp lc($b) } keys %rec ) { push @keys, $key unless $first{$key} }
 
+  my @chunks;
   for my $key ( @keys ) {
     next if $skip{$key};
-    print $cgi->p($key,':',$cgi->textfield({-name=>$key,-value=>$rec{$key}}));
+    push @chunks, ( $checkboxes{$key} 
+            ? $cgi->p($cgi->checkbox({-name=>$key,-checked=>($rec{$key}?1:0)}))
+            : $cgi->p($key,':',$cgi->textfield({-name=>$key,-value=>$rec{$key}})) 
+          );
   }
 
-  print $cgi->hr({-noshade=>undef});
+  my @col1;
+  for ( 1 .. int(scalar(@chunks)/2) ) {
+    push @col1, shift @chunks;
+  }
+  
+  $body .= $cgi->table({-cellpadding=>'10'},
+            $cgi->Tr({-valign=>'top'},
+              $cgi->td(@col1),
+              $cgi->td(@chunks)
+            )
+          );
+
+  $body .= $cgi->submit({-name=>'Update'});
+  $body .= $cgi->hr({-noshade=>undef});
 
   for my $key ( sort keys %skip) {
-    print $cgi->p($key,':',$rec{$key});
+    $body .= $cgi->b($key) . ': ' . $rec{$key} . $cgi->br;
   }
 
-  print $cgi->hr({-noshade=>undef}),
-        $cgi->submit({-name=>'Update'}),
-        $cgi->end_form;
+  $body .= $cgi->end_form;
 
 } else {
   my %hosts = $fh->all();
-  print $cgi->start_form, $cgi->submit({-name=>'New'}),$cgi->end_form;
+  $body .= $cgi->start_form . $cgi->submit({-name=>'New'}) . $cgi->end_form;
   for my $id ( sort { lc($hosts{$a}) cmp lc($hosts{$b})  } keys %hosts ) {
-    print $cgi->start_form, "$hosts{$id}", $cgi->hidden({-name=>'id',-value=>$id}), $cgi->submit({-name=>'Edit'}), $cgi->end_form;
+    $body .= $cgi->start_form . "$hosts{$id}" . $cgi->hidden({-name=>'id',-value=>$id}) . $cgi->submit({-name=>'Edit'}), $cgi->end_form;
   }
 }
 
-print $cgi->end_html;
-
+$tmpl->param( body => $body, info => $info, nav => $nav, guest => $guest, title => $title, titlebar => $titlebar );
+print $tmpl->output;

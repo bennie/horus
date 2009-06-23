@@ -1,4 +1,4 @@
-=head1 Horus::Hosts (Hosts.pm)
+=head1 Horus::Reports (Reports.pm)
 
 =head2 Summary
 
@@ -11,7 +11,7 @@ package Horus::Reports;
 use Horus::DB;
 use strict;
 
-$Horus::Reports::VERSION = '$Revision: 1.2 $';
+$Horus::Reports::VERSION = '$Revision: 1.3 $';
 
 sub new {
   my $self = {};
@@ -50,7 +50,7 @@ sub list {
   (c) 2007-2008, Horus, Inc.
 
   Work by Phil Pollard
-  $Revision: 1.2 $ $Date: 2009/06/16 21:27:33 $
+  $Revision: 1.3 $ $Date: 2009/06/23 23:47:01 $
     
 =cut
 
