@@ -1,6 +1,6 @@
 #!/usr/bin/perl -I../lib
 
-# $Id: index.cgi,v 1.43 2009/06/18 22:56:14 ppollard Exp $
+# $Id: index.cgi,v 1.44 2009/06/24 00:47:40 ppollard Exp $
 
 use Horus::Auth;
 use Horus::Hosts;
@@ -59,6 +59,8 @@ if ( $pathinfo[0] eq 'dashboard' ) {
   &os_report();
 } elsif ( $pathinfo[0] eq 'report' and $pathinfo[1] eq 'password' ) {
   &password_report();
+} elsif ( $pathinfo[0] eq 'report' and $pathinfo[1] eq 'rack' ) {
+  &rack_report();
 } else {
   print $cgi->redirect('/index.cgi/dashboard');
 }
@@ -132,7 +134,8 @@ sub dashboard {
   $tmpl->param( titlebar => 'Horus: Dashboard view' );
   $tmpl->param( guest => $guest );
 
-  my $nav = ( &authorized($user) ? $cgi->a({-href=>'/index.cgi/report/password'},"Passwords") . $cgi->br : '' )
+  my $nav = ( &authorized($user) ? $cgi->a({-href=>'/index.cgi/report/password'},"Password Report") . $cgi->br : '' )
+          . $cgi->a({-href=>'/index.cgi/report/rack'},"Rack Layout") . $cgi->br
           . $cgi->a({-href=>'/index.cgi/report/network'},"Network Report") . $cgi->br
           . $cgi->a({-href=>'/index.cgi/report/os'},"OS Report") . $cgi->br
           . $cgi->br
@@ -462,6 +465,40 @@ sub password_report {
   print $cgi->header, $tmpl->output;
 }
 
+sub rack_report {
+  $tmpl->param( titlebar => 'Horus - Rack Report' );
+  $tmpl->param( title => 'Rack Report' );
+  $tmpl->param( guest => $guest );
+  $tmpl->param( nav => $cgi->a({-href=>'/index.cgi/dashboard'},'Back to Dashboard') );
+
+  my @rows = $cgi->Tr( map {$cgi->td({-bgcolor=>$color_header},$_)} qw/Host Rack Position Patch Switch SN/);
+  my %racks;
+
+  for my $id ( sort { lc($hosts{$a}) cmp lc($hosts{$b}) } keys %hosts ) {
+    my %rec = $fh->get($id);
+    next unless length $rec{rack};
+    $racks{$rec{rack}}{$rec{rack_position}}{$rec{name}} = \%rec;
+  }
+  
+  for my $rack ( sort { $a <=> $b } keys %racks ) {
+    for my $pos ( sort { $a <=> $b } keys %{$racks{$rack}} ) {
+      for my $host ( sort keys %{$racks{$rack}{$pos}} ) {
+        push @rows, $cgi->Tr(
+          $cgi->td( $host ),
+          $cgi->td({-align=>'center'}, $rack ),
+          $cgi->td({-align=>'center'}, $pos ),
+          $cgi->td({-align=>'center'}, $racks{$rack}{$pos}{$host}{rack_patching} ),
+          $cgi->td({-align=>'center'}, $racks{$rack}{$pos}{$host}{switch_ports} ),
+          $cgi->td({-align=>'center'}, $racks{$rack}{$pos}{$host}{serial}
+        ));
+      }
+    }
+  }
+    
+  my $body = $cgi->p({-align=>'center'},box(@rows));
+  $tmpl->param( body => $body );
+  print $cgi->header, $tmpl->output;
+}
 
 ### Subroutines
 

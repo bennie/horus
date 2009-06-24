@@ -37,7 +37,7 @@ if ( $cgi->param('Update') && $cgi->param('id') ) {
 
   my %params = map {$_,1;} $cgi->param(), keys %checkboxes; # Always check the value of the checkboxes
 
-  for my $param ( keys %params ) {
+  for my $param ( sort keys %params ) {
     next if $param eq 'Update';
     next if $param eq 'id';
 
@@ -52,9 +52,7 @@ if ( $cgi->param('Update') && $cgi->param('id') ) {
 
   my $ret = $fh->update($cgi->param('id'),$ref);
 
-  $body .= $cgi->p("Update returned $ret");
-
-  $body .= $cgi->a({-href=>'index.cgi'},'Back');
+  $title = "Update returned $ret";
 
 } elsif ( ( $cgi->param('Edit') and $cgi->param('id') ) || $cgi->param('New') ) { # Edit a host!
   my $id = $cgi->param('id');
