@@ -8,7 +8,7 @@ use strict;
 
 ## Confs
 
-my %skip = map {$_,1;} qw/arch created id last_modified ntp ntphost osrelease osversion ram snmp snmp_community tz uptime vm/;
+my %skip = map {$_,1;} qw/arch created id last_modified ntp ntphost ram snmp snmp_community tz uptime vm/;
 my %checkboxes = map {$_,1;} qw/decomissioned skip/;
 
 my $tmpl_file = '/home/horus/support/main.tmpl';
@@ -69,7 +69,7 @@ if ( $cgi->param('Update') && $cgi->param('id') ) {
 
   $body .= $cgi->start_form . $cgi->hidden({name=>'id',value=>$id});
 
-  my @first = qw/name username password category customer decomissioned skip os type rack rack_position rack_patching switch_ports/;
+  my @first = qw/name username password category customer decomissioned skip remote remote_user remote_pass serial rack rack_position rack_patching switch_ports os type/;
   my %first = map { $_,1; } @first;
   my @keys = @first;
   for my $key ( sort { lc($a) cmp lc($b) } keys %rec ) { push @keys, $key unless $first{$key} }

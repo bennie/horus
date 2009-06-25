@@ -1,6 +1,6 @@
 #!/usr/bin/perl -I../lib
 
-# $Id: index.cgi,v 1.44 2009/06/24 00:47:40 ppollard Exp $
+# $Id: index.cgi,v 1.45 2009/06/25 00:26:36 ppollard Exp $
 
 use Horus::Auth;
 use Horus::Hosts;
@@ -135,7 +135,7 @@ sub dashboard {
   $tmpl->param( guest => $guest );
 
   my $nav = ( &authorized($user) ? $cgi->a({-href=>'/index.cgi/report/password'},"Password Report") . $cgi->br : '' )
-          . $cgi->a({-href=>'/index.cgi/report/rack'},"Rack Layout") . $cgi->br
+          . $cgi->a({-href=>'/index.cgi/report/rack'},"Rack &amp; Port Report") . $cgi->br
           . $cgi->a({-href=>'/index.cgi/report/network'},"Network Report") . $cgi->br
           . $cgi->a({-href=>'/index.cgi/report/os'},"OS Report") . $cgi->br
           . $cgi->br
@@ -210,6 +210,8 @@ sub host {
   unless ( &authorized($user) ) {
     $rec{username} = '********';
     $rec{password} = '********';
+    $rec{remote_user} = '********' if $rec{remote_user};
+    $rec{remote_pass} = '********' if $rec{remote_pass};
   }
 
   my %used = map {$_,1} qw/last_modified id created customer machine_brand machine_model arch os 
@@ -438,6 +440,8 @@ sub password_report {
     unless ( &authorized($user) ) {
       $rec{username} = '********';
       $rec{password} = '********';
+      $rec{remote_user} = '********' if $rec{remote_user};
+      $rec{remote_pass} = '********' if $rec{remote_pass};
     }
 
     push @chunks,
@@ -471,7 +475,7 @@ sub rack_report {
   $tmpl->param( guest => $guest );
   $tmpl->param( nav => $cgi->a({-href=>'/index.cgi/dashboard'},'Back to Dashboard') );
 
-  my @rows = $cgi->Tr( map {$cgi->td({-bgcolor=>$color_header},$_)} qw/Host Rack Position Patch Switch SN/);
+  my @rows = $cgi->Tr( map {$cgi->td({-bgcolor=>$color_header,-align=>'center'},$_)} qw/Host Rack Position Patch Switch Brand Model SN/);
   my %racks;
 
   for my $id ( sort { lc($hosts{$a}) cmp lc($hosts{$b}) } keys %hosts ) {
@@ -489,13 +493,15 @@ sub rack_report {
           $cgi->td({-align=>'center'}, $pos ),
           $cgi->td({-align=>'center'}, $racks{$rack}{$pos}{$host}{rack_patching} ),
           $cgi->td({-align=>'center'}, $racks{$rack}{$pos}{$host}{switch_ports} ),
-          $cgi->td({-align=>'center'}, $racks{$rack}{$pos}{$host}{serial}
-        ));
+          $cgi->td({-align=>'center'}, $racks{$rack}{$pos}{$host}{machine_brand} ),
+          $cgi->td({-align=>'center'}, $racks{$rack}{$pos}{$host}{machine_model} ),
+          $cgi->td({-align=>'center'}, $racks{$rack}{$pos}{$host}{serial} )
+        );
       }
     }
   }
     
-  my $body = $cgi->p({-align=>'center'},box(@rows));
+  my $body = $cgi->center(box(@rows));
   $tmpl->param( body => $body );
   print $cgi->header, $tmpl->output;
 }

@@ -85,10 +85,13 @@ CREATE TABLE `hosts` (
   `rack_position` varchar(25) default NULL,
   `rack_patching` varchar(255) default NULL,
   `switch_ports` varchar(255) default NULL,
+  `serial` varchar(100) default NULL,
+  `remote_user` varchar(100) default NULL,
+  `remote_pass` varchar(100) default NULL,
   PRIMARY KEY  (`id`),
   KEY `customer` (`customer`),
   CONSTRAINT `hosts_ibfk_1` FOREIGN KEY (`customer`) REFERENCES `list_customer` (`customer`)
-) ENGINE=InnoDB AUTO_INCREMENT=362 DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB AUTO_INCREMENT=388 DEFAULT CHARSET=latin1;
 
 --
 -- Table structure for table `list_customer`
@@ -136,6 +139,18 @@ CREATE TABLE `network` (
   KEY `ethernet_switch_id` (`switch_id`),
   CONSTRAINT `network_ibfk_1` FOREIGN KEY (`host_id`) REFERENCES `hosts` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+
+--
+-- Table structure for table `reports`
+--
+
+DROP TABLE IF EXISTS `reports`;
+CREATE TABLE `reports` (
+  `name` varchar(25) NOT NULL,
+  `report` text,
+  `last_modified` timestamp NOT NULL default CURRENT_TIMESTAMP on update CURRENT_TIMESTAMP,
+  PRIMARY KEY  (`name`)
+) ENGINE=MyISAM DEFAULT CHARSET=latin1;
 
 --
 -- Table structure for table `switches`
