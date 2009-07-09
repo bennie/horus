@@ -7,7 +7,7 @@
 # --config=foo Deal only with the textconfig foo.
 # --noreport will skip emailing the change report.
 
-# $Id: grab.pl,v 1.77 2009/06/18 22:56:14 ppollard Exp $
+# $Id: grab.pl,v 1.78 2009/07/09 00:26:33 ppollard Exp $
 
 use Horus::Hosts;
 
@@ -26,10 +26,11 @@ my $noconfigsave = 0;                 # --noconfigsave, do not update configs in
 my $noreport = 0;                     # --noreport, supress emailing the change report
 my $subject = 'Server Change Report'; # --subject, change the report email subject line
 my $quiet = 0;                        # --quiet, supress STDOUT run-time info
+my $archive = 0;                      # --archive, to save a historic copy of the report
 
 my $ret = GetOptions(
             'config=s' => \@configs_to_save, 'email=s' => \$email,  noconfigsave => \$noconfigsave,
-            noreport => \$noreport, 'subject=s' => \$subject, quiet => \$quiet
+            noreport => \$noreport, 'subject=s' => \$subject, quiet => \$quiet, archive => \$archive
 );
 
 @configs_to_save = grep !/^\s*$/, split(/,/,join(',',@configs_to_save)); # in case the configs are comma sep
@@ -41,7 +42,7 @@ debug("\n");
 
 ### Global Vars
 
-my $ver = (split ' ', '$Revision: 1.77 $')[1];
+my $ver = (split ' ', '$Revision: 1.78 $')[1];
 my $start = time;
 
 ### Build up the storable files
@@ -213,6 +214,7 @@ sub change_report {
   close REPORT;
 
   exec("/usr/sbin/sendmail $email < /tmp/change.html") unless $noreport;
+  exec("./report-update.pl --historic changes < /tmp/change.html") if $archive;
   
   print "Skipping emaling the report.\n";
 }
