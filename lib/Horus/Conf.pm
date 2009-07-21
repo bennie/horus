@@ -6,7 +6,7 @@ package Horus::Conf;
 
 use strict;
 
-$Horus::Conf::VERSION = '$Revision: 1.24 $';
+$Horus::Conf::VERSION = '$Revision: 1.25 $';
 
 sub new {
   my     $self = {};
@@ -67,6 +67,7 @@ sub config_files {
   /etc/lftp.conf
   /etc/modprobe.conf
   /etc/motd
+  /etc/my.cnf
   /etc/named.conf
   /etc/nsswitch.conf
   /etc/ntp.conf
@@ -124,6 +125,7 @@ sub config_files {
   /root/.bash_logout
   /root/.bash_profile
   /root/.bashrc
+  /root/.my.cnf
   /root/.ssh/authorized_keys2
   /root/.ssh/authorized_keys
   /root/.ssh/identity
@@ -255,7 +257,7 @@ sub config_files {
   (c) 2008-2209, Horus, Inc. 
 
   Work by Phil Pollard
-  $Revision: 1.24 $ $Date: 2009/06/10 00:11:21 $
+  $Revision: 1.25 $ $Date: 2009/07/21 23:25:50 $
 
 =cut
 
