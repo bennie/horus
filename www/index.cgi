@@ -1,6 +1,6 @@
 #!/usr/bin/perl -I../lib
 
-# $Id: index.cgi,v 1.45 2009/06/25 00:26:36 ppollard Exp $
+# $Id: index.cgi,v 1.46 2009/07/22 23:42:55 ppollard Exp $
 
 use Horus::Auth;
 use Horus::Hosts;
@@ -139,7 +139,8 @@ sub dashboard {
           . $cgi->a({-href=>'/index.cgi/report/network'},"Network Report") . $cgi->br
           . $cgi->a({-href=>'/index.cgi/report/os'},"OS Report") . $cgi->br
           . $cgi->br
-          . $cgi->a({-href=>'/report.cgi/vmhosts'},"VM Hosts Report") . $cgi->br;
+          . $cgi->a({-href=>'/report.cgi/vmhosts'},"VM Hosts Report") . $cgi->br
+          . $cgi->a({-href=>'/report.cgi/backups'},"Backup Report") . $cgi->br;
 
   my $info = $cgi->p("$total hosts in the system.");
   $info .= $cgi->p("$decomm_total decomissioned hosts in the system.");
