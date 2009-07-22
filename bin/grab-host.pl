@@ -1,6 +1,6 @@
 #!/usr/bin/perl -I../lib
 
-# $Id: grab-host.pl,v 1.10 2009/06/05 21:23:33 ppollard Exp $
+# $Id: grab-host.pl,v 1.11 2009/07/22 21:33:06 ppollard Exp $
 
 use Horus::Conf;
 use Horus::Network;
@@ -19,7 +19,7 @@ use strict;
 
 ### Global Vars
 
-my $ver = (split ' ', '$Revision: 1.10 $')[1];
+my $ver = (split ' ', '$Revision: 1.11 $')[1];
 
 my $use_expect = 0;
 
@@ -30,6 +30,7 @@ my $changesref = retrieve('changes.store') or die "CAN'T OPEN CHANGES FILE.";
 my $optionsref = retrieve('options.store') or die "CAN'T OPEN OPTIONS FILE.";
 my $skippedref = retrieve('skipped.store') or die "CAN'T OPEN SKIP FILE.";
 my $uptimeref  = retrieve('uptime.store')  or die "CAN'T OPEN UPTIME FILE.";
+my $loadref    = retrieve('load.store')    or die "CAN'T OPEN LOAD FILE.";
 
 my $noconfigsave = $optionsref->{noconfigsave};
 my $quiet        = $optionsref->{quiet};
@@ -191,6 +192,15 @@ if ( $uptime ) {
   $uptimeref->{$hostid}->{string} = $years ? sprintf('%d years, %d days, %02d:%02d', $years, $days, $hours, $mins)
                                   : $days  ? sprintf('%d days, %02d:%02d', $days, $hours, $mins)
                                   : sprintf('%02d:%02d', $hours, $mins);
+}
+
+# Parse load from uptime
+
+if ( $uptime =~ /load average: ((\d+(\.\d+)?), (\d+(\.\d+)?), (\d+(\.\d+)?))/  ) { 
+  $loadref->{$hostid}->{1}  = $2;
+  $loadref->{$hostid}->{5}  = $4;
+  $loadref->{$hostid}->{15} = $6;
+  $loadref->{$hostid}->{string} = $1;
 }
 
 # RPM list - Builds it as /tmp/packages.txt - Maybe a better way?
@@ -507,6 +517,7 @@ sub close_configs {
   store $optionsref, 'options.store';
   store $skippedref, 'skipped.store';
   store $uptimeref, 'uptime.store';
+  store $loadref, 'load.store';
 }
 
 # is a service running

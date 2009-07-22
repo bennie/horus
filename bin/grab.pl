@@ -7,7 +7,7 @@
 # --config=foo Deal only with the textconfig foo.
 # --noreport will skip emailing the change report.
 
-# $Id: grab.pl,v 1.78 2009/07/09 00:26:33 ppollard Exp $
+# $Id: grab.pl,v 1.79 2009/07/22 21:33:06 ppollard Exp $
 
 use Horus::Hosts;
 
@@ -42,12 +42,12 @@ debug("\n");
 
 ### Global Vars
 
-my $ver = (split ' ', '$Revision: 1.78 $')[1];
+my $ver = (split ' ', '$Revision: 1.79 $')[1];
 my $start = time;
 
 ### Build up the storable files
 
-for my $file ( qw/changes.store skipped.store uptime.store/ ) {
+for my $file ( qw/changes.store skipped.store uptime.store load.store/ ) {
   my %blank = ();
   store \%blank, $file;
 }
@@ -85,6 +85,7 @@ for my $hostid ( @hostids ) {
 my %changes = %{ retrieve('changes.store') };
 my %skipped = %{ retrieve('skipped.store') };
 my %uptime  = %{ retrieve('uptime.store')  };
+my %load    = %{ retrieve('load.store')  };
 
 my @connect_errors;
 
@@ -94,7 +95,7 @@ for my $hostid ( @hostids ) {
 
 &change_report();
 
-for my $file ( qw/changes.store skipped.store uptime.store options.store/ ) {
+for my $file ( qw/changes.store skipped.store uptime.store options.store load.store/ ) {
   unlink $file;
 }
 
@@ -120,7 +121,25 @@ sub change_report {
     $worst_uptime .= "<li> $uptime{$up}{string} - <b>".&href($all{$up})."</b>\n";
   }
   $worst_uptime .= '</ul>';
-   
+ 
+  # Loads
+
+  my @loads = sort { $load{$a}{15} <=> $load{$b}{15} || $load{$a}{5} <=> $load{$b}{5} || $load{$a}{1} <=> $load{$b}{1} || lc($a) cmp lc($b) } keys %load;
+  my @best_load = map { $loads[$_] if  $loads[$_] } ( 0 .. 9 );
+  my @worst_load = map { pop @loads if scalar(@loads) } ( 0 .. 9 );
+
+  my $best_load = '<ul>';
+  for my $hid (@best_load) {
+    $best_load .= "<li> $load{$hid}{string} - <b>".&href($all{$hid})."</b>\n";
+  }
+  $best_load .= '</ul>';
+
+  my $worst_load = '<ul>';
+  for my $hid (@worst_load) {
+    $worst_load .= "<li> $load{$hid}{string} - <b>".&href($all{$hid})."</b>\n";
+  }
+  $worst_load .= '</ul>';
+
   # Sort out what hosts changed, didn't change, and were skipped
  
   my $changeheader;
@@ -193,7 +212,8 @@ sub change_report {
 
   print REPORT "<hr noshade /><font size='+2'><b>General Stats</b></font><hr noshade />\n"
              . "<p>$runtime</p>"
-             . "<p>Highest uptimes:</p>$best_uptime<p>Lowest uptimes:</p>$worst_uptime";
+             . "<center><table noborder cellpadding=15><tr><td><p>Worst loads:</p>$worst_load</td><td><p>Worst uptimes:</p>$worst_uptime</td></tr>"
+             . "<tr><td><p>Best loads:</p>$best_load</td><td><p>Best uptimes:</p>$best_uptime</td></tr></table></center>";
 
   print REPORT "<hr noshade /><font size='+2'><b>Packages Changed</b></font><hr noshade />\n" if $packages;
 
