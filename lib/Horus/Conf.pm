@@ -6,7 +6,7 @@ package Horus::Conf;
 
 use strict;
 
-$Horus::Conf::VERSION = '$Revision: 1.25 $';
+$Horus::Conf::VERSION = '$Revision: 1.26 $';
 
 sub new {
   my     $self = {};
@@ -218,6 +218,10 @@ sub config_files {
   /opt/svn/conf/passwd
   /opt/svn/conf/svnserve.conf
 
+  /var/f1/last_backup
+  /var/f1/last_ostune
+  /var/f1/last_yum
+
   /var/spool/cron/oracle
   /var/spool/cron/root
 @;
@@ -257,7 +261,7 @@ sub config_files {
   (c) 2008-2209, Horus, Inc. 
 
   Work by Phil Pollard
-  $Revision: 1.25 $ $Date: 2009/07/21 23:25:50 $
+  $Revision: 1.26 $ $Date: 2009/07/29 01:07:55 $
 
 =cut
 
