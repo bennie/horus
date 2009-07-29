@@ -1,12 +1,12 @@
 #!/usr/bin/perl -I../lib
 
-# $Id: report-backups.pl,v 1.1 2009/07/22 23:42:55 ppollard Exp $
+# $Id: report-backups.pl,v 1.2 2009/07/29 21:56:12 ppollard Exp $
 
 use strict;
 
 ### Prep
 
-my $ver = (split ' ', '$Revision: 1.1 $')[1];
+my $ver = (split ' ', '$Revision: 1.2 $')[1];
 my %backups;
 
 my @raw = `./remote-command.pl ops ls -l --time-style=long-iso /archive_logs/images-rsync/*/bootsector.*`;
@@ -24,6 +24,8 @@ for my $line (@raw) {
   $backups{$dir} = "$1 (no bootsector)" unless $backups{$dir};
 }
 
+print '<pre>';
+
 print "By name:\n";
 
 for my $server ( sort { lc($a) cmp lc($b) } keys %backups ) {
@@ -35,3 +37,5 @@ print "\nBy date:\n";
 for my $server ( sort { $backups{$a} <=> $backups{$b} } keys %backups ) {
   print "  $backups{$server}: $server\n";
 }
+
+print '</pre>';

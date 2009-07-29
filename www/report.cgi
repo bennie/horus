@@ -1,6 +1,6 @@
 #!/usr/bin/perl -I../lib
 
-# $Id: report.cgi,v 1.2 2009/06/16 21:27:33 ppollard Exp $
+# $Id: report.cgi,v 1.3 2009/07/29 21:56:55 ppollard Exp $
 
 use Horus::Auth;
 use Horus::Reports;
@@ -62,7 +62,7 @@ sub report {
 
   my $nav = $cgi->a({-href=>'/index.cgi/dashboard'},'Back to Dashboard');
   my $info = '';
-  my $body = $cgi->pre($hr->get($report));
+  my $body = $hr->get($report);
 
   $tmpl->param( body => $body, info => $info, nav => $nav );
   print $cgi->header, $tmpl->output;

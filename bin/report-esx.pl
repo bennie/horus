@@ -1,16 +1,18 @@
 #!/usr/bin/perl -I../lib
 
-# $Id: report-esx.pl,v 1.1 2009/06/12 19:17:44 ppollard Exp $
+# $Id: report-esx.pl,v 1.2 2009/07/29 21:56:12 ppollard Exp $
 
 use Horus::Hosts;
 use strict;
 
 ### Prep
 
-my $ver = (split ' ', '$Revision: 1.1 $')[1];
+my $ver = (split ' ', '$Revision: 1.2 $')[1];
 
 my $h = new Horus::Hosts;
 my $hosts = $h->all();
+
+print '<pre>';
 
 for my $hostid ( sort { lc($hosts->{$a}) cmp lc($hosts->{$b}) } keys %$hosts ) {
   my $host = $h->get($hostid);
@@ -26,3 +28,5 @@ for my $hostid ( sort { lc($hosts->{$a}) cmp lc($hosts->{$b}) } keys %$hosts ) {
   }
   print sort @finish;
 }
+
+print '</pre>';

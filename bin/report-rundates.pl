@@ -1,28 +1,41 @@
 #!/usr/bin/perl -I../lib
 
-# $Id: report-rundates.pl,v 1.1 2009/07/29 01:07:55 ppollard Exp $
+# $Id: report-rundates.pl,v 1.2 2009/07/29 21:56:12 ppollard Exp $
 
+use CGI;
 use Horus::Hosts;
 use strict;
 
 ### Prep
 
-my $ver = (split ' ', '$Revision: 1.1 $')[1];
+my $ver = (split ' ', '$Revision: 1.2 $')[1];
 
-my $h = new Horus::Hosts;
+my $color_header  = '#666699';
+
+my $cgi = new CGI;
+my $h   = new Horus::Hosts;
+
 my $hosts = $h->all();
 
-for my $hostid ( sort { lc($hosts->{$a}) cmp lc($hosts->{$b}) } keys %$hosts ) {
-  my $host = $h->get($hostid);
-  next unless $host->{os} eq 'VMware';
-  print "$host->{name}:\n";
+print $cgi->start_table({-border=>1});
 
-  my @raw = `./remote-command.pl $host->{name} 'if [ -x /sbin/vmdumper ]; then vmdumper --listVM; elif [ -x /usr/bin/vmware-cmd ]; then /usr/bin/vmware-cmd -l; fi'`;
-  my @finish;
-  for my $raw (@raw) {
-    next if $raw =~ /^$/;
-    warn "Can't parse: $raw" unless $raw =~ /\/vmfs\/volumes\/[\w- ]+?\/([\w- ]+?)\/([\w- ]+?\.vmx)/;
-    push @finish, "  $1 ($2)\n";
+print $cgi->Tr(
+        $cgi->td({-bgcolor=>$color_header},'Host'),
+        $cgi->td({-bgcolor=>$color_header},'Last OS Tune'),
+        $cgi->td({-bgcolor=>$color_header},'Last Yum Command'),
+        $cgi->td({-bgcolor=>$color_header},'Last Manual Backup')
+      );
+
+for my $hostid ( sort { lc($hosts->{$a}) cmp lc($hosts->{$b}) } keys %$hosts ) {
+  print $cgi->start_Tr(), $cgi->td( $hosts->{$hostid} );
+
+  for my $config ( map { '/var/f1/last_'.$_ } qw/ostune yum backup/ ) {
+    my $raw = $h->config_get($hostid,$config); chomp $raw;
+    $raw = undef if $raw =~ /^[\s\n]+$/;
+    print $cgi->td({-align=>'center'}, $raw ? $raw : '&nbsp;' );
   }
-  print sort @finish;
+
+  print $cgi->end_Tr;
 }
+
+print $cgi->end_table;
