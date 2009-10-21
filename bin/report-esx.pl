@@ -1,6 +1,6 @@
 #!/usr/bin/perl -w -I/usr/lib/vmware-vcli/apps/ -I../lib
 
-# $Id: report-esx.pl,v 1.3 2009/09/18 23:37:35 ppollard Exp $
+# $Id: report-esx.pl,v 1.4 2009/10/21 01:07:52 ppollard Exp $
 # Based on "report-esx.pl" which is Copyright (c) 2007 VMware, Inc.
 
 use Horus::Hosts;
@@ -63,13 +63,14 @@ my %opts = (
 );
 
 Opts::add_options(%opts);
-
+Opts::parse();
+  
 my @valid_properties;
 my $filename;
 
 ### Main
 
-my $ver = (split ' ', '$Revision: 1.3 $')[1];
+my $ver = (split ' ', '$Revision: 1.4 $')[1];
 
 my $h = new Horus::Hosts;
 my $hosts = $h->all();
@@ -83,11 +84,10 @@ for my $hostid ( sort {
   next unless $host->{os} and $host->{os} eq 'VMware';
   print "<p><b>$host->{name}:</b></p>\n";
   
-  $ENV{VI_USERNAME} = $host->{username};
-  $ENV{VI_PASSWORD} = $host->{password};
-  $ENV{VI_SERVER} = $host->{name};
-
-  Opts::parse();
+  Opts::set_option('username',$host->{username});
+  Opts::set_option('password',$host->{password});
+  Opts::set_option('server',$host->{name});
+  
   Opts::validate(\&validate);
   
   Util::connect();
@@ -111,18 +111,13 @@ sub vm_info {
   return undef unless $vm_views;
 
   print "<table border=\"1\">\n";
-  print "<tr><td bgcolor='#666699'>Host</td>
-             <td bgcolor='#666699'>Virtual Disk Path</td>
-             <td bgcolor='#666699'>Num CPU</td>
-             <td bgcolor='#666699'>Memory</td>
-             <td bgcolor='#666699'>Host Mem Use</td>
-             <td bgcolor='#666699'>Guest Mem Use</td>
-         </tr>\n";
+  print "<tr><td bgcolor='#666699'>Host</td><td bgcolor='#666699'>Virtual Disk Path</td><td bgcolor='#666699'>Memory</td><td bgcolor='#666699'>Host Mem Use</td><td bgcolor='#666699'>Guest Mem Use</td><td bgcolor='#666699'>VM Tools</td></tr>\n";
 
   for my $vm_view ( sort { lc($a->name) cmp lc($b->name) } @$vm_views ) {
     my $name   = $vm_view->config->name();
+
     my $vpath  = $vm_view->summary->config->vmPathName();
-    my $numcpu = $vm_view->summary->config->numCpu();
+    $vpath =~ s/ /&nbsp;/g;
 
     my $memory      = $vm_view->summary->config->memorySizeMB();
     my $hostmemuse  = $vm_view->summary->quickStats->hostMemoryUsage();
@@ -132,72 +127,17 @@ sub vm_info {
     $hostmemuse = '-' unless $hostmemuse;
     $guestmemuse = '-' unless $guestmemuse;
 
-    print "<tr><td><a href=\"http://horus.fusionone.com/index.cgi/host/$name\">$name</a></td><td>$vpath</td><td align=\"center\">$numcpu</td><td align=\"right\">$memory MB</td><td align=\"right\">$hostmemuse MB</td><td align=\"right\">$guestmemuse MB</td></tr>\n";
+    my $tools = $vm_view->summary->guest->toolsStatus->val();
+    $tools =~ s/^tools//;
+    $tools = '&nbsp;' if $tools eq 'NotRunning';
+
+    #my $numcpu = $vm_view->summary->config->numCpu();
+
+    print "<tr><td><a href=\"http://horus.fusionone.com/index.cgi/host/$name\">$name</a></td><td>$vpath</td><td align=\"right\">$memory\&nbsp;MB</td><td align=\"right\">$hostmemuse\&nbsp;MB</td><td align=\"right\">$guestmemuse\&nbsp;MB</td><td align=\"center\">$tools</td></tr>\n";
   }
   
   print "</table>\n\n";
 }
-
-
-=head3 foo
-         elsif($_ eq 'guestFullName') {
-            if (defined ($vm_view->summary->guest->guestFullName)) {
-               print_log($vm_view->summary->guest->guestFullName,"guestOS","Guest OS");
-            }
-            else {
-               print_log("Not Known","guestOS","Guest OS");
-            }
-         }
-         elsif($_ eq 'guestId') {
-            if (defined ($vm_view->summary->guest->guestId)) {
-               print_log($vm_view->summary->guest->guestId,"guestId","guestId");
-            }
-            else {
-               print_log("Not Known","guestId","guestId");
-            }
-         }
-         elsif($_ eq 'hostName') {
-            if (defined ($vm_view->summary->guest->hostName)) {
-               print_log($vm_view->summary->guest->hostName,"hostName","Host name");
-            }
-            else {
-               print_log("Not Known","hostName","Host name");
-            }
-         }
-         elsif($_ eq 'ipAddress') {
-            if (defined ($vm_view->summary->guest->ipAddress)) {
-               print_log($vm_view->summary->guest->ipAddress,"ipAddress","IP Address");
-            }
-            else {
-               print_log("Not Known","ipAddress","IP Address");
-            }
-         }
-         elsif($_ eq 'toolsStatus') {
-            if (defined ($vm_view->summary->guest->toolsStatus)) {
-               my $status = $vm_view->summary->guest->toolsStatus->val;
-               print_log($toolsStatus{$status},"VMwareTools","VMware Tools");
-            }
-         }
-         elsif($_ eq 'overallCpuUsage') {
-            if (defined ($vm_view->summary->quickStats->overallCpuUsage)) {
-               print_log($vm_view->summary->quickStats->overallCpuUsage.
-                                           " MHz","cpuUsage","Cpu usage");
-            }
-            else {
-               print_log("Not Known","cpuUsage","Cpu usage");
-            }
-
-         elsif ($_ eq 'overallStatus') {
-            my $overall_status = $vm_view->summary->overallStatus->val;
-            print_log($overallStatus{$overall_status},"overallStatus","Overall Status");
-         }
-         else {
-            Util::trace(0, "$_ Not Supported\n");
-         }
-       }
-
-=cut
-
 
 sub get_vm_info {
    my $filename;
