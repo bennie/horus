@@ -147,9 +147,10 @@ CREATE TABLE `network` (
 DROP TABLE IF EXISTS `reports`;
 CREATE TABLE `reports` (
   `name` varchar(25) NOT NULL,
+  `part` int(11) NOT NULL,
   `report` text,
   `last_modified` timestamp NOT NULL default CURRENT_TIMESTAMP on update CURRENT_TIMESTAMP,
-  PRIMARY KEY  (`name`)
+  PRIMARY KEY  (`name`,`part`)
 ) ENGINE=MyISAM DEFAULT CHARSET=latin1;
 
 --

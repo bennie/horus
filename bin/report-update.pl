@@ -1,9 +1,12 @@
 #!/usr/bin/perl -I../lib
 
 use Horus::DB;
+use Horus::Reports;
 use strict;
 
 my $hdb = new Horus::DB;
+my $hr  = new Horus::Reports;
+
 my $dbh = $hdb->get_dbh();
 
 ### Parse args
@@ -41,7 +44,7 @@ if ( $is_historic ) {
   my $ret = execute("update reports_historic set report=? where name=? and date=?",$report,$name,$date);
   warn "Update returned '$ret'\n" unless $ret == 1;
 } else {
-  my $ret = execute("update reports set report=? where name=?",$report,$name);
+  my $ret = $hr->update($name,$report);
   warn "Update returned '$ret'\n" unless $ret == 1;
 }
 
