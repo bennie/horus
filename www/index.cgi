@@ -1,6 +1,6 @@
 #!/usr/bin/perl -I../lib
 
-# $Id: index.cgi,v 1.47 2009/07/29 21:57:26 ppollard Exp $
+# $Id: index.cgi,v 1.48 2009/11/04 19:04:54 ppollard Exp $
 
 use Horus::Auth;
 use Horus::Hosts;
@@ -490,7 +490,7 @@ sub rack_report {
     for my $pos ( sort { $a <=> $b } keys %{$racks{$rack}} ) {
       for my $host ( sort keys %{$racks{$rack}{$pos}} ) {
         push @rows, $cgi->Tr(
-          $cgi->td( $host ),
+          $cgi->td( $cgi->a({-href=>'/index.cgi/host/'.$host},$host) ),
           $cgi->td({-align=>'center'}, $rack ),
           $cgi->td({-align=>'center'}, $pos ),
           $cgi->td({-align=>'center'}, $racks{$rack}{$pos}{$host}{rack_patching} ),
@@ -520,7 +520,7 @@ sub authorized {
   return 1 if $user eq 'pzaura';
   return 1 if $user eq 'rob';
   return 1 if $user eq 'tamundson';
-  return 1 if $user eq 'sbhalla';
+  return 1 if $user eq 'sjaiswal';
   return 0;
 }
 
