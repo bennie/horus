@@ -8,7 +8,7 @@ use DBI;
 use Horus::Utils qw/zt/;
 use strict;
 
-$Horus::DB::VERSION = '$Revision: 1.5 $';
+$Horus::DB::VERSION = '$Revision: 1.6 $';
 
 sub new {
   my     $self = {};
@@ -180,7 +180,20 @@ sub insert {
   return wantarray ? ( $ret, $sql ) : $ret;
 }
 
+=head2 now($text)
+
+Returns the current time from mysql.
+
+=cut
+
+sub now {
+  my $self = shift @_;
+  return $self->single('select now()');
+}
+
 =head2 quote($text)
+
+Returns the given text as quotes safe for SQL.
 
 =cut
 
@@ -282,7 +295,7 @@ sub update {
   (c) 2007, Horus, Inc. 
 
   Work by Phil Pollard
-  $Revision: 1.5 $ $Date: 2009/06/15 22:19:08 $
+  $Revision: 1.6 $ $Date: 2009/11/04 22:53:45 $
 
   Some portions of this module are (c) 1999-2007, Phillip Pollard
   and were released under GPL v2.

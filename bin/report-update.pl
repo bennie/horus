@@ -1,13 +1,9 @@
 #!/usr/bin/perl -I../lib
 
-use Horus::DB;
 use Horus::Reports;
 use strict;
 
-my $hdb = new Horus::DB;
 my $hr  = new Horus::Reports;
-
-my $dbh = $hdb->get_dbh();
 
 ### Parse args
 
@@ -28,7 +24,7 @@ my $report = join("\n",<STDIN>);
 ### The time is now; unless it isn't
 
 if ( $is_historic and not $date ) {
-  $date = &single('select now()');
+  $date = $hr->{db}->now();
 }
 
 ### Import it
@@ -39,17 +35,4 @@ if ( $is_historic ) {
 } else {
   my $ret = $hr->update($name,$report);
   warn "Update returned '$ret'\n" unless $ret == 1;
-}
-
-### Subs
-
-sub single {
-  my $query = shift @_;
-  my @param =       @_;
-  my $sth = $dbh->prepare($query);
-  my $ret = $sth->execute(@param);
-  my $ref = $sth->fetchrow_arrayref();
-  my $ans = $ref->[0];
-            $sth->finish();
-  return $ans;
 }
