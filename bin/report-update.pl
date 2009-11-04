@@ -34,14 +34,7 @@ if ( $is_historic and not $date ) {
 ### Import it
 
 if ( $is_historic ) {
-
-  my $is_there = &single('select count(*) from reports_historic where name=? and date=?',$name,$date);
-  unless ( $is_there ) { 
-    my $ret = &execute('insert into reports_historic (name,date) values (?,?)',$name,$date);
-    $is_there = $ret if $ret == 1;
-  }
-
-  my $ret = execute("update reports_historic set report=? where name=? and date=?",$report,$name,$date);
+  my $ret = $hr->update_historic($name,$date,$report);
   warn "Update returned '$ret'\n" unless $ret == 1;
 } else {
   my $ret = $hr->update($name,$report);
@@ -49,14 +42,6 @@ if ( $is_historic ) {
 }
 
 ### Subs
-
-sub execute {
-  my $query = shift @_;
-  my @param =       @_;
-  my $sth = $dbh->prepare($query);
-  my $ret = $sth->execute(@param);
-  return $ret;
-}
 
 sub single {
   my $query = shift @_;
