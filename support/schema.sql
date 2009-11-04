@@ -91,7 +91,7 @@ CREATE TABLE `hosts` (
   PRIMARY KEY  (`id`),
   KEY `customer` (`customer`),
   CONSTRAINT `hosts_ibfk_1` FOREIGN KEY (`customer`) REFERENCES `list_customer` (`customer`)
-) ENGINE=InnoDB AUTO_INCREMENT=470 DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB AUTO_INCREMENT=475 DEFAULT CHARSET=latin1;
 
 --
 -- Table structure for table `list_customer`
@@ -161,9 +161,10 @@ DROP TABLE IF EXISTS `reports_historic`;
 CREATE TABLE `reports_historic` (
   `name` varchar(25) NOT NULL,
   `date` datetime NOT NULL,
+  `part` int(11) NOT NULL,
   `report` text,
   `last_modified` timestamp NOT NULL default CURRENT_TIMESTAMP on update CURRENT_TIMESTAMP,
-  PRIMARY KEY  (`name`,`date`)
+  PRIMARY KEY  (`name`,`date`,`part`)
 ) ENGINE=MyISAM DEFAULT CHARSET=latin1;
 
 --
