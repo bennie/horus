@@ -11,7 +11,7 @@ package Horus::Reports;
 use Horus::DB;
 use strict;
 
-$Horus::Reports::VERSION = '$Revision: 1.5 $';
+$Horus::Reports::VERSION = '$Revision: 1.6 $';
 
 sub new {
   my $self = {};
@@ -23,7 +23,7 @@ sub new {
 
 =head2 Methods
 
-=head3 get()
+=head3 get($report_name)
 
 Returns an the text of the reqested report.
 
@@ -36,6 +36,20 @@ sub get {
   return join '', @$report;
 }
 
+=head3 get_historic($report_name,$date)
+
+Returns an the text of the reqested historic report.
+
+=cut
+
+sub get_historic {
+  my $self = shift @_;
+  my $name = shift @_;
+  my $date = shift @_;
+  my $report = $self->{db}->column('select report from reports_historic where name=? and date=? order by part',$name,$date);
+  return join '', @$report;
+}
+
 =head3 list()
 
 Returns an array or arrayref of the available reports.
@@ -44,7 +58,23 @@ Returns an array or arrayref of the available reports.
 
 sub list {
   my $self = shift @_;
-  return $self->{db}->column('select name from reports order by report');
+  return $self->{db}->column('select name from reports order by name');
+}
+
+=head3 list_historic()
+
+Returns an hash or hashref of the available reports. Key is report. Value is the array of available dates.
+
+=cut
+
+sub list_historic {
+  my $self = shift @_;
+  my $sth = $self->{db}->handle('select distinct name, date from reports_historic order by name, date');
+  my %ret;
+  while ( my $row = $sth->fetchrow_arrayref ) {
+    push @{ $ret{$row->[0]} }, $row->[1];
+  }
+  return wantarray ? %ret : \%ret;
 }
 
 =head3 update($report_name,$report_text)
@@ -103,7 +133,7 @@ sub update_historic {
   (c) 2007-2009, Horus, Inc.
 
   Work by Phil Pollard
-  $Revision: 1.5 $ $Date: 2009/11/04 22:48:46 $
+  $Revision: 1.6 $ $Date: 2009/11/04 23:11:42 $
     
 =cut
 
