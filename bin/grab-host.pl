@@ -1,6 +1,6 @@
 #!/usr/bin/perl -I../lib
 
-# $Id: grab-host.pl,v 1.12 2009/08/05 01:52:41 ppollard Exp $
+# $Id: grab-host.pl,v 1.13 2009/11/18 19:28:57 ppollard Exp $
 
 use Horus::Conf;
 use Horus::Network;
@@ -19,7 +19,7 @@ use strict;
 
 ### Global Vars
 
-my $ver = (split ' ', '$Revision: 1.12 $')[1];
+my $ver = (split ' ', '$Revision: 1.13 $')[1];
 
 my $use_expect = 0;
 
@@ -140,6 +140,8 @@ unless ( $ref->{type} ) {
   $type = 'Page' if $ref->{name} =~ /page/i;
   $type = 'Sync' if $ref->{name} =~ /sync/i;
   $type = 'FMS'  if $ref->{name} =~ /fms/i;
+  $type = 'WSG'  if $ref->{name} =~ /wsg/i;
+  $type = 'SCF'  if $ref->{name} =~ /scf/i;
   
   $type = 'VM&nbsp;host' if $os eq 'VMware';
   if ( $type ) {
@@ -298,6 +300,8 @@ if ( $os eq 'Linux' ) {
     $machine_model = 'Altus 2200'   if $machine_brand eq 'Penguin' and $machine_model eq 'IR2350';
     
     $machine_brand = 'VMware' if $machine_brand eq 'VMware, Inc.';
+
+    $machine_brand = 'HP' if $machine_brand eq 'Hewlett-Packard';
   }
 
   # Fallback to dmesg
