@@ -88,10 +88,11 @@ CREATE TABLE `hosts` (
   `serial` varchar(100) default NULL,
   `remote_user` varchar(100) default NULL,
   `remote_pass` varchar(100) default NULL,
+  `contact` varchar(100) default NULL,
   PRIMARY KEY  (`id`),
   KEY `customer` (`customer`),
   CONSTRAINT `hosts_ibfk_1` FOREIGN KEY (`customer`) REFERENCES `list_customer` (`customer`)
-) ENGINE=InnoDB AUTO_INCREMENT=475 DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB AUTO_INCREMENT=481 DEFAULT CHARSET=latin1;
 
 --
 -- Table structure for table `list_customer`

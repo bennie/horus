@@ -1,6 +1,6 @@
 #!/usr/bin/perl -I../lib
 
-# $Id: index.cgi,v 1.49 2009/11/04 23:11:42 ppollard Exp $
+# $Id: index.cgi,v 1.50 2009/11/19 00:59:57 ppollard Exp $
 
 use Horus::Auth;
 use Horus::Hosts;
@@ -151,14 +151,14 @@ sub dashboard {
   my @rows = (
     $cgi->Tr(
       $cgi->td({-bgcolor=>$color_header},'Host'),
+      $cgi->td({-bgcolor=>$color_header},'Contact'),
       $cgi->td({-bgcolor=>$color_header},'Customer'),
       $cgi->td({-bgcolor=>$color_header},'Category'),
       $cgi->td({-bgcolor=>$color_header},'Type'),
       $cgi->td({-bgcolor=>$color_header},'RAM'),
       $cgi->td({-bgcolor=>$color_header},'OS'),
       $cgi->td({-bgcolor=>$color_header},'Release'),
-      $cgi->td({-bgcolor=>$color_header},'Version'),
-      #$cgi->td({-bgcolor=>$color_header},'Arch.'),
+      #$cgi->td({-bgcolor=>$color_header},'Version'),
       $cgi->td({-bgcolor=>$color_header},'Brand'),
       #$cgi->td({-bgcolor=>$color_header},'Model'),
       #$cgi->td({-bgcolor=>$color_header},'Clock'),
@@ -179,13 +179,14 @@ sub dashboard {
   
     push @rows, $cgi->Tr(
       $cgi->td({-bgcolor=>$bg}, $cgi->a({-href=>"/index.cgi/host/$hosts{$id}"},$hosts{$id}) ),
+      $cgi->td({-bgcolor=>$bg}, "$rec{contact}" ),
       $cgi->td({-bgcolor=>$bg}, "$rec{customer}" ),
       $cgi->td({-bgcolor=>$bg}, "$rec{category}" ),
       $cgi->td({-bgcolor=>$bg}, "$rec{type}" ),
       $cgi->td({-bgcolor=>$bg}, "$rec{ram}" ),
       $cgi->td({-bgcolor=>$bg}, "$rec{os}" ),
       $cgi->td({-bgcolor=>$bg}, "$rec{osrelease}" ),
-      $cgi->td({-bgcolor=>$bg}, "$rec{osversion}" ),
+      #$cgi->td({-bgcolor=>$bg}, "$rec{osversion}" ),
       #$cgi->td({-bgcolor=>$bg}, "$rec{arch}" ),
       $cgi->td({-bgcolor=>$bg}, "$rec{machine_brand}" ),
       #$cgi->td({-bgcolor=>$bg}, "$rec{machine_model}" ),
@@ -517,6 +518,7 @@ sub authorized {
   return 1 if $user eq 'alee';
   return 1 if $user eq 'bmurphy';
   return 1 if $user eq 'btanaka';
+  return 1 if $user eq 'jtrump';
   return 1 if $user eq 'mlysenko';
   return 1 if $user eq 'ppollard';
   return 1 if $user eq 'pzaura';
@@ -528,8 +530,10 @@ sub authorized {
 
 sub authorized_to_edit {
   my $user = shift @_;
+  return 1 if $user eq 'alee';
   return 1 if $user eq 'bmurphy';
   return 1 if $user eq 'btanaka';
+  return 1 if $user eq 'jtrump';
   return 1 if $user eq 'ppollard';
   return 1 if $user eq 'tamundson';
   return 0;
