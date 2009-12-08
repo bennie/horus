@@ -92,7 +92,7 @@ CREATE TABLE `hosts` (
   PRIMARY KEY  (`id`),
   KEY `customer` (`customer`),
   CONSTRAINT `hosts_ibfk_1` FOREIGN KEY (`customer`) REFERENCES `list_customer` (`customer`)
-) ENGINE=InnoDB AUTO_INCREMENT=486 DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB AUTO_INCREMENT=497 DEFAULT CHARSET=latin1;
 
 --
 -- Table structure for table `list_customer`
