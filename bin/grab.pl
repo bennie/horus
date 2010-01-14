@@ -7,7 +7,7 @@
 # --config=foo Deal only with the textconfig foo.
 # --noreport will skip emailing the change report.
 
-# $Id: grab.pl,v 1.79 2009/07/22 21:33:06 ppollard Exp $
+# $Id: grab.pl,v 1.80 2010/01/14 00:10:57 ppollard Exp $
 
 use Horus::Hosts;
 
@@ -36,13 +36,16 @@ my $ret = GetOptions(
 @configs_to_save = grep !/^\s*$/, split(/,/,join(',',@configs_to_save)); # in case the configs are comma sep
 
 debug( $noreport ? "Report will NOT be sent.\n" : "Report will go to $email\n" );
+debug( $archive  ? "Report will be archived.\n" : "Report will NOT be archived.\n" );
 debug("Configs will NOT be saved.\n") if $noconfigsave;
 debug("Only checking for the following config(s): ".join(', ',@configs_to_save)."\n") if scalar @configs_to_save > 0;
 debug("\n");
 
+exit;
+
 ### Global Vars
 
-my $ver = (split ' ', '$Revision: 1.79 $')[1];
+my $ver = (split ' ', '$Revision: 1.80 $')[1];
 my $start = time;
 
 ### Build up the storable files
@@ -234,7 +237,7 @@ sub change_report {
   close REPORT;
 
   exec("/usr/sbin/sendmail $email < /tmp/change.html") unless $noreport;
-  exec("./report-update.pl --historic changes < /tmp/change.html") if $archive;
+  exec("/home/horus/bin/report-update.pl --historic change < /tmp/change.html") if $archive;
   
   print "Skipping emaling the report.\n";
 }
