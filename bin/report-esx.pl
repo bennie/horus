@@ -1,6 +1,6 @@
 #!/usr/bin/perl -w -I/usr/lib/vmware-vcli/apps/ -I../lib
 
-# $Id: report-esx.pl,v 1.5 2009/11/04 22:36:13 ppollard Exp $
+# $Id: report-esx.pl,v 1.6 2010/01/27 20:45:29 ppollard Exp $
 # Based on "report-esx.pl" which is Copyright (c) 2007 VMware, Inc.
 
 use Horus::Hosts;
@@ -68,10 +68,21 @@ my $filename;
 
 ### Main
 
-my $ver = (split ' ', '$Revision: 1.5 $')[1];
+my $ver = (split ' ', '$Revision: 1.6 $')[1];
 
 my $h = new Horus::Hosts;
 my $hosts = $h->all();
+
+my $total_capacity = 0;
+my $used_capacity = 0;
+
+my $total_vm = 0;
+my $active_vm = 0;
+
+my $report = "<h2>Host Detail</h2>\n";
+my $capacity_report = "<h2>Capacity Usage</h2>\n"
+                    . "<table border=\"1\">\n"
+                    . "<tr><td bgcolor='#666699'>Host</td><td bgcolor='#666699' colspan='2'>RAM allocation</td><td bgcolor='#666699'>Num VMs</td><td bgcolor='#666699'>Notes</td></tr>\n";
 
 for my $hostid ( sort { 
   $hosts->{$a} =~ /(.+?)(\d*)$/; my $a_word = $1; my $a_num = $2; $a_num = -1 unless $a_num;
@@ -79,8 +90,16 @@ for my $hostid ( sort {
   $hosts->{$a} =~ /esxi/ <=> $hosts->{$b} =~ /esxi/ || lc($a_word) cmp lc($b_word) || $a_num <=> $b_num
 } keys %$hosts ) {
   my $host = $h->get($hostid);
-  next unless $host->{os} and $host->{os} eq 'VMware';
-  print "<p><b>$host->{name}:</b></p>\n";
+  next unless $host->{os} and $host->{os} eq 'VMware';  
+
+  $total_capacity = 0;
+  $used_capacity = 0;
+
+  $total_vm = 0;
+  $active_vm = 0;
+
+  $report .= "<p><b>$host->{name}:</b> (RAM: $host->{ram})</p>\n";
+  $total_capacity += ( 1024 * $1 ) if $host->{ram} =~ /^(\d+(\.\d+)?) GB/;
   
   Opts::set_option('username',$host->{username});
   Opts::set_option('password',$host->{password});
@@ -92,8 +111,25 @@ for my $hostid ( sort {
   vm_info();
   Util::disconnect();
 
+  my $percent = $total_capacity ? int( $used_capacity * 100 / $total_capacity ) : 0;
+  my $image = '<img width=100 height=10 src="/images/meter/'. ($percent > 100 ? 100 : $percent) .'.jpg" />';
+  
+  my $note = '&nbsp;';
+  $note = 'Production' if $host->{name} =~ /f1vm0[1234]/;
+  $note = 'Development&nbsp;IT' if $host->{name} =~ /esxi[67]/;
+  $note = 'Demo' if $host->{name} =~ /esxi[89]/;
+  $note = 'IT' if $host->{name} =~ /esxi1[01]/;
+  
+  my $num_vm = "$active_vm / $total_vm";
+
+  $capacity_report .= sprintf "<tr><td>%s</td><td>%s</td><td>%d%% (%d/%d)</td><td>%s</td><td>%s</td></tr>\n", $host->{name}, $image, $percent, $used_capacity, $total_capacity, $num_vm, $note;
 }
 
+$capacity_report .= "</table>\n";
+
+print $capacity_report;
+print "<hr noshade />\n";
+print $report;
 
 ### Subroutines
 
@@ -108,8 +144,8 @@ sub vm_info {
                                      %filter_hash);
   return undef unless $vm_views;
 
-  print "<table border=\"1\">\n";
-  print "<tr><td bgcolor='#666699'>Host</td><td bgcolor='#666699'>Virtual Disk Path</td><td bgcolor='#666699'>Network</td><td bgcolor='#666699'>Memory</td><td bgcolor='#666699'>Host Mem Use</td><td bgcolor='#666699'>Guest Mem Use</td><td bgcolor='#666699'>VM Tools</td></tr>\n";
+  $report .= "<table border=\"1\">\n";
+  $report .= "<tr><td bgcolor='#666699'>Host</td><td bgcolor='#666699'>Virtual Disk Path</td><td bgcolor='#666699'>Network</td><td bgcolor='#666699'>Memory</td><td bgcolor='#666699'>Host Mem Use</td><td bgcolor='#666699'>Guest Mem Use</td><td bgcolor='#666699'>VM Tools</td></tr>\n";
 
   for my $vm_view ( sort { lc($a->name) cmp lc($b->name) } @$vm_views ) {
     my $name   = $vm_view->config->name();
@@ -120,6 +156,12 @@ sub vm_info {
     my $memory      = $vm_view->summary->config->memorySizeMB();
     my $hostmemuse  = $vm_view->summary->quickStats->hostMemoryUsage();
     my $guestmemuse = $vm_view->summary->quickStats->guestMemoryUsage();
+
+    my $row_color = $hostmemuse ? '#FFFFFF' : '#CCCCCC';    
+    $used_capacity += $memory if $hostmemuse;
+
+    $total_vm++;
+    $active_vm++ if $hostmemuse;
 
     $memory = '-' unless $memory;
     $hostmemuse = '-' unless $hostmemuse;
@@ -142,10 +184,11 @@ sub vm_info {
     }
     my $network_tags = join(', ',@tags);
 
-    print "<tr><td><a href=\"http://horus.fusionone.com/index.cgi/host/$name\">$name</a></td><td>$vpath</td><td align=\"center\">$network_tags</td><td align=\"right\">$memory\&nbsp;MB</td><td align=\"right\">$hostmemuse\&nbsp;MB</td><td align=\"right\">$guestmemuse\&nbsp;MB</td><td align=\"center\">$tools</td></tr>\n";
+
+    $report .= "<tr><td bgcolor=\"$row_color\"><a href=\"http://horus.fusionone.com/index.cgi/host/$name\">$name</a></td><td bgcolor=\"$row_color\">$vpath</td><td bgcolor=\"$row_color\" align=\"center\">$network_tags</td><td bgcolor=\"$row_color\" align=\"right\">$memory\&nbsp;MB</td><td bgcolor=\"$row_color\" align=\"right\">$hostmemuse\&nbsp;MB</td><td bgcolor=\"$row_color\" align=\"right\">$guestmemuse\&nbsp;MB</td><td bgcolor=\"$row_color\" align=\"center\">$tools</td></tr>\n";
   }
   
-  print "</table>\n\n";
+  $report .= "</table>\n&nbsp;<br />\n";
 }
 
 sub create_hash {
