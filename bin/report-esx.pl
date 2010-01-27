@@ -1,6 +1,6 @@
 #!/usr/bin/perl -w -I/usr/lib/vmware-vcli/apps/ -I../lib
 
-# $Id: report-esx.pl,v 1.6 2010/01/27 20:45:29 ppollard Exp $
+# $Id: report-esx.pl,v 1.7 2010/01/27 22:47:26 ppollard Exp $
 # Based on "report-esx.pl" which is Copyright (c) 2007 VMware, Inc.
 
 use Horus::Hosts;
@@ -37,8 +37,7 @@ my %field_values = (
 );
 
 my %toolsStatus = (
-   'toolsNotInstalled' => 'VMware Tools has never been installed or has '
-                           .'not run in the virtual machine.',
+   'toolsNotInstalled' => 'VMware Tools has never been installed or has not run in the virtual machine.',
    'toolsNotRunning' => 'VMware Tools is not running.',
    'toolsOk' => 'VMware Tools is running and the version is current',
    'toolsOld' => 'VMware Tools is running, but the version is not current',
@@ -68,21 +67,21 @@ my $filename;
 
 ### Main
 
-my $ver = (split ' ', '$Revision: 1.6 $')[1];
+my $ver = (split ' ', '$Revision: 1.7 $')[1];
 
 my $h = new Horus::Hosts;
 my $hosts = $h->all();
 
 my $total_capacity = 0;
-my $used_capacity = 0;
+my $used_capacity = 512;
 
 my $total_vm = 0;
 my $active_vm = 0;
 
-my $report = "<h2>Host Detail</h2>\n";
-my $capacity_report = "<h2>Capacity Usage</h2>\n"
+my $report = "<h1>Host Detail</h1>\n<p><small>Lines in grey denote VMs that are currently powered off.</small></p>\n";
+my $capacity_report = "<h1>Capacity Usage</h1>\n"
                     . "<table border=\"1\">\n"
-                    . "<tr><td bgcolor='#666699'>Host</td><td bgcolor='#666699' colspan='2'>RAM allocation</td><td bgcolor='#666699'>Num VMs</td><td bgcolor='#666699'>Notes</td></tr>\n";
+                    . "<tr><td bgcolor='#666699'>Host</td><td bgcolor='#666699' colspan='2'>RAM allocation</td><td bgcolor='#666699'>Total&nbsp;RAM</td><td bgcolor='#666699'>Total&nbsp;VMs</td><td bgcolor='#666699'>Active&nbsp;VMs</td><td bgcolor='#666699'>Notes</td><td bgcolor='#666699'>Approximate&nbsp;Room*</td></tr>\n";
 
 for my $hostid ( sort { 
   $hosts->{$a} =~ /(.+?)(\d*)$/; my $a_word = $1; my $a_num = $2; $a_num = -1 unless $a_num;
@@ -112,6 +111,9 @@ for my $hostid ( sort {
   Util::disconnect();
 
   my $percent = $total_capacity ? int( $used_capacity * 100 / $total_capacity ) : 0;
+
+  my $approx = int(( $total_capacity - $used_capacity ) / 2048 );
+
   my $image = '<img width=100 height=10 src="/images/meter/'. ($percent > 100 ? 100 : $percent) .'.jpg" />';
   
   my $note = '&nbsp;';
@@ -120,15 +122,12 @@ for my $hostid ( sort {
   $note = 'Demo' if $host->{name} =~ /esxi[89]/;
   $note = 'IT' if $host->{name} =~ /esxi1[01]/;
   
-  my $num_vm = "$active_vm / $total_vm";
-
-  $capacity_report .= sprintf "<tr><td>%s</td><td>%s</td><td>%d%% (%d/%d)</td><td>%s</td><td>%s</td></tr>\n", $host->{name}, $image, $percent, $used_capacity, $total_capacity, $num_vm, $note;
+  $capacity_report .= sprintf "<tr><td>%s</td><td>%d%%</td><td>%s</td><td align='center'>%s</td><td align='center'>%s</td><td align='center'>%s</td><td>%s</td><td align='center'>%s</td></tr>\n", $host->{name}, $percent, $image, $host->{ram}, $total_vm, $active_vm, $note, $approx;
 }
 
-$capacity_report .= "</table>\n";
+$capacity_report .= "</table>\n<small>* Approximate number of 2 GB RAM hosts that could be created on this server.</small>\n";
 
 print $capacity_report;
-print "<hr noshade />\n";
 print $report;
 
 ### Subroutines
