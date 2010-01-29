@@ -1,11 +1,12 @@
 #!/usr/bin/perl -w -I/home/horus/lib
 
-# $Id: report-disk.pl,v 1.1 2010/01/29 00:57:44 ppollard Exp $
+# $Id: report-disk.pl,v 1.2 2010/01/29 01:19:39 ppollard Exp $
 # Based on "report-esx.pl" which is Copyright (c) 2007 VMware, Inc.
 
 #use FindBin;
 #push @INC, "$FindBin::Bin/../lib";
 
+use Data::Dumper qw/Dumper/;
 use Horus::Hosts;
 
 use strict;
@@ -13,7 +14,7 @@ use warnings;
 
 ### Main
 
-my $ver = (split ' ', '$Revision: 1.1 $')[1];
+my $ver = (split ' ', '$Revision: 1.2 $')[1];
 
 my $h = new Horus::Hosts;
 my $hosts = $h->all();
@@ -33,8 +34,6 @@ for my $hostid ( sort {
   my $host = $h->get($hostid);
   next unless $host->{os} and $host->{osrelease} and $host->{machine_brand} and $host->{osrelease} eq 'OnTap' and $host->{machine_brand} eq 'NetApp';  
 
-  next unless $host->{name} eq 'netapp03';
-
   my $raw_data = `/home/horus/bin/remote-command.pl $host->{name} 'aggr show_space -m; logout telnet'`;
   my @chunks = split /Aggregate '/, $raw_data;
   
@@ -45,16 +44,13 @@ for my $hostid ( sort {
     my $aggr_name = shift @lines;
     $aggr_name = $1 if $aggr_name =~ /^(\w+)'/;
     
-    print "$host->{name} : $aggr_name : ";
+    my %aggr;
 
     shift @lines; # blank line
     shift @lines; # upper title row
 
-    my ($total_space, $wafl_reserve, $snap_reserve, $usable_space, $bsr_nvlog ) = split ' ', shift @lines; 
+    ($aggr{total_space}{total}, $aggr{wafl_reserve}{total}, $aggr{snap_reserve}{total}, $aggr{usable_space}, $aggr{bsr_nvlog} ) = map { $_ =~ s/MB$//; $_ } split ' ', shift @lines; 
  
-    print "$total_space";
-    print "\n";
-
     shift @lines; # blank line
     shift @lines; # "Space allocated to volumes in the aggregate"
     shift @lines; # blank line
@@ -65,14 +61,31 @@ for my $hostid ( sort {
       my $vol_allocated = $2;
       my $vol_used = $3;
       my $vol_guarntee = $4;
-      print " - $vol_name - $vol_used / $vol_allocated\n";
+
+      $aggr{volumes}{$vol_name}{allocated} = $vol_allocated;
+      $aggr{volumes}{$vol_name}{used} = $vol_used;
+      $aggr{volumes}{$vol_name}{guarentee} = $vol_guarntee;
+
       shift @lines;
     }    
 
     shift @lines; # blank line
     shift @lines; # bottom title row
+
+    while ( $lines[0] and $lines[0] =~ /^(.*?)\s+(\d+)MB\s+(\d+)MB\s+(\d+)MB\s*$/ ) {
+      my $row = $1; my $allocated = $2; my $used = $3; my $avail = $4;
+      $row = lc($row); $row =~ tr/ /_/;
+      $aggr{$row}{allocated} = $2;
+      $aggr{$row}{used} = $3;
+      $aggr{$row}{available} = $4;
+      shift @lines;
+    }
+
+    $datapile{$host->{name}} = \%aggr;
   }
 }
+
+print Dumper(\%datapile);
 
 #$capacity_report .= "</table>\n<small>* Approximate number of 2 GB RAM hosts that could be created on this server.</small>\n";
 
