@@ -1,6 +1,6 @@
 #!/usr/bin/perl -w -I/home/horus/lib
 
-# $Id: report-disk.pl,v 1.2 2010/01/29 01:19:39 ppollard Exp $
+# $Id: report-disk.pl,v 1.3 2010/01/29 20:46:30 ppollard Exp $
 # Based on "report-esx.pl" which is Copyright (c) 2007 VMware, Inc.
 
 #use FindBin;
@@ -14,17 +14,13 @@ use warnings;
 
 ### Main
 
-my $ver = (split ' ', '$Revision: 1.2 $')[1];
+my $ver = (split ' ', '$Revision: 1.3 $')[1];
 
 my $h = new Horus::Hosts;
 my $hosts = $h->all();
 
+my $debug = 1;
 my %datapile;
-
-#my $report = "<h1>Host Detail</h1>\n<p><small>Lines in grey denote VMs that are currently powered off.</small></p>\n";
-#my $capacity_report = "<h1>Capacity Usage</h1>\n"
-#                    . "<table border=\"1\">\n"
-#                    . "<tr><td bgcolor='#666699'>Host</td><td bgcolor='#666699' colspan='2'>RAM allocation</td><td bgcolor='#666699'>Total&nbsp;RAM</td><td bgcolor='#666699'>Total&nbsp;VMs</td><td bgcolor='#666699'>Active&nbsp;VMs</td><td bgcolor='#666699'>Notes</td><td bgcolor='#666699'>Approximate&nbsp;Room*</td></tr>\n";
 
 for my $hostid ( sort { 
   $hosts->{$a} =~ /(.+?)(\d*)$/; my $a_word = $1; my $a_num = $2; $a_num = -1 unless $a_num;
@@ -32,7 +28,10 @@ for my $hostid ( sort {
   $hosts->{$a} =~ /esxi/ <=> $hosts->{$b} =~ /esxi/ || lc($a_word) cmp lc($b_word) || $a_num <=> $b_num
 } keys %$hosts ) {
   my $host = $h->get($hostid);
-  next unless $host->{os} and $host->{osrelease} and $host->{machine_brand} and $host->{osrelease} eq 'OnTap' and $host->{machine_brand} eq 'NetApp';  
+  next unless $host->{osrelease} and $host->{osrelease} eq 'OnTap';  
+
+  next if $host->{name} eq 'vz02-nas01';
+  print STDERR "Connecting to $host->{name}\n" if $debug;
 
   my $raw_data = `/home/horus/bin/remote-command.pl $host->{name} 'aggr show_space -m; logout telnet'`;
   my @chunks = split /Aggregate '/, $raw_data;
@@ -81,14 +80,74 @@ for my $hostid ( sort {
       shift @lines;
     }
 
-    $datapile{$host->{name}} = \%aggr;
+    $datapile{$host->{name}}{$aggr_name} = \%aggr;
   }
 }
 
-print Dumper(\%datapile);
+### Report time!
 
-#$capacity_report .= "</table>\n<small>* Approximate number of 2 GB RAM hosts that could be created on this server.</small>\n";
+print "<h1>Systems Summary</h1>\n"
+    . "<table border=\"1\">\n"
+    . "<tr><td bgcolor='#666699'>Host</td><td bgcolor='#666699' colspan='2'>Disk&nbsp;Consumption</td><td bgcolor='#666699'>Used</td><td bgcolor='#666699'>Total</td></tr>\n";
 
-#print $capacity_report;
-#print $report;
+for my $host ( sort keys %datapile ) {
+  my $used = 0;
+  my $total = 0;
 
+  for my $aggr ( keys %{$datapile{$host}} ) {
+    $used  += $datapile{$host}{$aggr}{total_space}{used};
+    $total += $datapile{$host}{$aggr}{usable_space};
+  }
+
+  my $readable_used = readable_mb($used);
+  my $readable_total = readable_mb($total);
+
+  my ($percent,$image) = &percent_and_image( $used, $total );
+
+  printf "<tr><td>%s</td><td>%d%%</td><td>%s</td><td align='right'>%s</td><td>%s</td align='right'></tr>\n", $host, $percent, $image, $readable_used, $readable_total;
+}
+
+print "</table>\n"
+    . "<small>NB: After 80% disk consumption, Netapp performance falls exponentially.</small>";
+
+print "<h1>Host Details</h1>\n";
+
+for my $host ( sort keys %datapile ) {
+  print "<p><b>$host:</b></p><table border=\"1\">\n"
+      . "<tr><td bgcolor='#666699'>Aggregate</td><td bgcolor='#666699'>Volume</td><td bgcolor='#666699'>Allocation</td><td bgcolor='#666699' colspan='2'>Consumption</td></tr>\n";
+  for my $aggr ( sort keys %{$datapile{$host}} ) {
+    for my $vol ( sort keys %{$datapile{$host}{$aggr}{volumes}} ) {
+      my ($percent,$image) = &percent_and_image( $datapile{$host}{$aggr}{volumes}{$vol}{used}, $datapile{$host}{$aggr}{volumes}{$vol}{allocated} );
+      my $readable_allocation = &readable_mb( $datapile{$host}{$aggr}{volumes}{$vol}{allocated} );
+      printf "<tr><td>%s</td><td>%s</td><td>%s</td><td>%d%%</td><td>%s</td></tr>\n", $aggr, $vol, $readable_allocation, $percent, $image;
+    }
+  }
+  print "</table>\n";
+}
+
+#print "<h1>Raw Data</h1>\n<pre>", Dumper(\%datapile), "</pre>\n";
+
+### Subroutines
+
+sub percent_and_image {
+  my $num1 = shift @_;
+  my $num2 = shift @_;
+
+  my $raw_percent = 0;  
+  $raw_percent = $num1 / $num2 if ( $num1 and $num2 and $num2 != 0 );
+    
+  my $percent = int( $raw_percent * 100 );
+  my $image = '<img width=100 height=10 src="/images/meter/'. ($percent > 100 ? 100 : $percent) .'.jpg" />';
+
+  return ( $percent, $image );
+}
+
+sub readable_mb {
+  my $megabytes = shift @_;
+  return 'Err MB' unless defined $megabytes;
+  return "$megabytes MB" if $megabytes < 1025;
+  my $gigabytes = sprintf '%.2f', ( $megabytes / 1024 );
+  return "$gigabytes GB" if $gigabytes < 1025;
+  my $terrabytes = sprintf '%.2f', ( $gigabytes / 1024 );
+  return "$terrabytes TB";  
+}
