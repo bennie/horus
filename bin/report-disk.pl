@@ -1,6 +1,6 @@
 #!/usr/bin/perl -w -I/home/horus/lib
 
-# $Id: report-disk.pl,v 1.3 2010/01/29 20:46:30 ppollard Exp $
+# $Id: report-disk.pl,v 1.4 2010/02/05 23:27:58 ppollard Exp $
 # Based on "report-esx.pl" which is Copyright (c) 2007 VMware, Inc.
 
 #use FindBin;
@@ -14,12 +14,12 @@ use warnings;
 
 ### Main
 
-my $ver = (split ' ', '$Revision: 1.3 $')[1];
+my $ver = (split ' ', '$Revision: 1.4 $')[1];
 
 my $h = new Horus::Hosts;
 my $hosts = $h->all();
 
-my $debug = 1;
+my $debug = 0;
 my %datapile;
 
 for my $hostid ( sort { 
@@ -88,27 +88,32 @@ for my $hostid ( sort {
 
 print "<h1>Systems Summary</h1>\n"
     . "<table border=\"1\">\n"
-    . "<tr><td bgcolor='#666699'>Host</td><td bgcolor='#666699' colspan='2'>Disk&nbsp;Consumption</td><td bgcolor='#666699'>Used</td><td bgcolor='#666699'>Total</td></tr>\n";
+    . "<tr><td bgcolor='#666699'>Host</td><td bgcolor='#666699' colspan='2'>Disk&nbsp;Consumption</td><td bgcolor='#666699' align='center'>Used</td><td bgcolor='#666699' align='center'>Total*</td><td bgcolor='#666699' align='center'>Raw</td></tr>\n";
 
 for my $host ( sort keys %datapile ) {
+  my $raw = 0;
   my $used = 0;
   my $total = 0;
 
   for my $aggr ( keys %{$datapile{$host}} ) {
     $used  += $datapile{$host}{$aggr}{total_space}{used};
     $total += $datapile{$host}{$aggr}{usable_space};
+    $raw   += $datapile{$host}{$aggr}{total_space}{total};
   }
 
+  $total *= 0.80; # 80% limit for netapps
+
+  my $readable_raw = readable_mb($raw);
   my $readable_used = readable_mb($used);
   my $readable_total = readable_mb($total);
 
   my ($percent,$image) = &percent_and_image( $used, $total );
 
-  printf "<tr><td>%s</td><td>%d%%</td><td>%s</td><td align='right'>%s</td><td>%s</td align='right'></tr>\n", $host, $percent, $image, $readable_used, $readable_total;
+  printf "<tr><td>%s</td><td>%d%%</td><td>%s</td><td align='right'>%s</td><td>%s</td><td>%s</td></tr>\n", $host, $percent, $image, $readable_used, $readable_total, $readable_raw;
 }
 
 print "</table>\n"
-    . "<small>NB: After 80% disk consumption, Netapp performance falls exponentially.</small>";
+    . "<small>* Total capability reflects an 80% usage performance limit.</small>";
 
 print "<h1>Host Details</h1>\n";
 
@@ -125,7 +130,7 @@ for my $host ( sort keys %datapile ) {
   print "</table>\n";
 }
 
-#print "<h1>Raw Data</h1>\n<pre>", Dumper(\%datapile), "</pre>\n";
+print "<h1>Raw Data</h1>\n<pre>", Dumper(\%datapile), "</pre>\n" if $debug;
 
 ### Subroutines
 

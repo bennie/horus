@@ -11,7 +11,7 @@ package Horus::Reports;
 use Horus::DB;
 use strict;
 
-$Horus::Reports::VERSION = '$Revision: 1.6 $';
+$Horus::Reports::VERSION = '$Revision: 1.7 $';
 
 sub new {
   my $self = {};
@@ -22,6 +22,18 @@ sub new {
 }
 
 =head2 Methods
+
+=head3 date_of($report_name)
+
+Returns the last modified date of the given report.
+
+=cut
+
+sub date_of {
+  my $self = shift @_;
+  my $name = shift @_;
+  return $self->{db}->single('select last_modified from reports where name=? order by part limit 1',$name);
+}
 
 =head3 get($report_name)
 
@@ -35,6 +47,7 @@ sub get {
   my $report = $self->{db}->column('select report from reports where name=? order by part',$name);
   return join '', @$report;
 }
+
 
 =head3 get_historic($report_name,$date)
 
@@ -133,7 +146,7 @@ sub update_historic {
   (c) 2007-2009, Horus, Inc.
 
   Work by Phil Pollard
-  $Revision: 1.6 $ $Date: 2009/11/04 23:11:42 $
+  $Revision: 1.7 $ $Date: 2010/02/05 23:27:58 $
     
 =cut
 
