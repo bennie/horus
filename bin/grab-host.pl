@@ -1,6 +1,6 @@
 #!/usr/bin/perl -I../lib
 
-# $Id: grab-host.pl,v 1.15 2013/03/26 20:57:26 cvs Exp $
+# $Id: grab-host.pl,v 1.16 2013/03/26 21:35:01 cvs Exp $
 
 use Horus::Conf;
 use Horus::Network;
@@ -17,7 +17,7 @@ use strict;
 
 ### Global Vars
 
-my $ver = (split ' ', '$Revision: 1.15 $')[1];
+my $ver = (split ' ', '$Revision: 1.16 $')[1];
 
 my $use_expect = 0;
 
@@ -484,7 +484,7 @@ sub open_connection {
 
   } else {
     
-    our $ssh = Net::OpenSSH->new( $host, user => $user, password => $pass );
+    our $ssh = Net::OpenSSH->new( $host, user => $user, password => $pass, master_opts => [-o => "StrictHostKeyChecking=no"] );
     if ( $ssh->error ) { warn "Can't ssh to $host: " . $ssh->error; return 0; }
   }
   
