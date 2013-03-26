@@ -8,7 +8,7 @@ use DBI;
 use Horus::Utils qw/zt/;
 use strict;
 
-$Horus::DB::VERSION = '$Revision: 1.6 $';
+$Horus::DB::VERSION = '$Revision: 1.7 $';
 
 sub new {
   my     $self = {};
@@ -27,7 +27,7 @@ sub _initialize {
   my $db_user   = 'horus';
   my $db_pass   = 'nochaos';
 
-  my @db_connect = ("dbi:$db_driver:dbname=$db_name;host=mysql01.fusionone.com", $db_user, $db_pass);
+  my @db_connect = ("dbi:$db_driver:dbname=$db_name;host=localhost", $db_user, $db_pass);
 
   $self->{dbh} = DBI->connect(@db_connect)
                  or die "Connecting: $DBI::errstr" . join(',',@db_connect);
@@ -295,7 +295,7 @@ sub update {
   (c) 2007, Horus, Inc. 
 
   Work by Phil Pollard
-  $Revision: 1.6 $ $Date: 2009/11/04 22:53:45 $
+  $Revision: 1.7 $ $Date: 2013/03/26 18:44:44 $
 
   Some portions of this module are (c) 1999-2007, Phillip Pollard
   and were released under GPL v2.

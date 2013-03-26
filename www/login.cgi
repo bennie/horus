@@ -1,6 +1,6 @@
 #!/usr/bin/perl -I../lib
 
-# $Id: login.cgi,v 1.5 2009/03/20 21:36:12 ppollard Exp $
+# $Id: login.cgi,v 1.6 2013/03/26 18:44:44 cvs Exp $
 
 use Horus::Auth;
 use HTML::Template;
@@ -13,7 +13,7 @@ my $cgi = $ha->{cgi};
 
 $ha->{debug} = $debug; # pass through debug levels
 
-my $tmpl_file = '/home/horus/support/main.tmpl';
+my $tmpl_file = '/opt/horus/support/main.tmpl';
 my $tmpl = HTML::Template->new( filename => $tmpl_file );
 
 $tmpl->param( titlebar => 'Horus - Login' );

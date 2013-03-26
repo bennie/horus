@@ -1,6 +1,6 @@
 #!/usr/bin/perl -I../lib
 
-# $Id: index.cgi,v 1.51 2010/01/29 20:46:30 ppollard Exp $
+# $Id: index.cgi,v 1.52 2013/03/26 18:44:44 cvs Exp $
 
 use Horus::Auth;
 use Horus::Hosts;
@@ -29,7 +29,7 @@ my $color_subhead = '#CCCCCC';
 my $good = '<img width="32" height="32" alt="[ + ]" src="http://horus.fusionone.com/images/good.png" />';
 my $bad  = '<img width="32" height="32" alt="[ - ]" src="http://horus.fusionone.com/images/bad.png" />';
 
-my $tmpl_file = '/home/horus/support/main.tmpl';
+my $tmpl_file = '/opt/horus/support/main.tmpl';
 my $tmpl = HTML::Template->new( filename => $tmpl_file );
 
 my $guest = $user eq 'Guest' ? $cgi->a({-href=>'/login.cgi?path=/index.cgi'.$cgi->path_info},'Login') : "$user [ ".$cgi->a({-href=>'/login.cgi?logout=true'},'logout').' ]';

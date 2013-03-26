@@ -1,6 +1,6 @@
 #!/usr/bin/perl -I../lib
 
-# $Id: report.cgi,v 1.5 2010/02/05 23:27:58 ppollard Exp $
+# $Id: report.cgi,v 1.6 2013/03/26 18:44:44 cvs Exp $
 
 use Horus::Auth;
 use Horus::Reports;
@@ -15,7 +15,7 @@ my $hr = new Horus::Reports;
 my $cgi  = $ha->{cgi};
 my $user = $ha->{username};
 
-my $tmpl_file = '/home/horus/support/main.tmpl';
+my $tmpl_file = '/opt/horus/support/main.tmpl';
 my $tmpl = HTML::Template->new( filename => $tmpl_file );
 
 my $guest = $user eq 'Guest' ? $cgi->a({-href=>'/login.cgi?path=/index.cgi'.$cgi->path_info},'Login') : "$user [ ".$cgi->a({-href=>'/login.cgi?logout=true'},'logout').' ]';
