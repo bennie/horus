@@ -6,7 +6,7 @@ package Horus::Conf;
 
 use strict;
 
-$Horus::Conf::VERSION = '$Revision: 1.26 $';
+$Horus::Conf::VERSION = '$Revision: 1.27 $';
 
 sub new {
   my     $self = {};
@@ -121,6 +121,8 @@ sub config_files {
   /etc/sysconfig/sysstat
   /etc/vsftpd/vsftpd.conf
   /etc/yum.repos.d/CentOS-Base.repo
+  /etc/yum.repos.d/epel.repo
+  /etc/yum.repos.d/rpmforge.repo
 
   /root/.bash_logout
   /root/.bash_profile
@@ -139,79 +141,6 @@ sub config_files {
   /etc/sysconfig/vmware-release /etc/vmware/license.cfg /etc/vmware/esx.conf
 
   /etc/vmware/config
-
-  /fusionone/apache/conf/httpd.conf
-  /fusionone/bin/f1
-  /fusionone/smfe/server/default/data/pingfederate-admin-user.xml
-  /fusionone/tomcat/conf/server.xml
-
-  /fusionone/webapps/mb/WEB-INF/classes/pfagent.propertries
-
-  /fusionone/webapps/admin/WEB-INF/classes/admin.properties
-  /fusionone/webapps/admin/WEB-INF/classes/papi.properties
-  /fusionone/webapps/admin/WEB-INF/classes/f1papi.properties
-
-  /fusionone/webapps/alcsrw/WEB-INF/classes/alcsrw.properties
-  /fusionone/webapps/alcsrw/WEB-INF/classes/f1papi.properties
-  /fusionone/webapps/alcsrw/WEB-INF/classes/papi.properties
-  /fusionone/webapps/alcsrw/WEB-INF/classes/qc-lib.properties
-  /fusionone/webapps/alcsrw/WEB-INF/classes/hibernate.properties
-
-  /fusionone/webapps/f1nag/WEB-INF/classes/hibernate.properties
-  /fusionone/webapps/f1nag/WEB-INF/classes/jdbc.properties
-  /fusionone/webapps/f1nag/WEB-INF/classes/nag.properties
-
-  /fusionone/webapps/fms/WEB-INF/classes/f1papi.conf
-  /fusionone/webapps/fms/WEB-INF/classes/fms.conf
-  /fusionone/webapps/fms/WEB-INF/classes/hibernate.properties
-  /fusionone/webapps/fms/WEB-INF/classes/jdbc.properties  
- 
-  /fusionone/webapps/lc-broker/WEB-INF/classes/hibernate.properties
-  /fusionone/webapps/lc-broker/WEB-INF/classes/lcbroker.properties
-  /fusionone/webapps/lc-broker/WEB-INF/classes/f1papi.conf
-  /fusionone/webapps/lc-broker/WEB-INF/classes/jdbc.properties
-  /fusionone/webapps/lc-broker/WEB-INF/classes/papi.properties
- 
-  /fusionone/webapps/mb/WEB-INF/classes/f1papi.conf
-  /fusionone/webapps/mb/WEB-INF/classes/hibernate.properties
-  /fusionone/webapps/mb/WEB-INF/classes/jdbc.properties
-  /fusionone/webapps/mb/WEB-INF/classes/papi.properties
-  /fusionone/webapps/mb/WEB-INF/classes/pfagent.properties
-  /fusionone/webapps/mb/WEB-INF/classes/mbackup.properties
-  /fusionone/webapps/mb/WEB-INF/classes/sso.properties
- 
-  /fusionone/webapps/mbnag/WEB-INF/classes/f1papi.conf
-  /fusionone/webapps/mbnag/WEB-INF/classes/logger.properties
-  /fusionone/webapps/mbnag/WEB-INF/classes/mpwdb.properties
-  /fusionone/webapps/mbnag/WEB-INF/classes/nag.properties
-
-  /fusionone/webapps/mg/WEB-INF/classes/f1mg.properties
-  /fusionone/webapps/mg/WEB-INF/classes/f1papi.conf
-  /fusionone/webapps/mg/WEB-INF/classes/papi.properties
-
-  /fusionone/webapps/mp/WEB-INF/classes/dcl.f1papi.conf
-  /fusionone/webapps/mp/WEB-INF/classes/f1papi.conf
-  /fusionone/webapps/mp/WEB-INF/classes/logger.properties
-  /fusionone/webapps/mp/WEB-INF/classes/mpw.db.properties
-  /fusionone/webapps/mp/WEB-INF/classes/mpw.properties
-  /fusionone/webapps/mp/WEB-INF/classes/ora.config
-  /fusionone/webapps/mp/WEB-INF/classes/papi.properties
-
-  /fusionone/webapps/mpnag/WEB-INF/classes/configfiles.properties
-  /fusionone/webapps/mpnag/WEB-INF/classes/f1papi.conf
-  /fusionone/webapps/mpnag/WEB-INF/classes/logger.properties
-  /fusionone/webapps/mpnag/WEB-INF/classes/mpwdb.properties
-  /fusionone/webapps/mpnag/WEB-INF/classes/nag.properties 
- 
-  /fusionone/webapps/qc-gw/WEB-INF/classes/f1papi.conf
-  /fusionone/webapps/qc-gw/WEB-INF/classes/hibernate.properties
-  /fusionone/webapps/qc-gw/WEB-INF/classes/jdbc.properties
-  /fusionone/webapps/qc-gw/WEB-INF/classes/qcgw.properties
-  /fusionone/webapps/qc-gw/WEB-INF/classes/qc-lib.properties
-  /fusionone/webapps/qc-gw/WEB-INF/classes/papi.properties
- 
-  /fusionone/sync/classes_variables_ce.inf
-  /fusionone/sync/classes_ce.inf
   
   /opt/cvs/CVSROOT/config
   /opt/cvs/CVSROOT/passwd
@@ -225,13 +154,6 @@ sub config_files {
   /var/spool/cron/oracle
   /var/spool/cron/root
 @;
-
-  # Name trouble
-  
-  for my $config (@configs) {
-    push @configs, '/fusionone/webapp/' . $1 if $config =~ /\/fusionone\/webapps\/(.+)$/;
-    push @configs, '/fusionone/ss/' . $1, '/fusionone/apps/ss/' . $1 if $config =~ /\/fusionone\/sync\/(.+)$/;
-  }
 
   push @configs, '/tmp/packages.txt';
   
@@ -261,7 +183,7 @@ sub config_files {
   (c) 2008-2209, Horus, Inc. 
 
   Work by Phil Pollard
-  $Revision: 1.26 $ $Date: 2009/07/29 01:07:55 $
+  $Revision: 1.27 $ $Date: 2013/03/26 21:32:57 $
 
 =cut
 
