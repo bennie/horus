@@ -7,7 +7,7 @@
 # --config=foo Deal only with the textconfig foo.
 # --noreport will skip emailing the change report.
 
-# $Id: grab.pl,v 1.81 2010/01/27 20:45:29 ppollard Exp $
+# $Id: grab.pl,v 1.82 2013/03/26 21:01:06 cvs Exp $
 
 use Horus::Hosts;
 
@@ -21,7 +21,7 @@ use strict;
 my $use_expect = 0;
 
 my @configs_to_save = undef;          # --config=foo, Override what config to process
-my $email = 'dcops@fusionone.com';    # --email=foo, Email that change report is sent to
+my $email = 'ppollard@npivot.com';    # --email=foo, Email that change report is sent to
 my $noconfigsave = 0;                 # --noconfigsave, do not update configs in the DB
 my $noreport = 0;                     # --noreport, supress emailing the change report
 my $subject = 'Server Change Report'; # --subject, change the report email subject line
@@ -43,7 +43,7 @@ debug("\n");
 
 ### Global Vars
 
-my $ver = (split ' ', '$Revision: 1.81 $')[1];
+my $ver = (split ' ', '$Revision: 1.82 $')[1];
 my $start = time;
 
 ### Build up the storable files
@@ -201,7 +201,7 @@ sub change_report {
   # Print the report
 
   open REPORT, '>/tmp/change.html';
-  print REPORT "To: $email\nFrom: horus\@horus.fusionone.com\nSubject: $subject\nContent-Type: text/html; charset=\"us-ascii\"\n\n";
+  print REPORT "To: $email\nFrom: horus\@hq-l-lcvs1.kovarus.com\nSubject: $subject\nContent-Type: text/html; charset=\"us-ascii\"\n\n";
   print REPORT "<html><body>\n\n";
 
   print REPORT "<hr noshade /><font size='+2'><b>Change Report</b></font><hr noshade />\n"
@@ -234,7 +234,7 @@ sub change_report {
   print REPORT "\n</body></html>\n";
   close REPORT;
 
-  system("/home/horus/bin/report-update.pl --historic change < /tmp/change.html") if $archive;
+  system("/opt/horus/bin/report-update.pl --historic change < /tmp/change.html") if $archive;
 
   exec("/usr/sbin/sendmail $email < /tmp/change.html") unless $noreport;  
   print "Skipping emaling the report.\n";
@@ -246,7 +246,7 @@ sub debug {
 }
 
 sub href {
-  return '<a href=\'http://horus.fusionone.com/index.cgi/host/'.$_[0].'\'>'.$_[0]."</a>\n";
+  return '<a href=\'http://hq-l-lcvs1.kovarus.com/index.cgi/host/'.$_[0].'\'>'.$_[0]."</a>\n";
 }
 
 # Reformat the diff table to HTML

@@ -1,6 +1,6 @@
-#!/usr/bin/perl -w -I/home/horus/lib
+#!/usr/bin/perl -w -I/opt/horus/lib
 
-# $Id: report-disk.pl,v 1.4 2010/02/05 23:27:58 ppollard Exp $
+# $Id: report-disk.pl,v 1.5 2013/03/26 21:01:06 cvs Exp $
 # Based on "report-esx.pl" which is Copyright (c) 2007 VMware, Inc.
 
 #use FindBin;
@@ -14,7 +14,7 @@ use warnings;
 
 ### Main
 
-my $ver = (split ' ', '$Revision: 1.4 $')[1];
+my $ver = (split ' ', '$Revision: 1.5 $')[1];
 
 my $h = new Horus::Hosts;
 my $hosts = $h->all();
@@ -33,7 +33,7 @@ for my $hostid ( sort {
   next if $host->{name} eq 'vz02-nas01';
   print STDERR "Connecting to $host->{name}\n" if $debug;
 
-  my $raw_data = `/home/horus/bin/remote-command.pl $host->{name} 'aggr show_space -m; logout telnet'`;
+  my $raw_data = `/opt/horus/bin/remote-command.pl $host->{name} 'aggr show_space -m; logout telnet'`;
   my @chunks = split /Aggregate '/, $raw_data;
   
   for my $chunk (@chunks) {
