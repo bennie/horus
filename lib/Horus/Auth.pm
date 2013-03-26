@@ -4,13 +4,10 @@
 
 package Horus::Auth;
 
-$Horus::Auth::VERSION='$Revision: 1.5 $';
+$Horus::Auth::VERSION='$Revision: 1.6 $';
 
 use CGI;
 use CGI::Session;
-use Crypt::PasswdMD5;
-use Crypt::SaltedHash;
-use Digest::MD5 qw/md5_hex/;
 use Net::LDAP;
 
 use strict;
@@ -52,22 +49,39 @@ sub check_pass {
   my $user = shift @_;
   my $pass = shift @_;
 
-  my $ldap = Net::LDAP->new('ldap.myhost.com') or return ( 0, "Can't bind to ldap: $!" );
-  $ldap->bind("cn=manager,dc=mycompany,dc=com", password=>'mypassword');
+  my $ldap_host = 'ldap.myhost.com';
+  my $ldap_user = 'ldapuser';
+  my $ldap_pass = 'mypassword';
 
-  my $mesg = $ldap->search(filter => "(uid=$user)", base => "ou=People,dc=mycompany,dc=com");
+  my $search_base = "dc=mycompany,dc=com";
 
-  return ( 0, 'LDAP Query response: ' . $mesg->code . ' ' .  $mesg->error ) unless $mesg->code == 0;
+  my $ldap = Net::LDAP->new($ldap_host) or return ( 0, "Can't bind to ldap: $!" );
+  $ldap->bind( $ldap_user, password=> $ldap_pass );
 
-  my $uid; my $password; my $valid; my $crypt_check;
-  
-  for my $entry ($mesg->entries) {
-    $uid = ($entry->get('uid'))[0];
-    $password = ($entry->get('userPassword'))[0];
-    ( $valid, $crypt_check ) = $self->_verify_password($password, $pass);
-    last if $valid eq '1';
+  my $search = $ldap->search(
+               base   => $search_base,
+               filter => "(uid=$user)",
+               scope  => 'sub',
+               attrs  => ['dn']
+             );
+
+  return ( 0, 'LDAP Query response: ' . $search->code . ' ' .  $search->error )
+    unless $search->code == 0;
+
+  my $user_dn; my $valid; my $crypt_check; my $error;
+
+  if ( defined $search->entry and defined $search->entry->dn ) {
+    $user_dn = $search->entry->dn;
+
+    my $pass_check = $ldap->bind( $user_dn, password => $pass );
+    if ( $pass_check->error eq 'Success' ) {
+      $valid = 1;
+    } else {
+      $valid = 0;
+      $error = $pass_check->error;
+    }
   }
-
+  
   if ( $valid eq '1' ) {
     $self->{username} = $user;
     $self->{status} = 'authenticated';
@@ -76,23 +90,11 @@ sub check_pass {
     $self->{session}->param('status','authenticated');
 
     $self->{session}->flush();
-    return ( 1, "$uid $password - $crypt_check" );
+    return ( 1, "$user_dn $pass - Verfied" );
   } else {
-    return ( 0, "No such user" ) unless $uid;
-    return ( 0, "Bad Password" . ($self->{debug}?" ($uid $password - $crypt_check)":'') );
+    return ( 0, "No such user" ) unless $user_dn;
+    return ( 0, "Bad Password" . ($self->{debug}?" ($user $pass $user_dn $error)":'') );
   }
-}
-
-sub _verify_password {
-  my $self = shift @_;
-  my $pass = shift @_;
-  my $text = shift @_;
-  if ( $pass =~ /^\{crypt\}(.+)$/i ) {
-    my $crypt = $1;
-    my $enc = unix_md5_crypt($text,$crypt);
-    return (( $enc eq $crypt ? 1:0 ), "Local Crypt Check: $crypt $enc");
-  }
-  return ( Crypt::SaltedHash->validate($pass, $text) ? 1:0 ), "(SaltedHash: $pass)";
 }
 
 sub clear_session {
