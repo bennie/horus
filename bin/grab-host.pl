@@ -1,6 +1,6 @@
 #!/usr/bin/perl -I../lib
 
-# $Id: grab-host.pl,v 1.14 2013/03/26 20:54:34 cvs Exp $
+# $Id: grab-host.pl,v 1.15 2013/03/26 20:57:26 cvs Exp $
 
 use Horus::Conf;
 use Horus::Network;
@@ -8,19 +8,16 @@ use Horus::Hosts;
 
 use Getopt::Long;
 use Net::SSH::Expect;
-use Net::SSH::Perl;
 use Net::OpenSSH;
 
 use Text::Diff;
 use Storable;
 
-require Math::BigInt::GMP; # For speed on Net::SSH::Perl;
-
 use strict;
 
 ### Global Vars
 
-my $ver = (split ' ', '$Revision: 1.14 $')[1];
+my $ver = (split ' ', '$Revision: 1.15 $')[1];
 
 my $use_expect = 0;
 
@@ -486,13 +483,6 @@ sub open_connection {
     }
 
   } else {
-
-   #my @conf = (protocol=>'2,1', debug=>0);
-   #push @conf, 'identity_files' => [] if length $user and length $pass;
-  
-    #our $ssh = Net::SSH::Perl->new($host, @conf );
-    #eval { $ssh->login($user,$pass); };
-    #if ( $@ ) { warn $@; return 0; }
     
     our $ssh = Net::OpenSSH->new( $host, user => $user, password => $pass );
     if ( $ssh->error ) { warn "Can't ssh to $host: " . $ssh->error; return 0; }
@@ -511,9 +501,9 @@ sub run {
     pop @ret;
     return join("\n",@ret);
   } else {
-    #my ($stdout,$stderr,$exit) = $ssh->cmd($command);
-    my $stdout = $ssh->capture({},$command);
-
+    my $stdout;
+    eval { $stdout = $ssh->capture({},$command); };
+    warn $@ if $@;
     chomp $stdout;
     return $stdout;    
   }
