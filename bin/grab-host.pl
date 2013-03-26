@@ -1,6 +1,6 @@
 #!/usr/bin/perl -I../lib
 
-# $Id: grab-host.pl,v 1.13 2009/11/18 19:28:57 ppollard Exp $
+# $Id: grab-host.pl,v 1.14 2013/03/26 20:54:34 cvs Exp $
 
 use Horus::Conf;
 use Horus::Network;
@@ -9,6 +9,7 @@ use Horus::Hosts;
 use Getopt::Long;
 use Net::SSH::Expect;
 use Net::SSH::Perl;
+use Net::OpenSSH;
 
 use Text::Diff;
 use Storable;
@@ -19,7 +20,7 @@ use strict;
 
 ### Global Vars
 
-my $ver = (split ' ', '$Revision: 1.13 $')[1];
+my $ver = (split ' ', '$Revision: 1.14 $')[1];
 
 my $use_expect = 0;
 
@@ -486,13 +487,15 @@ sub open_connection {
 
   } else {
 
-   my @conf = (protocol=>'2,1', debug=>0);
-   push @conf, 'identity_files' => [] if length $user and length $pass;
+   #my @conf = (protocol=>'2,1', debug=>0);
+   #push @conf, 'identity_files' => [] if length $user and length $pass;
   
-    our $ssh = Net::SSH::Perl->new($host, @conf );
-    eval { $ssh->login($user,$pass); };
-    if ( $@ ) { warn $@; return 0; }
-
+    #our $ssh = Net::SSH::Perl->new($host, @conf );
+    #eval { $ssh->login($user,$pass); };
+    #if ( $@ ) { warn $@; return 0; }
+    
+    our $ssh = Net::OpenSSH->new( $host, user => $user, password => $pass );
+    if ( $ssh->error ) { warn "Can't ssh to $host: " . $ssh->error; return 0; }
   }
   
   return 1;
@@ -508,9 +511,11 @@ sub run {
     pop @ret;
     return join("\n",@ret);
   } else {
-    my ($stdout,$stderr,$exit) = $ssh->cmd($command);
+    #my ($stdout,$stderr,$exit) = $ssh->cmd($command);
+    my $stdout = $ssh->capture({},$command);
+
     chomp $stdout;
-    return $stdout;
+    return $stdout;    
   }
 }
 
