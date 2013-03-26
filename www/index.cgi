@@ -1,6 +1,6 @@
 #!/usr/bin/perl -I../lib
 
-# $Id: index.cgi,v 1.52 2013/03/26 18:44:44 cvs Exp $
+# $Id: index.cgi,v 1.53 2013/03/26 21:24:57 cvs Exp $
 
 use Horus::Auth;
 use Horus::Hosts;
@@ -26,8 +26,8 @@ my $color_border  = '#000000';
 my $color_header  = '#666699';
 my $color_subhead = '#CCCCCC';
 
-my $good = '<img width="32" height="32" alt="[ + ]" src="http://horus.fusionone.com/images/good.png" />';
-my $bad  = '<img width="32" height="32" alt="[ - ]" src="http://horus.fusionone.com/images/bad.png" />';
+my $good = '<img width="32" height="32" alt="[ + ]" src="http://hq-l-lcvs1.kovarus.com/images/good.png" />';
+my $bad  = '<img width="32" height="32" alt="[ - ]" src="http://hq-l-lcvs1.kovarus.com/images/bad.png" />';
 
 my $tmpl_file = '/opt/horus/support/main.tmpl';
 my $tmpl = HTML::Template->new( filename => $tmpl_file );
@@ -516,27 +516,15 @@ sub rack_report {
 
 sub authorized {
   my $user = shift @_;
-  return 1 if $user eq 'alee';
-  return 1 if $user eq 'bmurphy';
-  return 1 if $user eq 'btanaka';
-  return 1 if $user eq 'jtrump';
-  return 1 if $user eq 'mlysenko';
   return 1 if $user eq 'ppollard';
-  return 1 if $user eq 'pzaura';
-  return 1 if $user eq 'rob';
-  return 1 if $user eq 'tamundson';
-  return 1 if $user eq 'sjaiswal';
+  return 1 if $user eq 'rpope';
   return 0;
 }
 
 sub authorized_to_edit {
   my $user = shift @_;
-  return 1 if $user eq 'alee';
-  return 1 if $user eq 'bmurphy';
-  return 1 if $user eq 'btanaka';
-  return 1 if $user eq 'jtrump';
   return 1 if $user eq 'ppollard';
-  return 1 if $user eq 'tamundson';
+  return 1 if $user eq 'rpope';
   return 0;
 }
 
