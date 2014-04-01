@@ -12,8 +12,6 @@ use Digest::MD5 qw/md5_hex/;
 use Horus::DB;
 use strict;
 
-$Horus::Hosts::VERSION = '$Revision: 1.13 $';
-
 sub new {
   my $self = {};
   bless $self;
@@ -250,10 +248,9 @@ sub data_list {
 
 =head1 Authorship:
  
-  (c) 2007-2008, Horus, Inc.
+  (c) 2007-YEARTAG, Horus, Inc.
 
   Work by Phil Pollard
-  $Revision: 1.13 $ $Date: 2009/03/20 00:46:04 $
     
 =cut
 

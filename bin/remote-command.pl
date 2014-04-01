@@ -12,7 +12,6 @@ use strict;
 
 ### Prep
 
-my $ver = (split ' ', '$Revision: 1.1 $')[1];
 my $use_expect = 0;
 my $quiet = 1;
 

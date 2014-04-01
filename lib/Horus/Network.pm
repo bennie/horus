@@ -11,8 +11,6 @@ package Horus::Network;
 use Horus::DB;
 use strict;
 
-$Horus::Network::VERSION = '$Revision: 1.6 $';
-
 sub new {
   my $self = {};
   bless $self;
@@ -117,10 +115,9 @@ sub update {
 
 =head1 Authorship:
 
-  (c) 2007, Horus, Inc.
+  (c) 2007-YEARTAG, Horus, Inc.
 
   Work by Phil Pollard
-  $Revision: 1.6 $ $Date: 2008/08/07 20:32:31 $
 
 =cut
 

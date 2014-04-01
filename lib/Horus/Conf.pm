@@ -6,7 +6,7 @@ package Horus::Conf;
 
 use strict;
 
-$Horus::Conf::VERSION = '$Revision: 1.27 $';
+$Horus::Conf::VERSION = 'VERSIONTAG';
 
 sub new {
   my     $self = {};
@@ -180,10 +180,9 @@ sub config_files {
 
 =head1 Authorship:
 
-  (c) 2008-2209, Horus, Inc. 
+  (c) 2008-YEARTAG, Horus, Inc. 
 
   Work by Phil Pollard
-  $Revision: 1.27 $ $Date: 2013/03/26 21:32:57 $
 
 =cut
 

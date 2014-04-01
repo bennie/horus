@@ -8,8 +8,6 @@ use DBI;
 use Horus::Utils qw/zt/;
 use strict;
 
-$Horus::DB::VERSION = '$Revision: 1.7 $';
-
 sub new {
   my     $self = {};
   bless  $self;
@@ -292,10 +290,9 @@ sub update {
 
 =head1 Authorship:
 
-  (c) 2007, Horus, Inc. 
+  (c) 2007-YEARTAG, Horus, Inc. 
 
   Work by Phil Pollard
-  $Revision: 1.7 $ $Date: 2013/03/26 18:44:44 $
 
   Some portions of this module are (c) 1999-2007, Phillip Pollard
   and were released under GPL v2.

@@ -66,8 +66,6 @@ my $filename;
 
 ### Main
 
-my $ver = (split ' ', '$Revision: 1.7 $')[1];
-
 my $h = new Horus::Hosts;
 my $hosts = $h->all();
 

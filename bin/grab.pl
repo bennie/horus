@@ -41,7 +41,7 @@ debug("\n");
 
 ### Global Vars
 
-my $ver = (split ' ', '$Revision: 1.82 $')[1];
+my $ver = $Horus::Conf::VERSION;
 my $start = time;
 
 ### Build up the storable files

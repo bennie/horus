@@ -15,8 +15,6 @@ use strict;
 
 ### Global Vars
 
-my $ver = (split ' ', '$Revision: 1.16 $')[1];
-
 my $use_expect = 0;
 
 my $co = '/usr/bin/co'; # RCS utils

@@ -13,8 +13,6 @@ use warnings;
 
 ### Main
 
-my $ver = (split ' ', '$Revision: 1.5 $')[1];
-
 my $h = new Horus::Hosts;
 my $hosts = $h->all();
 

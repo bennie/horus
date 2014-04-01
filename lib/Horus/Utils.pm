@@ -10,7 +10,6 @@ use Exporter;
 use vars qw(@ISA @EXPORT_OK @EXPORT);
 
 package Horus::Utils;
-$Horus::Utils::VERSION = '$revision: $';
 
 @ISA       = qw/Exporter/;
 @EXPORT    = qw//;
@@ -189,10 +188,9 @@ sub zt {
 
 =head1 Authorship:
 
-  (c) 2007, Horus, Inc.
+  (c) 2007-YEARTAG, Horus, Inc.
   
   Work by Phil Pollard
-  $Revision: 1.2 $ $Date: 2008/07/24 22:35:06 $
 
   The majority of this module is (c) 1999-2007, Phillip Pollard
   and released under GPL v2.

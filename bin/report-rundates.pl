@@ -6,8 +6,6 @@ use strict;
 
 ### Prep
 
-my $ver = (split ' ', '$Revision: 1.2 $')[1];
-
 my $color_header  = '#666699';
 
 my $cgi = new CGI;

@@ -4,7 +4,6 @@ use strict;
 
 ### Prep
 
-my $ver = (split ' ', '$Revision: 1.2 $')[1];
 my %backups;
 
 my @raw = `./remote-command.pl ops ls -l --time-style=long-iso /archive_logs/images-rsync/*/bootsector.*`;

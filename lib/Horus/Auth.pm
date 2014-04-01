@@ -4,8 +4,6 @@
 
 package Horus::Auth;
 
-$Horus::Auth::VERSION='$Revision: 1.6 $';
-
 use CGI;
 use CGI::Session;
 use Net::LDAP;

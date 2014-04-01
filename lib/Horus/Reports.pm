@@ -11,8 +11,6 @@ package Horus::Reports;
 use Horus::DB;
 use strict;
 
-$Horus::Reports::VERSION = '$Revision: 1.7 $';
-
 sub new {
   my $self = {};
   bless $self;
@@ -143,10 +141,9 @@ sub update_historic {
 
 =head1 Authorship:
  
-  (c) 2007-2009, Horus, Inc.
+  (c) 2007-YEARTAG, Horus, Inc.
 
   Work by Phil Pollard
-  $Revision: 1.7 $ $Date: 2010/02/05 23:27:58 $
     
 =cut
 
