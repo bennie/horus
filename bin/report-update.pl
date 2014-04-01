@@ -1,4 +1,4 @@
-#!/usr/bin/perl -I/opt/horus/lib
+#!/usr/bin/perl -I/home/horus/lib
 
 use Horus::Reports;
 use strict;

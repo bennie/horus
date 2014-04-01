@@ -234,7 +234,7 @@ sub change_report {
   print REPORT "\n</body></html>\n";
   close REPORT;
 
-  system("/opt/horus/bin/report-update.pl --historic change < /tmp/change.html") if $archive;
+  system("/home/horus/bin/report-update.pl --historic change < /tmp/change.html") if $archive;
 
   exec("/usr/sbin/sendmail $email < /tmp/change.html") unless $noreport;  
   print "Skipping emaling the report.\n";

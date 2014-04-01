@@ -13,7 +13,7 @@ my $cgi = $ha->{cgi};
 
 $ha->{debug} = $debug; # pass through debug levels
 
-my $tmpl_file = '/opt/horus/support/main.tmpl';
+my $tmpl_file = '/home/horus/support/main.tmpl';
 my $tmpl = HTML::Template->new( filename => $tmpl_file );
 
 $tmpl->param( titlebar => 'Horus - Login' );

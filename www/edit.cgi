@@ -11,7 +11,7 @@ use strict;
 my %skip = map {$_,1;} qw/arch created id last_modified ntp ntphost ram snmp snmp_community tz uptime vm/;
 my %checkboxes = map {$_,1;} qw/decomissioned skip/;
 
-my $tmpl_file = '/opt/horus/support/main.tmpl';
+my $tmpl_file = '/home/horus/support/main.tmpl';
 my $tmpl = HTML::Template->new( filename => $tmpl_file );
 
 my $ha = new Horus::Auth;
