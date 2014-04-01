@@ -8,6 +8,8 @@ use strict;
 
 $Horus::Conf::VERSION = 'VERSIONTAG';
 
+$Horus::Conf::path = '/horus';
+
 sub new {
   my     $self = {};
   bless  $self;

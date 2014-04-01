@@ -1,6 +1,7 @@
 #!/usr/bin/perl -I../lib
 
 use Horus::Auth;
+use Horus::Conf;
 use Horus::Hosts;
 use Horus::Network;
 
@@ -24,17 +25,22 @@ my $color_border  = '#000000';
 my $color_header  = '#666699';
 my $color_subhead = '#CCCCCC';
 
-my $good = '<img width="32" height="32" alt="[ + ]" src="http://hq-l-lcvs1.kovarus.com/images/good.png" />';
-my $bad  = '<img width="32" height="32" alt="[ - ]" src="http://hq-l-lcvs1.kovarus.com/images/bad.png" />';
+my $path = $Horus::Conf::path;
+
+my $good = '<img width="32" height="32" alt="[ + ]" src="'.$path.'/images/good.png" />';
+my $bad  = '<img width="32" height="32" alt="[ - ]" src="'.$path.'/images/bad.png" />';
 
 my $tmpl_file = '/home/horus/support/main.tmpl';
 my $tmpl = HTML::Template->new( filename => $tmpl_file );
 
-my $guest = $user eq 'Guest' ? $cgi->a({-href=>'/login.cgi?path=/index.cgi'.$cgi->path_info},'Login') : "$user [ ".$cgi->a({-href=>'/login.cgi?logout=true'},'logout').' ]';
+my $guest = $user eq 'Guest' ? $cgi->a({-href=> $path.'/login.cgi?path='.$path.'/index.cgi'.$cgi->path_info},'Login') 
+                             : "$user [ ".$cgi->a({-href=>$path.'/login.cgi?logout=true'},'logout').' ]';
 
 $tmpl->param( titlebar => 'Horus' );
 $tmpl->param( title => 'Horus' );
 $tmpl->param( guest => $guest );
+
+$tmpl->param( path => $path );
 
 my %hosts = $fh->all();
 my $total = scalar keys %hosts;
@@ -60,7 +66,7 @@ if ( $pathinfo[0] eq 'dashboard' ) {
 } elsif ( $pathinfo[0] eq 'report' and $pathinfo[1] eq 'rack' ) {
   &rack_report();
 } else {
-  print $cgi->redirect('/index.cgi/dashboard');
+  print $cgi->redirect( $path.'/index.cgi/dashboard');
 }
 
 ### Pages
@@ -78,7 +84,7 @@ sub config {
           )
         ),
         $cgi->hr({-noshade=>undef}),
-        $cgi->font({-size=>1},$cgi->a({-href=>'/index.cgi/host/'.$host},'Back to host view'));
+        $cgi->font({-size=>1},$cgi->a({-href=> $path . '/index.cgi/host/'.$host},'Back to host view'));
 
   if ( $configs_requiring_auth{$config} and not &authorized($user) ) {
     print $cgi->p('You are not authroized to view this config file.');
@@ -133,16 +139,16 @@ sub dashboard {
   $tmpl->param( guest => $guest );
 
   my $nav = ( &authorized($user) ? $cgi->a({-href=>'/index.cgi/report/password'},"Password Report") . $cgi->br : '' )
-          . $cgi->a({-href=>'/index.cgi/report/rack'},"Rack &amp; Port Report") . $cgi->br
-          . $cgi->a({-href=>'/index.cgi/report/network'},"Network Report") . $cgi->br
-          . $cgi->a({-href=>'/index.cgi/report/os'},"OS Report") . $cgi->br
+          . $cgi->a({-href=>$path.'/index.cgi/report/rack'},"Rack &amp; Port Report") . $cgi->br
+          . $cgi->a({-href=>$path.'/index.cgi/report/network'},"Network Report") . $cgi->br
+          . $cgi->a({-href=>$path.'/index.cgi/report/os'},"OS Report") . $cgi->br
           . $cgi->br
-          . $cgi->a({-href=>'/report.cgi/vmhosts'},"VM Hosts Report") . $cgi->br
-          . $cgi->a({-href=>'/report.cgi/disk'},"Disk Consumption") . $cgi->br
-          . $cgi->a({-href=>'/report.cgi/backups'},"Backup Report") . $cgi->br
-          . $cgi->a({-href=>'/report.cgi/rundates'},"Last Run Dates") . $cgi->br
+          . $cgi->a({-href=>$path.'/report.cgi/vmhosts'},"VM Hosts Report") . $cgi->br
+          . $cgi->a({-href=>$path.'/report.cgi/disk'},"Disk Consumption") . $cgi->br
+          . $cgi->a({-href=>$path.'/report.cgi/backups'},"Backup Report") . $cgi->br
+          . $cgi->a({-href=>$path.'/report.cgi/rundates'},"Last Run Dates") . $cgi->br
           . $cgi->br
-          . $cgi->a({-href=>'/report.cgi/historic'},'Historic Reports');
+          . $cgi->a({-href=>$path.'/report.cgi/historic'},'Historic Reports');
 
   my $info = $cgi->p("$total hosts in the system.");
   $info .= $cgi->p("$decomm_total decomissioned hosts in the system.");
@@ -162,7 +168,7 @@ sub dashboard {
       #$cgi->td({-bgcolor=>$color_header},'Model'),
       #$cgi->td({-bgcolor=>$color_header},'Clock'),
       #$cgi->td({-bgcolor=>$color_header},'Last&nbsp;Update'),
-      ( &authorized_to_edit($user) ? $cgi->td({-bgcolor=>$color_header}, $cgi->start_form({-action=>'/edit.cgi'}), $cgi->submit({-name=>'New'}), $cgi->end_form ) : '' ),
+      ( &authorized_to_edit($user) ? $cgi->td({-bgcolor=>$color_header}, $cgi->start_form({-action=>$path.'/edit.cgi'}), $cgi->submit({-name=>'New'}), $cgi->end_form ) : '' ),
     )
   );
 
@@ -191,7 +197,7 @@ sub dashboard {
       #$cgi->td({-bgcolor=>$bg}, "$rec{machine_model}" ),
       #$cgi->td({-bgcolor=>$bg,-align=>'center'}, "$rec{tz}" ),
       #$cgi->td({-bgcolor=>$bg,-align=>'center'}, $time ),
-      ( &authorized_to_edit($user) ? $cgi->td({-bgcolor=>$bg,-align=>'center'}, $cgi->start_form({-action=>'/edit.cgi'}), $cgi->hidden({-name=>'id',-value=>$id}), $cgi->submit({-name=>'Edit'}), $cgi->end_form ) : '' ),
+      ( &authorized_to_edit($user) ? $cgi->td({-bgcolor=>$bg,-align=>'center'}, $cgi->start_form({-action=>$path.'/edit.cgi'}), $cgi->hidden({-name=>'id',-value=>$id}), $cgi->submit({-name=>'Edit'}), $cgi->end_form ) : '' ),
     );
   }
 
@@ -206,7 +212,7 @@ sub host {
   $tmpl->param( title => "Host: $host" );
   $tmpl->param( guest => $guest );
 
-  my $nav = $cgi->a({-href=>'/index.cgi/dashboard'},'Back to Dashboard');
+  my $nav = $cgi->a({-href=>$path.'/index.cgi/dashboard'},'Back to Dashboard');
 
   my $possible = $fh->by_name($host);
   my %rec = $fh->get($possible->[0]);
@@ -332,7 +338,7 @@ sub host {
   $body .= $cgi->end_blockquote;
 
   my $info = "<b>user:</b> $rec{username}" . $cgi->br . "<b>pass:</b> $rec{password}" . $cgi->br . $cgi->br
-           . ( &authorized_to_edit($user) ? $cgi->center( $cgi->start_form({-action=>'/edit.cgi'}), $cgi->hidden({-name=>'id',-value=>$rec{id}}), $cgi->submit({-name=>'Edit',-label=>'Edit this host'}), $cgi->end_form ) : '' );
+           . ( &authorized_to_edit($user) ? $cgi->center( $cgi->start_form({-action=>$path.'/edit.cgi'}), $cgi->hidden({-name=>'id',-value=>$rec{id}}), $cgi->submit({-name=>'Edit',-label=>'Edit this host'}), $cgi->end_form ) : '' );
            
   # Footer
   
@@ -352,7 +358,7 @@ sub network_report {
   $tmpl->param( title => 'Network Report' );
   $tmpl->param( guest => $guest );
 
-  my $nav = $cgi->a({-href=>'/index.cgi/dashboard'},'Back to Dashboard');
+  my $nav = $cgi->a({-href=>$path.'/index.cgi/dashboard'},'Back to Dashboard');
 
   my $all = $fn->all();
 
@@ -398,7 +404,7 @@ sub os_report {
   $tmpl->param( title => 'OS Report' );
   $tmpl->param( guest => $guest );
 
-  my $nav = $cgi->a({-href=>'/index.cgi/dashboard'},'Back to Dashboard');
+  my $nav = $cgi->a({-href=>$path.'/index.cgi/dashboard'},'Back to Dashboard');
   my $body;
 
   my %os;
@@ -433,7 +439,7 @@ sub password_report {
   $tmpl->param( titlebar => 'Horus - Password Report' );
   $tmpl->param( title => 'Password Report' );
   $tmpl->param( guest => $guest );
-  $tmpl->param( nav => $cgi->a({-href=>'/index.cgi/dashboard'},'Back to Dashboard') );
+  $tmpl->param( nav => $cgi->a({-href=>$path.'/index.cgi/dashboard'},'Back to Dashboard') );
 
   my @pass = $cgi->Tr( map {$cgi->td({-bgcolor=>$color_header},$_)} qw/Host User Pass Host User Pass Host User Pass/);
   my @chunks;
@@ -477,7 +483,7 @@ sub rack_report {
   $tmpl->param( titlebar => 'Horus - Rack Report' );
   $tmpl->param( title => 'Rack Report' );
   $tmpl->param( guest => $guest );
-  $tmpl->param( nav => $cgi->a({-href=>'/index.cgi/dashboard'},'Back to Dashboard') );
+  $tmpl->param( nav => $cgi->a({-href=>$path.'/index.cgi/dashboard'},'Back to Dashboard') );
 
   my @rows = $cgi->Tr( map {$cgi->td({-bgcolor=>$color_header,-align=>'center'},$_)} qw/Host Rack Position Patch Switch Brand Model SN/);
   my %racks;
@@ -492,7 +498,7 @@ sub rack_report {
     for my $pos ( sort { $a <=> $b } keys %{$racks{$rack}} ) {
       for my $host ( sort keys %{$racks{$rack}{$pos}} ) {
         push @rows, $cgi->Tr(
-          $cgi->td( $cgi->a({-href=>'/index.cgi/host/'.$host},$host) ),
+          $cgi->td( $cgi->a({-href=>$path.'/index.cgi/host/'.$host},$host) ),
           $cgi->td({-align=>'center'}, $rack ),
           $cgi->td({-align=>'center'}, $pos ),
           $cgi->td({-align=>'center'}, $racks{$rack}{$pos}{$host}{rack_patching} ),
