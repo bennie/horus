@@ -1,7 +1,5 @@
 #!/usr/bin/perl -I../lib
 
-# $Id: index.cgi,v 1.53 2013/03/26 21:24:57 cvs Exp $
-
 use Horus::Auth;
 use Horus::Hosts;
 use Horus::Network;

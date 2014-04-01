@@ -1,7 +1,5 @@
 #!/usr/bin/perl -I../lib
 
-# $Id: report-rundates.pl,v 1.2 2009/07/29 21:56:12 ppollard Exp $
-
 use CGI;
 use Horus::Hosts;
 use strict;

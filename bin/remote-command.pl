@@ -1,7 +1,5 @@
 #!/usr/bin/perl -I../lib
 
-# $Id: remote-command.pl,v 1.1 2009/06/09 00:09:54 ppollard Exp $
-
 use Horus::Hosts;
 
 use Getopt::Long;

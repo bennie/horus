@@ -1,6 +1,5 @@
 #!/usr/bin/perl -w -I/usr/lib/vmware-vcli/apps/ -I../lib
 
-# $Id: report-esx.pl,v 1.7 2010/01/27 22:47:26 ppollard Exp $
 # Based on "report-esx.pl" which is Copyright (c) 2007 VMware, Inc.
 
 use Horus::Hosts;

@@ -1,7 +1,5 @@
 #!/usr/bin/perl -I../lib
 
-# $Id: grab-host.pl,v 1.16 2013/03/26 21:35:01 cvs Exp $
-
 use Horus::Conf;
 use Horus::Network;
 use Horus::Hosts;

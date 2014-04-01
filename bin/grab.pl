@@ -7,8 +7,6 @@
 # --config=foo Deal only with the textconfig foo.
 # --noreport will skip emailing the change report.
 
-# $Id: grab.pl,v 1.82 2013/03/26 21:01:06 cvs Exp $
-
 use Horus::Hosts;
 
 use Getopt::Long;

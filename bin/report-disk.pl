@@ -1,6 +1,5 @@
 #!/usr/bin/perl -w -I/bin/horus/lib
 
-# $Id: report-disk.pl,v 1.5 2013/03/26 21:01:06 cvs Exp $
 # Based on "report-esx.pl" which is Copyright (c) 2007 VMware, Inc.
 
 #use FindBin;

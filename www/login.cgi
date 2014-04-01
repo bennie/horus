@@ -1,7 +1,5 @@
 #!/usr/bin/perl -I../lib
 
-# $Id: login.cgi,v 1.6 2013/03/26 18:44:44 cvs Exp $
-
 use Horus::Auth;
 use HTML::Template;
 use strict;
