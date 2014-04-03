@@ -41,6 +41,7 @@ $tmpl->param( title => 'Horus' );
 $tmpl->param( guest => $guest );
 
 $tmpl->param( path => $path );
+$tmpl->param( copyright => '&copy; 2014 ' . $Horus::Conf::company );
 
 my %hosts = $fh->all();
 my $total = scalar keys %hosts;

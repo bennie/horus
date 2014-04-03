@@ -8,7 +8,8 @@ use strict;
 
 $Horus::Conf::VERSION = 'VERSIONTAG';
 
-$Horus::Conf::path = '/horus';
+$Horus::Conf::company = 'Pure Storage, Inc.'; # used in text to identify company copyright
+$Horus::Conf::path    = '/horus'; # used as root for web paths
 
 sub new {
   my     $self = {};

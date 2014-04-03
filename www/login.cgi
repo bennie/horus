@@ -1,6 +1,7 @@
 #!/usr/bin/perl -I../lib
 
 use Horus::Auth;
+use Horus::Conf;
 use HTML::Template;
 use strict;
 
@@ -20,6 +21,9 @@ $tmpl->param( guest => '&nbsp;' );
 
 my $body;
 my $path = ( $cgi->param('path') ? $cgi->param('path') : '/index.cgi' );
+
+$tmpl->param( path => $Horus::Conf::path );
+$tmpl->param( copyright => '&copy; 2014 ' . $Horus::Conf::company );
 
 if ( $cgi->param('user') && $cgi->param('pass') )  {
   $body .= &auth($cgi->param('user'),$cgi->param('pass'));
