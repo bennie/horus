@@ -8,6 +8,8 @@ use CGI;
 use CGI::Session;
 use Net::LDAP;
 
+use LocalVars;
+
 use strict;
 
 sub new {
@@ -47,17 +49,11 @@ sub check_pass {
   my $user = shift @_;
   my $pass = shift @_;
 
-  my $ldap_host = 'ldap.myhost.com';
-  my $ldap_user = 'ldapuser';
-  my $ldap_pass = 'mypassword';
-
-  my $search_base = "dc=mycompany,dc=com";
-
-  my $ldap = Net::LDAP->new($ldap_host) or return ( 0, "Can't bind to ldap: $!" );
-  $ldap->bind( $ldap_user, password=> $ldap_pass );
+  my $ldap = Net::LDAP->new($LocalVars::ldap_host) or return ( 0, "Can't bind to ldap: $!" );
+  $ldap->bind( $LocalVars::ldap_user, password=> $LocalVars::ldap_pass );
 
   my $search = $ldap->search(
-               base   => $search_base,
+               base   => $LocalVars::ldap_base,
                filter => "(uid=$user)",
                scope  => 'sub',
                attrs  => ['dn']

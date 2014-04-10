@@ -1,0 +1,18 @@
+=head1 LocalVars (LocalVars.pm)
+
+This file is to serve to hold local variables such as LDAP server info, 
+users and passwords. This is to avoid having any of these values stored
+hidden in the code base, and to provide a central configuration point.
+
+=cut
+
+package LocalVars;
+
+use strict;
+
+$LocalVars::ldap_host = 'ldap.myhost.com';
+$LocalVars::ldap_user = 'ldapuser';
+$LocalVars::ldap_pass = 'mypassword';
+$LocalVars::ldap_base = 'dc=mycompany,dc=com';
+
+1;
