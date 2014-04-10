@@ -2,6 +2,7 @@
 
 use Crypt::PasswdMD5;
 use Crypt::SaltedHash;
+use Data::Dumper;
 use Net::LDAP;
 use Term::ReadLine;
 use Term::ReadPassword;
@@ -19,11 +20,16 @@ print " * User: $LocalVars::ldap_user\n";
 print " * Pass: $LocalVars::ldap_pass\n";
 print " * Base: $LocalVars::ldap_base\n\n";
 
+my $bind_dn = "cn=$LocalVars::ldap_user,$LocalVars::ldap_base";
+print " * Bind DN: $bind_dn\n\n";
+
+my $ldap = Net::LDAP->new($LocalVars::ldap_host) or die "Can't connect to ldap server: $@\n";
+
+my $ret = $ldap->bind( $bind_dn , password => "$localVars::ldap_pass" );
+die $ret->{errorMessage} . "\n" . Dumper($ret) if $ret->{errorMessage};
+
 my $user = $term->readline('user: ');
 my $password = read_password('password: ');
-
-my $ldap = Net::LDAP->new($LocalVars::ldap_host) or die "Can't bind to ldap: $!\n";
-$ldap->bind($LocalVars::ldap_user, password=>$localVars::ldap_pass);
 
 my $mesg = $ldap->search(filter => "(uid=$user)", base => $LocalVars::ldap_base);
 
