@@ -49,12 +49,14 @@ sub check_pass {
   my $user = shift @_;
   my $pass = shift @_;
 
-  my $ldap = Net::LDAP->new($LocalVars::ldap_host) or return ( 0, "Can't bind to ldap: $!" );
-  $ldap->bind( $LocalVars::ldap_user, password=> $LocalVars::ldap_pass );
+  my $ldap = Net::LDAP->new($LocalVars::ldap_host,($LocalVars::ldap_port?(port=>$LocalVars::ldap_port):())) or return ( 0, "Can't connect to ldap server: $@" );
+
+  my $ret = $ldap->bind( $LocalVars::ldap_bind , password => $LocalVars::ldap_pass );
+  return ( 0,  'Bind error: ' . $ret->error ) unless ( $ret->error eq 'Success' );
 
   my $search = $ldap->search(
                base   => $LocalVars::ldap_base,
-               filter => "(uid=$user)",
+               filter => "($LocalVars::ldap_uid=$user)",
                scope  => 'sub',
                attrs  => ['dn']
              );

@@ -19,7 +19,7 @@ print " * Pass: $LocalVars::ldap_pass\n";
 print " * Base: $LocalVars::ldap_base\n";
 print " * UID:  $LocalVars::ldap_uid\n\n";
 
-my $ldap = Net::LDAP->new($LocalVars::ldap_host, ($LocalVars::ldap_port?(port=>$LocalVars::ldap_port):()), async => 1 )
+my $ldap = Net::LDAP->new($LocalVars::ldap_host, ($LocalVars::ldap_port?(port=>$LocalVars::ldap_port):()) )
              or die "Can't connect to ldap server: $@\n";
 
 ### Test search bind
@@ -66,9 +66,7 @@ unless ( $mesg->error eq 'Success' ) {
 }
 
 my $ou = ($mesg->entries())[0]->get('distinguishedName')->[0];
-$ldap->unbind;
 
-my $ret = $ldap->bind( $ou , password => $password );
-die $ret->{errorMessage} . "\n" . Dumper($ret) if $ret->{errorMessage};
+my $ret = $ldap->bind( $ou, password => $password );
 
-print $ret->error();
+print $ret->error() . "\n";
