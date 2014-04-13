@@ -15,5 +15,6 @@ $LocalVars::ldap_port = '4321'; # optional
 $LocalVars::ldap_bind = 'cn=ldapuser,cn=users,dc=mycompany,dc=com';
 $LocalVars::ldap_pass = 'mypassword';
 $LocalVars::ldap_base = 'dc=mycompany,dc=com';
+$LocalVars::ldap_uid  = 'UserNameEntryKey';
 
 1;
